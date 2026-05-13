@@ -36,6 +36,13 @@
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+<!-- Instrument Serif — used by the Tal Weiss Story Drop scrollytelling
+     (StorytellingDropViewer). Loaded once globally so the storydrop's
+     editorial typography renders without a flash of system serif. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+
 <style>
 /* =================================================================
    v3.2-glass.html CSS verbatim (lines 336–1482) — this IS the design
@@ -591,6 +598,207 @@
      dominate the viewport. Phone keeps 16:9 (canonical v3.2 hero). */
   @media (min-width: 1024px) {
     .lg-live-stage { aspect-ratio: 24 / 9; }
+  }
+
+  /* ====================================================================
+     STORY DROP — Tal Weiss scrollytelling
+     ====================================================================
+     All classes prefixed with `sd-` and used only inside the
+     StorytellingDropViewer overlay. Ported from
+     prototype/storydrop-tal-weiss.html. */
+
+  /* Cream palette + cyan accents reuse existing tokens; new variables only
+     introduced where the storydrop needs translucent cream stops not
+     covered by the prototype's --text-* vars. */
+  .sd-root {
+    --sd-cream:    #F0EBE1;
+    --sd-cream-95: rgba(240,235,225,0.95);
+    --sd-cream-85: rgba(240,235,225,0.85);
+    --sd-cream-70: rgba(240,235,225,0.70);
+    --sd-cream-55: rgba(240,235,225,0.55);
+    --sd-cream-45: rgba(240,235,225,0.45);
+    --sd-cream-30: rgba(240,235,225,0.30);
+    --sd-cream-25: rgba(240,235,225,0.25);
+    --sd-cream-15: rgba(240,235,225,0.15);
+    --sd-cream-08: rgba(240,235,225,0.08);
+    --sd-cyan:     #00D6FE;
+    --sd-cyan-tx:  #66E6FF;
+    --sd-canvas:   #0A0D14;
+    background: var(--sd-canvas);
+    color: var(--sd-cream-95);
+  }
+
+  /* Typography utility classes scoped under sd-root so the storydrop's
+     editorial serif/mono pairing doesn't leak into the rest of the
+     prototype (which uses its own SF stack). */
+  .sd-root .sd-serif { font-family: 'Instrument Serif', Georgia, serif; }
+  .sd-root .sd-mono  { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace; font-feature-settings: 'tnum'; }
+  .sd-root .sd-tx    { color: var(--sd-cream-95); }
+  .sd-root .sd-tx85  { color: var(--sd-cream-85); }
+  .sd-root .sd-tx70  { color: var(--sd-cream-70); }
+  .sd-root .sd-tx55  { color: var(--sd-cream-55); }
+  .sd-root .sd-tx45  { color: var(--sd-cream-45); }
+  .sd-root .sd-tx30  { color: var(--sd-cream-30); }
+  .sd-root .sd-tx25  { color: var(--sd-cream-25); }
+  .sd-root .sd-tx15  { color: var(--sd-cream-15); }
+  .sd-root .sd-tx-cyan { color: var(--sd-cyan-tx); }
+  .sd-root .sd-bdr-08 { border-color: var(--sd-cream-08); }
+
+  /* Headline glitch — RGB-split feel on the big "+6" stat. */
+  @keyframes sdGlitchRed {
+    0%, 100% { opacity: 0; transform: translate(0,0); }
+    5%       { opacity: 0.50; transform: translate(-8px, 2px); }
+    8%       { opacity: 0; }
+    22%      { opacity: 0.45; transform: translate(6px, -3px); }
+    26%      { opacity: 0; }
+    50%      { opacity: 0.35; transform: translate(-4px, 1px); }
+    54%      { opacity: 0; }
+  }
+  @keyframes sdGlitchCyan {
+    0%, 100% { opacity: 0; transform: translate(0,0); }
+    5%       { opacity: 0.50; transform: translate(8px, -2px); }
+    8%       { opacity: 0; }
+    22%      { opacity: 0.45; transform: translate(-6px, 3px); }
+    26%      { opacity: 0; }
+    50%      { opacity: 0.35; transform: translate(4px, -1px); }
+    54%      { opacity: 0; }
+  }
+  .sd-glitch-red  { animation: sdGlitchRed  2.4s ease-out forwards; }
+  .sd-glitch-cyan { animation: sdGlitchCyan 2.4s ease-out forwards; }
+
+  /* Slow-spinning scroll-hint badge. */
+  @keyframes sdBadgeSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .sd-badge-ring { animation: sdBadgeSpin 18s linear infinite; }
+
+  /* Marquee — infinite horizontal ticker of stats. Pauses on hover. */
+  @keyframes sdMarqueeScroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+  .sd-marquee-track { animation: sdMarqueeScroll 60s linear infinite; will-change: transform; }
+  .sd-marquee-track:hover { animation-play-state: paused; }
+
+  /* Shot-chart dot pop-in. */
+  @keyframes sdDotPop {
+    from { opacity: 0; transform: scale(0); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  .sd-dot-pop { animation: sdDotPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; transform-origin: center; }
+
+  /* Cyan flash when the jersey "lands" in the anchored open. */
+  @keyframes sdFlashIn {
+    0%   { opacity: 0; }
+    20%  { opacity: 0.50; }
+    100% { opacity: 0; }
+  }
+  .sd-flash-in { animation: sdFlashIn 380ms ease-out forwards; }
+
+  /* Reveal-up — used by Closing section once it enters view. */
+  .sd-reveal-up { opacity: 0; transform: translateY(40px); transition: opacity 1s ease, transform 1s ease; }
+  .sd-reveal-up.sd-visible { opacity: 1; transform: translateY(0); }
+
+  /* Hero typewriter-style clip-path reveals (rh1..rh4 in storydrop). */
+  @keyframes sdRevealClip {
+    from { clip-path: inset(0 0 100% 0); transform: translateY(28px); opacity: 0; }
+    to   { clip-path: inset(0 0 0%   0); transform: translateY(0);    opacity: 1; }
+  }
+  .sd-rh1 { animation: sdRevealClip 1.1s cubic-bezier(0.16,1,0.3,1) 0.20s both; }
+  .sd-rh2 { animation: sdRevealClip 1.1s cubic-bezier(0.16,1,0.3,1) 0.42s both; }
+  .sd-rh3 { animation: sdRevealClip 1.1s cubic-bezier(0.16,1,0.3,1) 0.62s both; }
+  .sd-rh4 { animation: sdRevealClip 0.9s cubic-bezier(0.16,1,0.3,1) 0.82s both; }
+
+  /* Ghost letter — translucent giant glyph behind each quarter panel. */
+  .sd-ghost-letter {
+    pointer-events: none;
+    user-select: none;
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-weight: 400;
+    color: rgba(240,235,225,0.025);
+    letter-spacing: -0.05em;
+    line-height: 1;
+  }
+
+  /* Progress bar at top of QuarterScroll. */
+  .sd-progress-bar {
+    background: linear-gradient(90deg, var(--sd-cyan) 0%, #8458ff 100%);
+    box-shadow: 0 0 8px rgba(0,214,254,0.45);
+  }
+
+  /* Layer-promote every sticky section + the QuarterScroll track. The
+     direct-DOM transforms set by the rAF scroll callbacks become cheap
+     compositor-only updates instead of full repaints. */
+  .sd-root .sticky { will-change: transform; transform: translateZ(0); }
+  .sd-root .sd-q-track { will-change: transform; transform: translateZ(0); backface-visibility: hidden; }
+  /* Mobile: also containment-isolate each quarter panel so its big
+     ghost-letter glyph doesn't repaint everything around it. */
+  .sd-root .sd-q-panel { contain: layout paint style; }
+
+  /* Video frame — VHS scan lines + corner brackets for the small 9:16
+     clip thumbs and the larger inline clips in the anchored open. */
+  .sd-video-frame {
+    position: relative;
+    overflow: hidden;
+    background: #000;
+    border: 1px solid rgba(240,235,225,0.12);
+  }
+  .sd-video-frame::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(10,13,20,0.05) 2px, rgba(10,13,20,0.05) 4px);
+    pointer-events: none; z-index: 2;
+  }
+  .sd-corner-tl { position: absolute; top: 7px;    left: 7px;  width: 10px; height: 10px; border-top: 1px solid rgba(240,235,225,0.4); border-left:  1px solid rgba(240,235,225,0.4); z-index: 3; }
+  .sd-corner-tr { position: absolute; top: 7px;    right: 7px; width: 10px; height: 10px; border-top: 1px solid rgba(240,235,225,0.4); border-right: 1px solid rgba(240,235,225,0.4); z-index: 3; }
+  .sd-corner-bl { position: absolute; bottom: 7px; left: 7px;  width: 10px; height: 10px; border-bottom: 1px solid rgba(240,235,225,0.4); border-left:  1px solid rgba(240,235,225,0.4); z-index: 3; }
+  .sd-corner-br { position: absolute; bottom: 7px; right: 7px; width: 10px; height: 10px; border-bottom: 1px solid rgba(240,235,225,0.4); border-right: 1px solid rgba(240,235,225,0.4); z-index: 3; }
+
+  /* Jersey plaque — rectangular cyan-tinted plaque used in the anchored
+     open (the falling object). */
+  .sd-plaque {
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    background: linear-gradient(180deg, #1a2034 0%, #0d1320 100%);
+    border: 1px solid rgba(0,214,254,0.45);
+    box-shadow:
+      0 0 60px rgba(0,214,254,0.30),
+      0 24px 40px rgba(0,0,0,0.55),
+      inset 0 1px 0 rgba(255,255,255,0.10);
+  }
+  .sd-plaque::after {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 30% 25%, rgba(0,214,254,0.18) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 50% at 75% 80%, rgba(132,88,255,0.14) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  /* QuarterPanel grid — 2-col on lg, 1-col stacked on phone. */
+  @media (max-width: 767px) {
+    .sd-root .sd-q-panel-grid {
+      grid-template-columns: 1fr !important;
+      grid-template-rows: auto auto !important;
+      padding: 4rem 1.5rem 4rem !important;
+      gap: 0.75rem !important;
+    }
+    .sd-root .sd-q-panel-court { max-height: 28vh; }
+  }
+
+  /* Closing — numbered game row hover. */
+  .sd-game-row { transition: border-left-color 0.3s ease, padding-left 0.3s ease; }
+  .sd-game-row:focus-visible { outline: 1px solid rgba(0,214,254,0.5); outline-offset: 2px; }
+
+  /* Reduced-motion respect. */
+  @media (prefers-reduced-motion: reduce) {
+    .sd-glitch-red, .sd-glitch-cyan,
+    .sd-badge-ring, .sd-marquee-track { animation: none !important; }
+    .sd-rh1, .sd-rh2, .sd-rh3, .sd-rh4 {
+      animation: none !important;
+      clip-path: inset(0 0 0% 0) !important;
+      opacity: 1 !important;
+      transform: none !important;
+    }
   }
 
 </style>
@@ -3384,25 +3592,69 @@ const SignInScreen = ({ onSignIn, onSignUp, onOpenInvite }) => (
    ============================================================ */
 
 /* HighlightCircles — DS sort: YOU → followed teams (live first) → followed players (claimed first).
-   No Add button (DS doesn't have one — empty state is a separate invite card). */
-const HighlightCircles = ({ onPickMoment, onOpenGame, onOpenAthlete }) => {
+   No Add button (DS doesn't have one — empty state is a separate invite card).
+
+   Tap behavior (per May-2026 Yoni spec): every circle opens a VIDEO viewer,
+   never a profile/game-stats page.
+     - YOU             → HighlightViewer (story-style 9:16 reel) starting at
+                         your most recent moment, then auto-advances through
+                         the rest of the moment feed.
+     - Team-member     → HighlightViewer starting at that player's most
+                         recent moment, then feeds onward.
+     - Live team       → GameVideoViewer for the live game (16:9 landscape
+                         video in portrait phone shell, fullscreen on
+                         desktop).
+     - Non-live team   → GameVideoViewer of that team's most recent finished
+                         game (e.g. Tigers vs another team highlight).
+   Seed data caveat: SEED_MOMENTS are currently all "self" so the per-player
+   start indices collapse to 0 in this prototype. The routing contract is
+   correct; the data will get its own per-player slicing later. */
+const HighlightCircles = ({ onPickMoment, onOpenGame, onOpenGameVideo, onOpenAthlete }) => {
   const liveGame = SEED_GAMES.find(g => g.status === 'live');
+  /* Helper: pick a representative game id for a non-live team circle.
+     Order of preference: most-recent finished/just-ended game whose home
+     OR away matches → first upcoming game for that team → fall back to
+     the live game so the click never dead-ends in the prototype. */
+  const gameIdForTeam = (teamName) => {
+    const finished = SEED_GAMES.find(g =>
+      (g.status === 'just-ended' || g.status === 'final')
+      && (g.home === teamName || g.away === teamName));
+    if (finished) return finished.id;
+    const upcoming = SEED_GAMES.find(g =>
+      g.status === 'upcoming'
+      && (g.home === teamName || g.away === teamName));
+    if (upcoming) return upcoming.id;
+    return liveGame ? liveGame.id : (SEED_GAMES[0] && SEED_GAMES[0].id);
+  };
+  /* Per-person starting index inside the moment feed. Until SEED_MOMENTS
+     carries personId, every circle starts at 0 — but the contract is in
+     place for when we slice data per player. */
+  const indexForPerson = (_personId) => 0;
   return (
     <div className="px-5 lg:px-8 xl:px-12 pt-2 pb-5">
       <div className="flex gap-4 overflow-x-auto no-scrollbar">
-        {/* YOU — first */}
-        <IdentityCircle kind="self" avatar={{ initial: 'T' }} label="You" isNew onClick={() => onOpenAthlete(PLAYER.id)} />
-        {/* Live team */}
+        {/* YOU — opens HighlightViewer starting at your latest moment. */}
+        <IdentityCircle kind="self" avatar={{ initial: 'T' }} label="You" isNew
+          onClick={() => onPickMoment(indexForPerson('self'))} />
+        {/* Live team — opens GameVideoViewer of the live game. */}
         <IdentityCircle kind="team" avatar={{ initial: 'EP' }} label="Varsity"
           liveGame={{ gameId: liveGame.id }}
-          onClick={() => onOpenGame(liveGame.id)} />
-        {/* Followed teams */}
-        <IdentityCircle kind="team" avatar={{ initial: 'LH' }} label="Tigers" />
-        {/* Followed players — claimed (silhouette) and unclaimed (jersey) */}
-        <IdentityCircle kind="player" avatar={{ initial: 'S' }} team={{ initial: 'EP' }} label="Sarah" isClaimed isNew />
-        <IdentityCircle kind="player" avatar={{ initial: 'D' }} team={{ initial: 'EP' }} label="Dylan" isClaimed />
-        <IdentityCircle kind="player" avatar={{ jersey: 23 }} team={{ initial: 'EP' }} label="Player #23" isClaimed={false} />
-        <IdentityCircle kind="player" avatar={{ jersey: 11 }} team={{ initial: 'LH' }} label="Player #11" isClaimed={false} />
+          onClick={() => onOpenGameVideo(liveGame.id)} />
+        {/* Non-live team — opens GameVideoViewer of the team's last/next
+            game so the circle leads to actual team video, not a profile. */}
+        <IdentityCircle kind="team" avatar={{ initial: 'LH' }} label="Tigers"
+          onClick={() => onOpenGameVideo(gameIdForTeam('Tigers'))} />
+        {/* Followed players — every circle opens HighlightViewer at that
+            player's most recent moment (claimed silhouette + unclaimed
+            jersey both behave the same — tap = watch their reel). */}
+        <IdentityCircle kind="player" avatar={{ initial: 'S' }} team={{ initial: 'EP' }} label="Sarah" isClaimed isNew
+          onClick={() => onPickMoment(indexForPerson('sarah'))} />
+        <IdentityCircle kind="player" avatar={{ initial: 'D' }} team={{ initial: 'EP' }} label="Dylan" isClaimed
+          onClick={() => onPickMoment(indexForPerson('dylan'))} />
+        <IdentityCircle kind="player" avatar={{ jersey: 23 }} team={{ initial: 'EP' }} label="Player #23" isClaimed={false}
+          onClick={() => onPickMoment(indexForPerson('p-23'))} />
+        <IdentityCircle kind="player" avatar={{ jersey: 11 }} team={{ initial: 'LH' }} label="Player #11" isClaimed={false}
+          onClick={() => onPickMoment(indexForPerson('p-11'))} />
       </div>
     </div>
   );
@@ -3724,7 +3976,7 @@ const TeamMomentsRail = ({ onOpenGameVideo }) => (
 const HomeScreen = ({ gameState, onPickMoment, onOpenGame, onOpenGameVideo, onOpenStory, onOpenAthlete, onOpenDrop, header }) => (
   <div className="anim-fade pb-28 sf" style={{ color: 'var(--text-primary)' }}>
     {header}
-    <HighlightCircles onPickMoment={onPickMoment} onOpenGame={onOpenGame} onOpenAthlete={onOpenAthlete} />
+    <HighlightCircles onPickMoment={onPickMoment} onOpenGame={onOpenGame} onOpenGameVideo={onOpenGameVideo} onOpenAthlete={onOpenAthlete} />
     <div className="px-5 lg:px-8 xl:px-12 mb-7"><GameCard state={gameState} onOpenGame={onOpenGame} onOpenDrop={onOpenDrop} /></div>
     <DropsSection onPickMoment={onPickMoment} />
     <FollowingStrip onOpenGame={onOpenGame} />
@@ -5986,211 +6238,784 @@ const STORYTELLING_HUES = [
 const hueForStory = (id) =>
   STORYTELLING_HUES[(id || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0) % STORYTELLING_HUES.length];
 
-const StorytellingDropViewer = ({ storyId, onClose, onPickMoment }) => {
-  const drop = STORYTELLING_DROPS.find(d => d.id === storyId) || STORYTELLING_DROPS[0];
-  /* Map drop to a set of moments — for the prototype we use SEED_MOMENTS
-     since drops don't carry momentIds in our data. Take first 4 moments. */
-  const moments = SEED_MOMENTS.slice(0, 4);
-  const [index, setIndex] = useState(0);
-  if (!drop) return null;
-  return (
-    <div data-theme="dark" className="absolute inset-0 z-50 lg:fixed lg:z-[100] anim-fade flex flex-col"
-      style={{
-        background:
-          'radial-gradient(ellipse 65% 40% at 50% 25%, rgba(0,214,254,0.18) 0%, transparent 65%),' +
-          'radial-gradient(ellipse 70% 45% at 50% 75%, rgba(132,88,255,0.14) 0%, transparent 70%),' +
-          'linear-gradient(180deg, #050810 0%, #020308 100%)',
-      }}>
-      {/* === Top bar — drop count pill + close === */}
-      <div className="absolute top-0 inset-x-0 z-30 px-4 pt-11 flex items-center justify-between">
-        <div className="lg-glass-strong squircle-sm px-2.5 py-1 inline-flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full anim-pulse-dot"
-            style={{ background: '#ef4444', boxShadow: '0 0 6px rgba(220,38,38,0.85)' }} />
-          <span className="sf text-[9.5px] tracking-[0.18em] uppercase font-bold text-white tabular-nums leading-none">
-            Story drop · {moments.length} moments
-          </span>
-        </div>
-        <button onClick={onClose} aria-label="Close"
-          className="w-9 h-9 lg-glass squircle-sm flex items-center justify-center text-white">
-          <Icon name="close" size={12} stroke={1.8} />
-        </button>
-      </div>
+/* ====================================================================
+   SD_* — Story Drop scrollytelling primitives
+   ====================================================================
+   Ported from prototype/storydrop-tal-weiss.html. Prefixed SD_ to avoid
+   colliding with other constants. Hardcoded to ONE story (Tal Weiss vs
+   Northside, career-best 24 pts) — every sd1/sd2/sd3 surfaces the same
+   drop for the prototype; per-drop data slicing can come later. */
+const SD_HALO_VIDEO_URL = 'https://yonipixellot.github.io/pixellot-design-system/videos/live-hero.mp4';
+/* Hero img sits at 10% opacity behind a heavy radial overlay — there's
+   no reason to download a 1920×1080 photo for that. Drop to 1080×608
+   with lower quality; it's invisible to the user but saves ~70% of the
+   image weight + decode time. */
+const SD_HERO_IMG = 'https://images.unsplash.com/photo-1546519638405-a5ba99db5c29?auto=format&fit=crop&w=1080&h=608&q=55';
+const SD_CLIP_IMGS = [
+  'https://images.unsplash.com/photo-1546519638405-a5ba99db5c29?auto=format&fit=crop&w=600&h=900&q=78',
+  'https://images.unsplash.com/photo-1574623452334-1e0ac2b3ccb4?auto=format&fit=crop&w=600&h=900&q=78',
+  'https://images.unsplash.com/photo-1504450758481-7338eba7524a?auto=format&fit=crop&w=600&h=900&q=78',
+  'https://images.unsplash.com/photo-1522098538805-b46f3a4e9e5d?auto=format&fit=crop&w=600&h=900&q=78',
+];
+const SD_PLAYER = { name: 'Tal Weiss', number: 7, position: 'SG', team: 'Varsity' };
+const SD_GAME = {
+  date: 'April 3, 2026', shortDate: 'Apr 3',
+  opponent: 'Northside Wolves', home: 'Varsity', away: 'Northside',
+  scoreHome: 64, scoreAway: 58, venue: 'Eastside Prep Gym', result: 'W',
+};
+const SD_HEADLINE = {
+  big: '+6', mid: 'in the final 8 minutes', eyebrow: 'The closer',
+  gameLine: 'Career-best 24 pts · W 64–58',
+};
+const SD_STAT_TICKER = [
+  ['Career-high', '24 pts'], ['Closer', '+6 in final 8'],
+  ['Field goals', '9/16'], ['Three-pointers', '3/7'], ['Free throws', '3/4'],
+  ['Assists', '6 · season-high'], ['Steals', '3'], ['On-court net', '+14'],
+  ['Game-winning', '3 · Q4 0:08'], ['Apr 3, 2026', 'Eastside Prep'],
+];
+const SD_OPENING = {
+  q: 'Q1', ts: '7:33', title: 'Vision.',
+  body: "Your first basket of the night wasn't really yours — you fed Marcus on the break, he kicked it back, you finished. A look most SGs don't make in February. Now it's been seen.",
+};
+const SD_QUARTERS = [
+  {
+    q: 'Q1', pts: 8, label: 'Points scored', title: 'You set the tone',
+    body: "Eight points before Coach Sarah called your first sub. Two threes attempted, one made, and you got to the line. Northside expected a slow-build. They got the no-look pass and the corner three.",
+    fg: '3/5', tpt: '1/2', ft: '1/2',
+    clip: { ts: 'Q1 · 7:33', caption: 'No-look pass · assist' },
+    shots: [
+      { x: 150, y: 228, type: 'fg-make' }, { x: 100, y: 200, type: 'fg-make' },
+      { x: 50, y: 220, type: '3-make' },   { x: 180, y: 195, type: 'fg-miss' },
+      { x: 250, y: 220, type: '3-miss' },  { x: 142, y: 138, type: 'ft' },
+      { x: 152, y: 138, type: 'ft-miss' },
+    ],
+  },
+  {
+    q: 'Q2', pts: 6, label: 'Points at halftime: 14', title: 'Defense did the heavy lift',
+    body: "Three steals, two of them straight off Northside's lead guard. Six quiet points on six shots. The kind of quarter that doesn't show up on Instagram but shows up on tape.",
+    fg: '3/5', tpt: '0/2', ft: '0/0',
+    clip: { ts: 'Q2 · 4:11', caption: 'Block · transition denied' },
+    shots: [
+      { x: 120, y: 210, type: 'fg-make' }, { x: 175, y: 215, type: 'fg-make' },
+      { x: 150, y: 235, type: 'fg-make' }, { x: 70, y: 130, type: '3-miss' },
+      { x: 230, y: 135, type: '3-miss' },  { x: 110, y: 240, type: 'fg-miss' },
+      { x: 190, y: 240, type: 'fg-miss' },
+    ],
+  },
+  {
+    q: 'Q3', pts: 4, label: 'Through three: 18', title: 'Quiet quarterback',
+    body: "Your lowest scoring quarter — and your highest assist count. Four for four field-goal makes from teammates within ten seconds of your touches. The game was waiting on you.",
+    fg: '1/3', tpt: '1/2', ft: '1/1',
+    clip: { ts: 'Q3 · 8:42', caption: 'Steal & break' },
+    shots: [
+      { x: 145, y: 225, type: 'fg-make' }, { x: 30, y: 215, type: '3-make' },
+      { x: 280, y: 220, type: '3-miss' },  { x: 160, y: 100, type: 'fg-miss' },
+      { x: 130, y: 105, type: 'fg-miss' }, { x: 142, y: 138, type: 'ft' },
+    ],
+  },
+  {
+    q: 'Q4', pts: 6, label: 'Final: 24 · Career-best', title: 'You closed the door',
+    body: "Eight minutes left, four-point game. You scored or assisted on every Varsity bucket from 7:42 to 0:08. The crossover floater at the elbow. Then a corner three to ice it — and the gym understood what they'd watched.",
+    fg: '2/3', tpt: '1/1', ft: '1/1', final: true,
+    clip: { ts: 'Q4 · 0:08', caption: 'Game-winning 3' },
+    shots: [
+      { x: 150, y: 230, type: 'fg-make' }, { x: 270, y: 195, type: '3-make' },
+      { x: 100, y: 210, type: 'fg-miss' }, { x: 142, y: 138, type: 'ft' },
+    ],
+  },
+];
+const SD_SEASON_TOP_THREE = [
+  { name: 'Lincoln',   date: 'Mar 25', pts: 22, fg: '8/16', tpt: '2/5', venue: 'Lincoln High',     rank: 'Was #1',     headline: 'Twenty-two and a near-miss.',                img: SD_CLIP_IMGS[1], clipTs: 'Q3 · 4:22', clipCaption: 'Step-back jumper · top of arc' },
+  { name: 'Northside', date: 'Apr 3',  pts: 24, fg: '9/16', tpt: '3/7', venue: 'Eastside Prep',    rank: '#1 — tonight', headline: 'Career-best. +6 in the closing stretch.',  isThis: true, img: SD_CLIP_IMGS[2], clipTs: 'Q4 · 0:08', clipCaption: 'Game-winning 3 · ice it' },
+  { name: 'Westfield', date: 'Feb 12', pts: 20, fg: '7/14', tpt: '2/6', venue: 'Westfield Catholic', rank: '#3 of the season', headline: 'Twenty on the road. Cold gym, hot start.', img: SD_CLIP_IMGS[3], clipTs: 'Q1 · 9:14', clipCaption: 'Opening drive · and-one' },
+];
 
-      {/* === PHONE LAYOUT — 60/40 vertical === */}
-      <div className="lg:hidden flex-1 flex flex-col min-h-0">
-        {/* Top 60% — horizontal snap carousel of moment cards */}
-        <div className="flex gap-3 overflow-x-auto no-scrollbar pt-20 pb-3 px-[10%] shrink-0"
-          style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch', height: '60%' }}>
-          {moments.map((m, i) => {
-            const hue = hueForStory(m.id);
-            const game = SEED_GAMES.find(g => g.id === m.gameId);
+/* ── SD atoms ──────────────────────────────────────────────────── */
+
+const SD_HaloMark = ({ size = 28 }) => (
+  <div className="rounded-md flex items-center justify-center sd-serif"
+    style={{
+      width: size, height: size,
+      background: 'linear-gradient(135deg, rgba(0,214,254,0.55) 0%, rgba(0,150,200,0.85) 100%)',
+      color: '#0A0D14', fontSize: size * 0.62, fontWeight: 500, letterSpacing: '-0.04em',
+      boxShadow: '0 0 16px rgba(0,214,254,0.30)',
+    }}>H</div>
+);
+
+const SD_JerseyPlaque = ({ size = 120 }) => (
+  <div className="sd-plaque flex flex-col items-center justify-center"
+    style={{ width: size, height: size * 1.30, padding: '14px 10px' }}>
+    <div className="sd-mono uppercase tracking-[0.25em] sd-tx45 relative z-10" style={{ fontSize: size * 0.07 }}>no.</div>
+    <div className="sd-serif relative z-10" style={{
+      fontSize: size * 0.78, fontWeight: 400, lineHeight: 0.9, letterSpacing: '-0.04em',
+      color: 'var(--sd-cream)', textShadow: '0 4px 16px rgba(0,214,254,0.40)',
+    }}>7</div>
+    <div className="sd-mono uppercase tracking-[0.30em] sd-tx-cyan relative z-10 mt-1" style={{ fontSize: size * 0.085 }}>WEISS</div>
+    <div className="sd-mono uppercase tracking-[0.25em] sd-tx30 relative z-10 mt-1" style={{ fontSize: size * 0.065 }}>VARSITY · SG</div>
+  </div>
+);
+
+const SD_VideoFrame = ({ tsLabel, captionLabel, captionAlign = 'top', ratio = '9/16', maxWidth = 360, imgSrc = SD_CLIP_IMGS[0] }) => (
+  <div className="relative mx-auto w-full" style={{ maxWidth }}>
+    <div className="sd-video-frame" style={{ aspectRatio: ratio }}>
+      <img src={imgSrc} alt="Game clip" className="absolute inset-0 w-full h-full object-cover opacity-95" />
+      {tsLabel && (
+        <div className={'absolute sd-mono text-[8.5px] tracking-[0.22em] uppercase sd-tx85 px-2 py-1 z-10 ' + (captionAlign === 'top' ? 'top-3 left-3' : 'bottom-3 left-3')}
+          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(8px)', border: '1px solid rgba(240,235,225,0.18)' }}>
+          {tsLabel}
+        </div>
+      )}
+      <span className="sd-corner-tl" /><span className="sd-corner-tr" />
+      <span className="sd-corner-bl" /><span className="sd-corner-br" />
+    </div>
+    {captionLabel && (
+      <div className="sd-mono text-[9px] tracking-[0.25em] uppercase sd-tx25 mt-3 text-center">
+        {captionLabel}
+      </div>
+    )}
+  </div>
+);
+
+const SD_TeamLogo = ({ team, size = 56, accent = false }) => {
+  const initial = (team || 'X').charAt(0).toUpperCase();
+  const hash = (team || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  const angle = (hash * 47) % 360;
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: '50%',
+      background: `conic-gradient(from ${angle}deg, rgba(240,235,225,0.07), rgba(240,235,225,0.015) 50%, rgba(240,235,225,0.07))`,
+      border: '1px solid ' + (accent ? 'rgba(0,214,254,0.55)' : 'rgba(240,235,225,0.20)'),
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      position: 'relative', flexShrink: 0,
+      boxShadow: accent
+        ? '0 0 24px rgba(0,214,254,0.18), inset 0 0 14px rgba(0,214,254,0.08)'
+        : 'inset 0 0 12px rgba(0,0,0,0.40)',
+    }}>
+      <div className="sd-serif" style={{
+        fontSize: size * 0.52, fontWeight: 400, lineHeight: 1, letterSpacing: '-0.04em',
+        color: accent ? 'var(--sd-cyan-tx)' : 'var(--sd-cream)',
+        textShadow: accent ? '0 0 10px rgba(0,214,254,0.35)' : 'none',
+        position: 'relative', zIndex: 1,
+      }}>{initial}</div>
+    </div>
+  );
+};
+
+/* ── SD sections ───────────────────────────────────────────────── */
+
+const SD_ScrollBadge = ({ visible }) => (
+  <div className="absolute top-8 left-8 lg:left-10 z-40 transition-opacity duration-500 pointer-events-none"
+    style={{ opacity: visible ? 1 : 0, width: 96, height: 96 }} aria-hidden="true">
+    <svg className="sd-badge-ring absolute inset-0" viewBox="0 0 120 120" fill="none">
+      <defs>
+        <path id="sdBadgeCircle" d="M 60,60 m -50,0 a 50,50 0 1,1 100,0 a 50,50 0 1,1 -100,0" />
+      </defs>
+      <text fill="rgba(240,235,225,0.35)" style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, letterSpacing: '0.18em' }}>
+        <textPath href="#sdBadgeCircle">SCROLL · TO UNFOLD · THE GAME · </textPath>
+      </text>
+    </svg>
+    <div className="absolute inset-0 flex items-center justify-center">
+      <div className="w-8 h-8 rounded-full sd-bdr-08 border flex items-center justify-center">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="rgba(240,235,225,0.55)" strokeWidth="1.5" strokeLinecap="round">
+          <path d="M7 2 V12 M3 8 L7 12 L11 8" />
+        </svg>
+      </div>
+    </div>
+  </div>
+);
+
+const SD_Hero = () => {
+  const [glitchKey, setGlitchKey] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setGlitchKey(k => k + 1), 7500);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <section className="relative min-h-screen flex flex-col items-center justify-center text-center px-6 py-20 overflow-hidden">
+      <img src={SD_HERO_IMG} alt="" aria-hidden="true"
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+        style={{ opacity: 0.10, filter: 'grayscale(0.4) contrast(1.1)' }} />
+      <div className="absolute inset-0 pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse 60% 55% at 50% 35%, rgba(10,13,20,0.55) 0%, rgba(10,13,20,0.85) 60%, rgba(10,13,20,0.97) 100%)' }} />
+      <div className="relative z-10 flex items-center gap-3 mb-10">
+        <SD_HaloMark size={24} />
+        <span className="sd-mono text-[10.5px] tracking-[0.30em] uppercase sd-tx45">
+          Halo Story Drop · Apr 4
+        </span>
+      </div>
+      <div className="relative z-10 flex flex-col items-center" style={{ maxWidth: '14ch' }}>
+        <div className="sd-rh1 sd-mono text-[11px] tracking-[0.35em] uppercase sd-tx55 mb-2">{SD_HEADLINE.eyebrow}</div>
+        <div className="sd-rh2" style={{ padding: '0.05em 0.14em' }}>
+          <div className="relative" key={glitchKey}>
+            <div className="absolute inset-0 sd-serif sd-glitch-red"  style={{ fontSize: 'clamp(7rem, 20vw, 16rem)', fontWeight: 400, lineHeight: 0.95, letterSpacing: '-0.015em', color: '#C8003C', mixBlendMode: 'screen' }}>{SD_HEADLINE.big}</div>
+            <div className="absolute inset-0 sd-serif sd-glitch-cyan" style={{ fontSize: 'clamp(7rem, 20vw, 16rem)', fontWeight: 400, lineHeight: 0.95, letterSpacing: '-0.015em', color: '#00D6FE', mixBlendMode: 'screen' }}>{SD_HEADLINE.big}</div>
+            <div className="relative sd-serif"                        style={{ fontSize: 'clamp(7rem, 20vw, 16rem)', fontWeight: 400, lineHeight: 0.95, letterSpacing: '-0.015em', color: 'var(--sd-cream)' }}>{SD_HEADLINE.big}</div>
+          </div>
+        </div>
+        <div className="sd-rh3 sd-serif italic sd-tx85 mt-1" style={{ fontSize: 'clamp(1.3rem, 3vw, 2.2rem)', lineHeight: 1.1, letterSpacing: '-0.01em' }}>
+          {SD_HEADLINE.mid}
+        </div>
+      </div>
+      <div className="sd-rh4 relative z-10 flex items-center gap-5 mt-12">
+        <div className="h-px w-12" style={{ background: 'var(--sd-cream-15)' }} />
+        <div className="sd-serif italic sd-tx70" style={{ fontSize: 'clamp(0.95rem, 1.4vw, 1.15rem)' }}>
+          {SD_PLAYER.name} <span className="not-italic mx-1 sd-tx-cyan">#{SD_PLAYER.number}</span> · vs {SD_GAME.opponent}
+        </div>
+        <div className="h-px w-12" style={{ background: 'var(--sd-cream-15)' }} />
+      </div>
+      <div className="sd-rh4 relative z-10 sd-mono text-[10px] tracking-[0.30em] uppercase sd-tx30 mt-3">
+        {SD_GAME.shortDate} · {SD_HEADLINE.gameLine}
+      </div>
+    </section>
+  );
+};
+
+const SD_Marquee = () => {
+  const items = [...SD_STAT_TICKER, ...SD_STAT_TICKER];
+  return (
+    <section className="border-t border-b sd-bdr-08 py-3 overflow-hidden relative" style={{ background: '#080b12' }}>
+      <div className="flex sd-marquee-track w-max">
+        {items.map(([k, v], i) => (
+          <div key={i} className="px-10 flex items-center gap-3.5 whitespace-nowrap">
+            <span className="sd-mono text-[9px] tracking-[0.30em] uppercase sd-tx25">{k}</span>
+            <span className="sd-serif italic sd-tx70" style={{ fontSize: '0.85rem' }}>{v}</span>
+            <span className="sd-mono sd-tx15">·</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+};
+
+const SD_AnchoredOpen = ({ scrollEl }) => {
+  const sectionRef = useRef(null);
+  const jerseyRef  = useRef(null);
+  const [landed, setLanded] = useState(false);
+  const [flashKey, setFlashKey] = useState(0);
+  /* Refs (not state) for per-frame values — flipping these via direct
+     DOM mutation avoids the React re-render that used to fire on every
+     scroll event (60+/sec). Only the binary `landed` toggle still uses
+     setState, since that one DOES need to flip child visibility. */
+  const lastLandedRef = useRef(false);
+  const rafRef = useRef(null);
+
+  useEffect(() => {
+    if (!scrollEl) return;
+    const apply = () => {
+      rafRef.current = null;
+      const sec = sectionRef.current;
+      const jersey = jerseyRef.current;
+      if (!sec) return;
+      const rect = sec.getBoundingClientRect();
+      const scrollable = sec.offsetHeight - window.innerHeight;
+      if (scrollable <= 0) return;
+      const p = Math.max(0, Math.min(1, -rect.top / scrollable));
+      const fall = Math.min(1, p / 0.65);
+      const eased = fall * fall;
+      const ballTopVh = -30 + 100 * eased;
+      const rotation = fall * 380;
+      /* Drive the jersey transform via DOM — no React render, no
+         transition CSS competing with our requestAnimationFrame loop. */
+      if (jersey) {
+        jersey.style.top = ballTopVh + 'vh';
+        jersey.style.transform = `translateX(-50%) translateZ(0) rotate(${rotation}deg)`;
+      }
+      const isLanded = p > 0.65;
+      if (isLanded !== lastLandedRef.current) {
+        lastLandedRef.current = isLanded;
+        setLanded(isLanded);
+        if (isLanded) setFlashKey(k => k + 1);
+      }
+    };
+    const onScroll = () => {
+      if (rafRef.current) return;
+      rafRef.current = requestAnimationFrame(apply);
+    };
+    scrollEl.addEventListener('scroll', onScroll, { passive: true });
+    apply();
+    return () => {
+      scrollEl.removeEventListener('scroll', onScroll);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [scrollEl]);
+
+  return (
+    <section ref={sectionRef} className="relative" style={{ height: '240vh' }}>
+      <div className="sticky top-0 h-screen overflow-hidden flex items-end justify-center">
+        <div className="absolute top-14 inset-x-0 text-center px-6 z-10 transition-opacity duration-500"
+          style={{ opacity: landed ? 0 : 1 }}>
+          <div className="sd-mono text-[10.5px] tracking-[0.30em] uppercase sd-tx30 mb-3">How it started</div>
+          <div className="sd-serif sd-tx" style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)', letterSpacing: '-0.02em', lineHeight: 1.05, fontWeight: 400 }}>
+            One pass. Then it was on.
+          </div>
+        </div>
+        <div ref={jerseyRef} className="absolute left-1/2 z-20" style={{
+          top: '-30vh',
+          /* Initial transform sets translateZ(0) to GPU-promote the
+             layer so subsequent scroll-driven transform updates only
+             touch the compositor, never re-paint. */
+          transform: 'translateX(-50%) translateZ(0)',
+          filter: 'drop-shadow(0 18px 32px rgba(0,0,0,0.55))',
+          opacity: landed ? 0 : 1,
+          transition: 'opacity 300ms ease',
+          transitionDelay: landed ? '120ms' : '0ms',
+          willChange: 'transform, top',
+        }}>
+          <SD_JerseyPlaque size={130} />
+        </div>
+        {landed && (
+          <div key={flashKey} className="absolute inset-0 z-30 pointer-events-none sd-flash-in"
+            style={{ background: 'rgba(0,214,254,0.30)' }} />
+        )}
+        <div className="absolute inset-0 z-40 px-6 lg:px-16 transition-opacity duration-700 flex items-center"
+          style={{ opacity: landed ? 1 : 0, pointerEvents: landed ? 'auto' : 'none' }}>
+          <div className="w-full max-w-[1280px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
+            <div className="lg:col-span-7 flex flex-col">
+              <div className="sd-mono text-[10.5px] tracking-[0.30em] uppercase sd-tx30 mb-5">
+                {SD_OPENING.q} · {SD_OPENING.ts} · First basket
+              </div>
+              <div className="sd-serif italic sd-tx" style={{ fontSize: 'clamp(4rem, 11vw, 8.5rem)', fontWeight: 300, lineHeight: 0.85, letterSpacing: '-0.01em' }}>
+                {SD_OPENING.title}
+              </div>
+              <p className="sd-mono text-[13px] leading-[1.85] sd-tx55 max-w-[44ch] mt-6">{SD_OPENING.body}</p>
+              <div className="sd-mono text-[9.5px] tracking-[0.30em] uppercase sd-tx25 mt-6">Halo clip · auto-detected</div>
+            </div>
+            <div className="lg:col-span-5">
+              <SD_VideoFrame tsLabel={`${SD_OPENING.q} · ${SD_OPENING.ts}`} captionLabel="No-look pass · Q1 7:33" maxWidth={420} imgSrc={SD_CLIP_IMGS[1]} />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const SD_CourtSVG = ({ shots, animate }) => (
+  <svg viewBox="0 0 300 280" className="w-full block sd-q-panel-court" style={{ maxHeight: '52vh' }} preserveAspectRatio="xMidYMid meet">
+    <rect x="1" y="1" width="298" height="278" rx="2" fill="none" stroke="rgba(240,235,225,0.08)" strokeWidth="1" />
+    <line x1="1" y1="262" x2="299" y2="262" stroke="rgba(240,235,225,0.06)" strokeWidth="1" />
+    <rect x="103" y="152" width="94" height="110" fill="none" stroke="rgba(240,235,225,0.15)" strokeWidth="1" />
+    <path d="M 109,152 A 36,36 0 0 1 191,152" fill="none" stroke="rgba(240,235,225,0.15)" strokeWidth="1" />
+    <ellipse cx="150" cy="152" rx="36" ry="36" fill="none" stroke="rgba(240,235,225,0.08)" strokeWidth="1" strokeDasharray="4 3" />
+    <circle cx="150" cy="230" r="6" fill="none" stroke="rgba(240,235,225,0.40)" strokeWidth="1.2" />
+    <line x1="132" y1="242" x2="168" y2="242" stroke="rgba(240,235,225,0.35)" strokeWidth="1.5" />
+    <path d="M 134,230 A 16,16 0 0 1 166,230" fill="none" stroke="rgba(240,235,225,0.10)" strokeWidth="1" />
+    <path d="M 30,262 L 30,192 A 126,126 0 0 1 270,192 L 270,262" fill="none" stroke="rgba(240,235,225,0.15)" strokeWidth="1" />
+    {animate && shots.map((s, i) => {
+      const delay = `${i * 60}ms`;
+      if (s.type === 'ft' || s.type === 'ft-miss') {
+        const c = s.type === 'ft' ? '#F0EBE1' : 'rgba(240,235,225,0.25)';
+        return (
+          <g key={i} className="sd-dot-pop" style={{ animationDelay: delay }}>
+            <line x1={s.x - 5} y1={s.y} x2={s.x + 5} y2={s.y} stroke={c} strokeWidth="1.4" />
+            <line x1={s.x} y1={s.y - 5} x2={s.x} y2={s.y + 5} stroke={c} strokeWidth="1.4" />
+          </g>
+        );
+      }
+      const isThree = s.type.includes('3');
+      let fill = 'none', stroke = '', sw = 1.2;
+      if (s.type === 'fg-make')        { fill = '#F0EBE1'; }
+      else if (s.type === '3-make')    { fill = '#00D6FE'; }
+      else if (s.type === 'fg-miss')   { stroke = 'rgba(240,235,225,0.45)'; }
+      else                             { stroke = 'rgba(0,214,254,0.50)'; }
+      return (
+        <circle key={i} cx={s.x} cy={s.y} r={isThree ? 5.5 : 5}
+          fill={fill} stroke={stroke || 'none'}
+          strokeWidth={fill === 'none' ? sw : 0}
+          className="sd-dot-pop" style={{ animationDelay: delay }} />
+      );
+    })}
+  </svg>
+);
+
+const SD_CourtLegend = () => {
+  const items = [
+    [<svg width="10" height="10" viewBox="0 0 22 22"><circle cx="11" cy="11" r="8" fill="#F0EBE1" /></svg>,  'FG'],
+    [<svg width="10" height="10" viewBox="0 0 22 22"><circle cx="11" cy="11" r="8" fill="none" stroke="rgba(240,235,225,0.50)" strokeWidth="2" /></svg>, 'Miss'],
+    [<svg width="10" height="10" viewBox="0 0 22 22"><circle cx="11" cy="11" r="8" fill="#00D6FE" /></svg>,  '3PT'],
+    [<svg width="10" height="10" viewBox="0 0 22 22"><line x1="2" y1="11" x2="20" y2="11" stroke="#F0EBE1" strokeWidth="2.4" strokeLinecap="round" /><line x1="11" y1="2" x2="11" y2="20" stroke="#F0EBE1" strokeWidth="2.4" strokeLinecap="round" /></svg>, 'FT'],
+  ];
+  return (
+    <div className="flex flex-wrap gap-3 mt-3">
+      {items.map(([sym, label], i) => (
+        <div key={i} className="flex items-center gap-1.5 sd-mono text-[9px] tracking-[0.18em] uppercase sd-tx25">
+          {sym}{label}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const SD_QuarterPanel = ({ q, isActive }) => (
+  <div className="sd-q-panel w-screen h-screen flex-shrink-0 grid grid-cols-2 sd-q-panel-grid items-center px-[5vw] gap-[4vw] relative overflow-hidden">
+    <div className="sd-ghost-letter absolute end-[-4vw] bottom-[-8vh] pointer-events-none" style={{ fontSize: '40vw' }}>
+      {q.q.charAt(1)}
+    </div>
+    <div className="flex flex-col min-w-0">
+      <SD_CourtSVG shots={q.shots} animate={isActive} />
+      <SD_CourtLegend />
+    </div>
+    <div className="flex flex-col relative z-10 min-w-0">
+      <div className="flex items-baseline gap-4 mb-3">
+        <div className="sd-mono text-[11.5px] tracking-[0.30em] uppercase sd-tx30">{q.q}</div>
+        <div className="h-px flex-1" style={{ background: 'var(--sd-cream-08)' }} />
+      </div>
+      <div className="sd-serif" style={{
+        fontSize: 'clamp(5rem, 10vw, 8.5rem)',
+        fontWeight: 300, lineHeight: 0.85, letterSpacing: '-0.02em',
+        color: q.final ? 'var(--sd-cyan-tx)' : 'var(--sd-cream)',
+      }}>{q.pts}</div>
+      <div className="sd-mono text-[10.5px] tracking-[0.28em] uppercase sd-tx30 mt-3 mb-6">{q.label}</div>
+      <div className="sd-serif italic sd-tx leading-tight mb-4" style={{ fontSize: 'clamp(1.5rem, 2.8vw, 2.15rem)', letterSpacing: '-0.01em' }}>{q.title}</div>
+      <p className="sd-mono text-[12.5px] leading-[1.8] sd-tx55 max-w-[44ch] mb-6">{q.body}</p>
+      <div className="flex items-end border-t sd-bdr-08 pt-3">
+        {[{ lbl: 'FG', val: q.fg }, { lbl: '3PT', val: q.tpt }, { lbl: 'FT', val: q.ft }].map((s, i) => (
+          <div key={i} className={'pe-5 me-5 ' + (i < 2 ? 'border-e sd-bdr-08' : '')}>
+            <div className="sd-serif" style={{
+              fontSize: '1.7rem', fontWeight: 300, lineHeight: 1,
+              color: q.final && i === 2 ? 'var(--sd-cyan-tx)' : 'var(--sd-cream)',
+            }}>{s.val}</div>
+            <div className="sd-mono text-[8.5px] tracking-[0.25em] uppercase sd-tx30 mt-1.5">{s.lbl}</div>
+          </div>
+        ))}
+        <div className="ms-auto text-end">
+          <div className="sd-mono text-[9px] tracking-[0.28em] uppercase sd-tx55">{q.clip.ts}</div>
+          <div className="sd-serif italic sd-tx70 mt-1" style={{ fontSize: '0.95rem', lineHeight: 1.2 }}>{q.clip.caption}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const SD_QuarterScroll = ({ scrollEl }) => {
+  const sectionRef = useRef(null);
+  const trackRef = useRef(null);
+  const progressRef = useRef(null);
+  const [active, setActive] = useState(0);
+  const activeRef = useRef(0);
+  const rafRef = useRef(null);
+
+  useEffect(() => {
+    if (!scrollEl) return;
+    const onScroll = () => {
+      if (rafRef.current) return;
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = null;
+        const sec = sectionRef.current;
+        if (!sec) return;
+        const rect = sec.getBoundingClientRect();
+        const scrollable = sec.offsetHeight - window.innerHeight;
+        if (scrollable <= 0) return;
+        const p = Math.max(0, Math.min(1, -rect.top / scrollable));
+        /* Track + progress = pure DOM mutation, never a React re-render. */
+        if (trackRef.current) trackRef.current.style.transform = `translate3d(-${p * 300}vw, 0, 0)`;
+        if (progressRef.current) progressRef.current.style.width = `${p * 100}%`;
+        const a = Math.max(0, Math.min(3, Math.round(p * 3)));
+        /* Skip the React render when active hasn't actually flipped to a
+           new panel. React's setState bails on equal values internally,
+           but the extra function call + scheduler work isn't free. */
+        if (a !== activeRef.current) {
+          activeRef.current = a;
+          setActive(a);
+        }
+      });
+    };
+    scrollEl.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => {
+      scrollEl.removeEventListener('scroll', onScroll);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [scrollEl]);
+
+  return (
+    <section ref={sectionRef} className="relative" style={{ height: '460vh' }}>
+      <div className="sticky top-0 h-screen overflow-hidden">
+        <div ref={progressRef} className="absolute top-0 start-0 h-[3px] sd-progress-bar z-30" style={{ width: '0%' }} />
+        <div className="absolute top-7 inset-x-0 text-center z-20 pointer-events-none">
+          <div className="sd-mono text-[10px] tracking-[0.30em] uppercase sd-tx30 mb-0.5">Quarter by quarter</div>
+          <div className="sd-serif italic sd-tx85" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.25rem)' }}>how all 24 happened</div>
+        </div>
+        {/* sd-q-track adds GPU-layer hints (via CSS). The 80ms linear
+            transition smooths fast wheel-fling but doesn't lag the
+            user's finger. */}
+        <div ref={trackRef} className="sd-q-track flex h-full"
+          style={{ width: '400vw', transition: 'transform 80ms linear' }}>
+          {SD_QUARTERS.map((q, i) => (
+            <SD_QuarterPanel key={i} q={q} isActive={active === i} />
+          ))}
+        </div>
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-7 z-30">
+          {SD_QUARTERS.map((q, i) => (
+            <div key={i} className="sd-mono text-[11px] tracking-[0.25em] uppercase transition-all duration-300"
+              style={{
+                color: i === active ? 'var(--sd-cream)' : 'var(--sd-cream-25)',
+                transform: i === active ? 'scale(1.15)' : 'scale(1)',
+              }}>{q.q}</div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const SD_ScoreBoard = ({ scrollEl }) => {
+  const ref = useRef(null);
+  const [vis, setVis] = useState(false);
+  useEffect(() => {
+    if (!scrollEl) return;
+    /* IntersectionObserver respects scrollable ancestors via its `root`
+       option — we pass the overlay's scroll container so the threshold
+       triggers when the section enters the overlay's viewport, not the
+       document's. */
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) setVis(true); },
+      { root: scrollEl, threshold: 0.35 }
+    );
+    if (ref.current) obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, [scrollEl]);
+  return (
+    <section ref={ref} className="relative flex flex-col items-center justify-center overflow-hidden"
+      style={{ minHeight: '100vh', background: '#050810' }}>
+      <div className="absolute inset-0 pointer-events-none" style={{
+        background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(0,214,254,0.09) 0%, transparent 65%)',
+        opacity: vis ? 1 : 0, transition: 'opacity 1.5s ease 0.6s',
+      }} />
+      <div className="sd-mono text-[9.5px] tracking-[0.45em] uppercase sd-tx25 mb-10"
+        style={{ opacity: vis ? 1 : 0, transition: 'opacity 0.8s ease 0.3s' }}>
+        Final Score · {SD_GAME.date} · {SD_GAME.venue}
+      </div>
+      <div style={{
+        overflow: 'hidden', padding: '0.08em 0.20em 0.04em',
+        clipPath: vis ? 'inset(0 0 0% 0)' : 'inset(0 0 100% 0)',
+        transform: vis ? 'translateY(0)' : 'translateY(36px)',
+        transition: 'clip-path 1.4s cubic-bezier(0.16,1,0.3,1) 0.5s, transform 1.4s cubic-bezier(0.16,1,0.3,1) 0.5s',
+      }}>
+        <div className="sd-serif text-center" style={{
+          fontSize: 'clamp(5.5rem, 18vw, 16rem)',
+          fontWeight: 400, lineHeight: 0.95, letterSpacing: '-0.03em', whiteSpace: 'nowrap',
+        }}>
+          <span style={{ color: 'var(--sd-cream)' }}>{SD_GAME.scoreHome}</span>
+          <span style={{ color: 'var(--sd-cream-30)', margin: '0 0.12em' }}>—</span>
+          <span style={{ color: 'var(--sd-cream-45)' }}>{SD_GAME.scoreAway}</span>
+        </div>
+      </div>
+      <div className="mt-12 flex items-center justify-center gap-6 sm:gap-10"
+        style={{ opacity: vis ? 1 : 0, transition: 'opacity 0.8s ease 1.1s' }}>
+        <div className="flex items-center gap-3">
+          <SD_TeamLogo team={SD_GAME.home} size={52} accent />
+          <div className="sd-mono text-[10px] tracking-[0.30em] uppercase sd-tx85">{SD_GAME.home}</div>
+        </div>
+        <div className="sd-mono text-[9px] tracking-[0.35em] uppercase sd-tx25">VS</div>
+        <div className="flex items-center gap-3">
+          <div className="sd-mono text-[10px] tracking-[0.30em] uppercase sd-tx45">{SD_GAME.away}</div>
+          <SD_TeamLogo team={SD_GAME.away} size={52} />
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const SD_Closing = ({ scrollEl, onPickMoment }) => {
+  const wrapRef = useRef(null);
+  const [visible, setVisible] = useState(false);
+  const [activeIdx, setActiveIdx] = useState(SD_SEASON_TOP_THREE.findIndex(g => g.isThis));
+  const [hoverIdx, setHoverIdx] = useState(null);
+  useEffect(() => {
+    if (!scrollEl) return;
+    const obs = new IntersectionObserver(
+      (entries) => entries.forEach(e => { if (e.isIntersecting) setVisible(true); }),
+      { root: scrollEl, threshold: 0.20 }
+    );
+    if (wrapRef.current) obs.observe(wrapRef.current);
+    return () => obs.disconnect();
+  }, [scrollEl]);
+  const active = SD_SEASON_TOP_THREE[activeIdx];
+  return (
+    <section ref={wrapRef} className="relative min-h-screen flex flex-col items-center justify-center px-6 py-24">
+      <div className="sd-mono text-[10.5px] tracking-[0.35em] uppercase sd-tx30 mb-4">Where this night ranks</div>
+      <div className="sd-serif text-center sd-tx mb-12"
+        style={{ fontSize: 'clamp(2rem, 4.5vw, 3.6rem)', fontWeight: 400, lineHeight: 1.05, letterSpacing: '-0.02em', maxWidth: '20ch' }}>
+        Your top three<br/>
+        <em className="italic sd-tx45">this season.</em>
+      </div>
+      <div className={'w-full max-w-[1100px] sd-reveal-up ' + (visible ? 'sd-visible' : '')}>
+        <div className="border-t sd-bdr-08 mb-10">
+          {SD_SEASON_TOP_THREE.map((g, i) => {
+            const isActive = i === activeIdx;
+            const isHovered = i === hoverIdx && !isActive;
+            const nameColor = isActive ? 'var(--sd-cream)' : isHovered ? 'rgba(240,235,225,0.50)' : 'rgba(240,235,225,0.16)';
+            const metaColor = isActive ? 'rgba(240,235,225,0.45)' : isHovered ? 'rgba(240,235,225,0.28)' : 'rgba(240,235,225,0.12)';
+            const nameSize = isActive ? 'clamp(2rem, 4.4vw, 3.5rem)' : 'clamp(1.5rem, 3.2vw, 2.5rem)';
+            const ptsSize  = isActive ? 'clamp(1.4rem, 2.6vw, 2.2rem)' : 'clamp(1.05rem, 1.9vw, 1.6rem)';
+            const rowPadY  = isActive ? '1.6rem' : '1.1rem';
             return (
-              <button key={m.id} onClick={() => onPickMoment(SEED_MOMENTS.indexOf(m))}
-                className="shrink-0 relative overflow-hidden h-full lg-aura lg-shine squircle-md"
+              <button key={i} type="button"
+                className="sd-game-row w-full flex items-center gap-5 lg:gap-8 text-left"
                 style={{
-                  width: '80%',
-                  scrollSnapAlign: 'center',
-                  background:
-                    `radial-gradient(ellipse 80% 55% at 25% 20%, ${hue.a} 0%, transparent 60%),` +
-                    `radial-gradient(ellipse 75% 55% at 80% 80%, ${hue.b} 0%, transparent 65%),` +
-                    'linear-gradient(180deg, var(--card-base-soft-top) 0%, var(--card-base-soft-bot) 100%)',
-                  border: '1px solid var(--glass-card-border)',
-                  backdropFilter: 'blur(28px) saturate(180%)',
-                  WebkitBackdropFilter: 'blur(28px) saturate(180%)',
-                  boxShadow: 'inset 0 1px 0 var(--glass-card-inset-top), 0 12px 40px -12px rgba(0,0,0,0.55)',
-                }}>
-                <div className="absolute inset-0 hatch opacity-50 pointer-events-none" />
-                <div className="absolute top-3 start-3 z-10 lg-glass-strong squircle-sm px-2 py-0.5">
-                  <span className="sf text-[9.5px] tracking-[0.14em] uppercase font-bold text-white leading-none">{m.sub}</span>
+                  background: 'transparent', border: 'none',
+                  borderBottom: '1px solid rgba(240,235,225,0.08)',
+                  borderLeft: isActive ? '2px solid var(--sd-cyan)' : '2px solid transparent',
+                  paddingLeft: isActive ? '1.5rem' : '0.25rem',
+                  paddingTop: rowPadY, paddingBottom: rowPadY,
+                  cursor: 'pointer', transition: 'border-left-color 0.3s ease, padding 0.35s ease',
+                }}
+                onClick={() => setActiveIdx(i)}
+                onMouseEnter={() => setHoverIdx(i)}
+                onMouseLeave={() => setHoverIdx(null)}>
+                <div className="sd-mono flex-shrink-0 w-5"
+                  style={{ fontSize: 10, letterSpacing: '0.2em', color: isActive ? 'var(--sd-cyan-tx)' : 'rgba(240,235,225,0.22)' }}>
+                  {String(i + 1).padStart(2, '0')}
                 </div>
-                <div className="absolute inset-0 flex items-center justify-center z-10">
-                  <div className="w-16 h-16 rounded-full lg-glass-strong flex items-center justify-center"
-                    style={{ boxShadow: '0 0 32px -4px rgba(0,214,254,0.50), inset 0 1px 0 rgba(255,255,255,0.30)', border: '1px solid rgba(255,255,255,0.25)' }}>
-                    <svg width={18} height={22} viewBox="0 0 18 22" fill="#fff"
-                      style={{ width: 18, height: 22, marginInlineStart: 3, display: 'block' }}>
-                      <path d="M1 1 L17 11 L1 21 Z" />
-                    </svg>
-                  </div>
+                <div style={{ opacity: isActive ? 1 : isHovered ? 0.75 : 0.35, transition: 'opacity 0.25s ease' }}>
+                  <SD_TeamLogo team={g.name} size={38} accent={isActive && g.isThis} />
                 </div>
-                <div className="absolute inset-x-0 bottom-0 px-4 pt-12 pb-4 z-10"
-                  style={{ background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.78) 65%, rgba(0,0,0,0.95) 100%)' }}>
-                  <div className="sf-display text-white text-[18px] font-bold leading-tight tracking-[-0.015em]">{m.title}</div>
-                  <div className="sf text-white/70 text-[11.5px] mt-1 truncate">{game ? `${game.home} vs ${game.away}` : ''}</div>
+                <div className="sd-serif flex-1"
+                  style={{ fontSize: nameSize, fontWeight: 400, lineHeight: 1, letterSpacing: '-0.03em', color: nameColor, transition: 'color 0.25s ease, font-size 0.35s ease' }}>
+                  {g.name}
                 </div>
+                <div className="flex items-baseline gap-1.5 flex-shrink-0">
+                  <span className="sd-serif"
+                    style={{ fontSize: ptsSize, fontWeight: 400, lineHeight: 1, letterSpacing: '-0.02em', color: isActive && g.isThis ? 'var(--sd-cyan-tx)' : nameColor, transition: 'color 0.25s ease, font-size 0.35s ease' }}>
+                    {g.pts}
+                  </span>
+                  <span className="sd-mono" style={{ fontSize: 9, letterSpacing: '0.22em', color: metaColor, transition: 'color 0.25s ease' }}>PTS</span>
+                </div>
+                <div className="sd-mono flex-shrink-0 hidden sm:block"
+                  style={{ fontSize: 10, letterSpacing: '0.20em', textTransform: 'uppercase', color: metaColor, transition: 'color 0.25s ease', minWidth: '3.5rem', textAlign: 'right' }}>
+                  {g.date}
+                </div>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0"
+                  style={{
+                    opacity: isActive ? 1 : isHovered ? 0.5 : 0.15,
+                    transform: isActive ? 'translateX(0)' : 'translateX(-3px)',
+                    transition: 'opacity 0.25s ease, transform 0.25s ease',
+                  }}>
+                  <path d="M2 7h10M8 3l4 4-4 4" stroke={isActive ? 'var(--sd-cyan-tx)' : 'var(--sd-cream)'} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </button>
             );
           })}
         </div>
-        {/* Bottom 40% — insight panel */}
-        <div className="flex-1 min-h-0 px-5 pt-5 pb-6 overflow-y-auto"
-          style={{ borderTop: '1px solid rgba(0,214,254,0.30)', background: 'rgba(8,12,20,0.55)' }}>
-          <div className="sf text-[10px] tracking-[0.18em] uppercase font-bold mb-1.5"
-            style={{ color: 'var(--brand-cyan-text)' }}>
-            The story
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+          <div className="lg:col-span-7 p-7"
+            style={{ background: '#080b12', border: '1px solid ' + (active.isThis ? 'rgba(0,214,254,0.45)' : 'rgba(240,235,225,0.10)') }}>
+            <div className="sd-mono text-[9.5px] tracking-[0.30em] uppercase sd-tx30 mb-3">{active.rank}</div>
+            <div className="flex items-baseline gap-3 mb-3">
+              <div className="sd-serif" style={{ fontSize: '3.5rem', fontWeight: 400, lineHeight: 1, letterSpacing: '-0.02em', color: 'var(--sd-cream)' }}>
+                {active.pts}
+              </div>
+              <div className="sd-mono text-[10px] tracking-[0.20em] uppercase sd-tx30">pts</div>
+            </div>
+            <div className="sd-serif italic sd-tx85 mb-5" style={{ fontSize: '1.05rem', lineHeight: 1.4 }}>{active.headline}</div>
+            <div className="sd-mono text-[9.5px] tracking-[0.15em] uppercase sd-tx30 leading-[2] border-t sd-bdr-08 pt-4">
+              vs {active.name} · {active.date}<br/>
+              FG {active.fg} · 3PT {active.tpt}<br/>
+              {active.venue}
+            </div>
+            {/* Play this clip — wired to onPickMoment so the user can drop
+                from the story into the moment player. Falls back to the
+                first SEED moment since we don't have per-row clip ids. */}
+            <button onClick={() => onPickMoment && onPickMoment(0)}
+              className="mt-5 squircle-sm px-5 py-2.5 sd-mono text-[10.5px] tracking-[0.20em] uppercase font-semibold inline-flex items-center gap-2"
+              style={{
+                color: '#0a0d18',
+                background: 'linear-gradient(180deg, rgba(0,235,255,1) 0%, rgba(0,200,250,1) 100%)',
+                boxShadow: '0 4px 12px -2px rgba(0,214,254,0.45), inset 0 1px 0 rgba(255,255,255,0.40)',
+              }}>
+              <svg width={10} height={11} viewBox="0 0 11 12" fill="currentColor"><path d="M1 1 L10 6 L1 11 Z" /></svg>
+              Watch the clip
+            </button>
           </div>
-          <div className="sf-display text-[22px] font-bold leading-tight tracking-[-0.015em] mb-2 text-white">
-            {drop.title}
+          <div className="lg:col-span-5">
+            <SD_VideoFrame key={activeIdx} tsLabel={active.clipTs} captionLabel={active.clipCaption} maxWidth={300} imgSrc={active.img} />
           </div>
-          <p className="sf text-[13px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.75)' }}>
-            {drop.body}
-          </p>
         </div>
       </div>
+      <div className="mt-16 max-w-[36ch] text-center sd-serif italic sd-tx45" style={{ fontSize: 'clamp(0.95rem, 1.4vw, 1.15rem)', lineHeight: 1.5 }}>
+        Tomorrow's Halo will read these games again and write you a new one.
+      </div>
+      <div className="mt-12 flex items-center gap-3">
+        <SD_HaloMark size={26} />
+        <div className="sd-mono text-[9.5px] tracking-[0.30em] uppercase sd-tx30">Halo · Story Drop</div>
+      </div>
+    </section>
+  );
+};
 
-      {/* === DESKTOP LAYOUT (lg+) — vertical 9:16 player on left + side panel ===
-          Per the May 2026 critique: even on the landscape desktop canvas
-          the story content stays vertical. The card aspect is portrait
-          (matching the phone), centered in the left half of the screen
-          with arrow nav buttons flanking it. The insight panel docks to
-          the right edge (380px). */}
-      <div className="hidden lg:flex flex-1 items-stretch relative">
-        <div className="flex-1 flex flex-col items-center justify-center relative px-8 py-8">
-          {(() => {
-            const m = moments[index];
-            const hue = hueForStory(m.id);
-            const game = SEED_GAMES.find(g => g.id === m.gameId);
-            return (
-              <>
-                <button onClick={() => onPickMoment(SEED_MOMENTS.indexOf(m))}
-                  className="relative overflow-hidden squircle-md lg-aura lg-shine"
-                  style={{
-                    aspectRatio: '9 / 16',
-                    height: '75vh',
-                    maxHeight: '640px',
-                    background:
-                      `radial-gradient(ellipse 80% 55% at 25% 20%, ${hue.a} 0%, transparent 60%),` +
-                      `radial-gradient(ellipse 75% 55% at 80% 80%, ${hue.b} 0%, transparent 65%),` +
-                      'linear-gradient(180deg, var(--card-base-soft-top) 0%, var(--card-base-soft-bot) 100%)',
-                    border: '1px solid var(--glass-card-border)',
-                    backdropFilter: 'blur(28px) saturate(180%)',
-                    WebkitBackdropFilter: 'blur(28px) saturate(180%)',
-                    boxShadow: 'inset 0 1px 0 var(--glass-card-inset-top), 0 12px 40px -12px rgba(0,0,0,0.55)',
-                  }}>
-                  <div className="absolute inset-0 hatch opacity-40 pointer-events-none" />
-                  <div className="absolute top-3 start-3 z-10 lg-glass-strong squircle-sm px-2 py-0.5">
-                    <span className="sf text-[9.5px] tracking-[0.14em] uppercase font-bold text-white leading-none">{m.sub}</span>
-                  </div>
-                  <div className="absolute inset-0 flex items-center justify-center z-10">
-                    <div className="w-20 h-20 rounded-full lg-glass-strong flex items-center justify-center"
-                      style={{ boxShadow: '0 0 40px -4px rgba(0,214,254,0.50), inset 0 1px 0 rgba(255,255,255,0.30)', border: '1px solid rgba(255,255,255,0.25)' }}>
-                      <svg width={22} height={26} viewBox="0 0 22 26" fill="#fff"
-                        style={{ width: 22, height: 26, marginInlineStart: 4, display: 'block' }}>
-                        <path d="M2 2 L20 13 L2 24 Z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="absolute inset-x-0 bottom-0 px-4 pt-12 pb-4 z-10"
-                    style={{ background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.78) 65%, rgba(0,0,0,0.95) 100%)' }}>
-                    <div className="sf-display text-white text-[20px] font-bold leading-tight tracking-[-0.015em]">{m.title}</div>
-                    <div className="sf text-white/70 text-[12px] mt-1">{game ? `${game.home} vs ${game.away}` : ''}</div>
-                  </div>
-                </button>
-                {/* Pagination dots */}
-                <div className="mt-4 flex justify-center gap-1.5">
-                  {moments.map((_, i) => (
-                    <button key={i} onClick={() => setIndex(i)} aria-label={`Moment ${i + 1}`}
-                      className="rounded-full transition-all"
-                      style={{
-                        width: i === index ? 24 : 6,
-                        height: 6,
-                        background: i === index ? 'var(--brand-cyan)' : 'rgba(255,255,255,0.25)',
-                        boxShadow: i === index ? '0 0 8px rgba(0,214,254,0.50)' : 'none',
-                      }} />
-                  ))}
-                </div>
-              </>
-            );
-          })()}
-          {/* Nav arrows — flank the portrait card on the dark canvas */}
-          <button onClick={() => setIndex(i => Math.max(0, i - 1))} disabled={index === 0}
-            aria-label="Previous moment"
-            className="absolute start-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 lg-glass-strong rounded-full flex items-center justify-center"
-            style={{ color: index === 0 ? 'rgba(255,255,255,0.30)' : 'rgba(255,255,255,0.90)' }}>
-            <svg width={14} height={14} viewBox="0 0 14 14" fill="none" stroke="currentColor"
-              strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
-              className="icon-flip-rtl" style={{ width: 14, height: 14, display: 'block' }}>
-              <path d="M9 2 L4 7 L9 12" />
-            </svg>
-          </button>
-          <button onClick={() => setIndex(i => Math.min(moments.length - 1, i + 1))} disabled={index === moments.length - 1}
-            aria-label="Next moment"
-            className="absolute end-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 lg-glass-strong rounded-full flex items-center justify-center"
-            style={{ color: index === moments.length - 1 ? 'rgba(255,255,255,0.30)' : 'rgba(255,255,255,0.90)' }}>
-            <svg width={14} height={14} viewBox="0 0 14 14" fill="none" stroke="currentColor"
-              strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
-              className="icon-flip-rtl" style={{ width: 14, height: 14, display: 'block' }}>
-              <path d="M5 2 L10 7 L5 12" />
-            </svg>
-          </button>
-        </div>
-        {/* Right: insight panel — docked. */}
-        <aside className="w-[380px] shrink-0 flex flex-col justify-center px-7 py-8 overflow-y-auto"
-          style={{ borderInlineStart: '1px solid rgba(0,214,254,0.20)', background: 'rgba(0,0,0,0.30)' }}>
-          <div className="sf text-[10px] tracking-[0.18em] uppercase font-bold mb-2"
-            style={{ color: 'var(--brand-cyan-text)' }}>
-            Halo insight
-          </div>
-          <div className="sf-display text-[26px] font-bold leading-tight tracking-[-0.02em] mb-3 text-white">
-            {drop.title}
-          </div>
-          <p className="sf text-[14px] leading-relaxed mb-5" style={{ color: 'rgba(255,255,255,0.75)' }}>
-            {drop.body}
-          </p>
-          <button onClick={() => onPickMoment(SEED_MOMENTS.indexOf(moments[index]))}
-            className="self-start squircle-sm px-5 py-2.5 sf text-[12.5px] font-semibold flex items-center gap-2"
-            style={{
-              color: '#0a0d18',
-              background: 'linear-gradient(180deg, rgba(0,235,255,1) 0%, rgba(0,200,250,1) 100%)',
-              boxShadow: '0 4px 12px -2px rgba(0,214,254,0.45), inset 0 1px 0 rgba(255,255,255,0.40)',
-            }}>
-            <svg width={11} height={12} viewBox="0 0 11 12" fill="currentColor"
-              style={{ width: 11, height: 12, display: 'block' }}>
-              <path d="M1 1 L10 6 L1 11 Z" />
-            </svg>
-            Play this moment
-          </button>
-        </aside>
+/* ── StorytellingDropViewer ─────────────────────────────────────────
+   Fullscreen scrollytelling overlay. Replaces the earlier 60/40 split
+   viewer with the Tal Weiss editorial experience ported from
+   prototype/storydrop-tal-weiss.html.
+   - The overlay itself owns the scroll (overflow-y: auto on its
+     absolute-inset child). Sticky sections inside sticky to the
+     overlay, not to window.
+   - AnchoredOpen / QuarterScroll / ScoreBoard / Closing all receive the
+     scroll element as a prop so their scroll listeners and
+     IntersectionObservers bind to the overlay's scroll, not the
+     document's.
+   - Close button is fixed top-end above all content.
+   For the prototype, every story drop (sd1/sd2/sd3) renders the same
+   Tal Weiss vs Northside story — per-drop data branching is a future
+   enhancement. */
+const StorytellingDropViewer = ({ storyId, onClose, onPickMoment }) => {
+  const scrollRef = useRef(null);
+  const [scrollEl, setScrollEl] = useState(null);
+  const [badgeVisible, setBadgeVisible] = useState(true);
+  const badgeRef = useRef(true);
+  useEffect(() => {
+    setScrollEl(scrollRef.current);
+  }, []);
+  /* Lock body scroll while the overlay is mounted. Stops iOS Safari from
+     rubber-banding the underlying document and prevents the prototype's
+     ambient live-amp / shine / ember animations from chewing CPU behind
+     a fixed overlay the user can't see. Restore prior state on unmount. */
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prevOverflow; };
+  }, []);
+  /* Badge fade — only setState when the boolean actually flips (not on
+     every scroll tick). */
+  useEffect(() => {
+    if (!scrollEl) return;
+    const onScroll = () => {
+      const next = scrollEl.scrollTop < scrollEl.clientHeight * 0.85;
+      if (next !== badgeRef.current) {
+        badgeRef.current = next;
+        setBadgeVisible(next);
+      }
+    };
+    scrollEl.addEventListener('scroll', onScroll, { passive: true });
+    return () => scrollEl.removeEventListener('scroll', onScroll);
+  }, [scrollEl]);
+  return (
+    <div data-theme="dark" className="fixed inset-0 z-[100] sd-root anim-fade">
+      {/* contain: paint isolates this layer's rendering work from the
+          underlying app tree so animations behind the overlay (live ember
+          tally, shine sweeps, conic gradients) don't trigger repaints
+          inside the scrollytelling. translateZ(0) GPU-promotes the
+          scroll container. */}
+      <div ref={scrollRef} className="absolute inset-0 overflow-y-auto"
+        style={{
+          overflowX: 'clip',
+          contain: 'layout paint style',
+          transform: 'translateZ(0)',
+          WebkitOverflowScrolling: 'touch',
+        }}>
+        <SD_Hero />
+        <SD_Marquee />
+        <SD_AnchoredOpen scrollEl={scrollEl} />
+        <SD_QuarterScroll scrollEl={scrollEl} />
+        <SD_ScoreBoard scrollEl={scrollEl} />
+        <SD_Closing scrollEl={scrollEl} onPickMoment={onPickMoment} />
       </div>
+      <SD_ScrollBadge visible={badgeVisible} />
+      <button onClick={onClose} aria-label="Close"
+        className="fixed top-4 end-4 z-[110] w-10 h-10 lg-glass squircle-sm flex items-center justify-center text-white">
+        <Icon name="close" size={12} stroke={1.8} />
+      </button>
     </div>
   );
 };
