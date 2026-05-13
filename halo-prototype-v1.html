@@ -3302,8 +3302,19 @@ const SignInForm = ({ onSubmit, onSignUp }) => {
             error={confirmPw && password !== confirmPw ? "Passwords don't match" : null} />
         )}
       </div>
+      {/* Primary CTA — sticky to the bottom of the viewport on mobile so
+          the user can submit from anywhere in the (often-tall) Sign Up
+          form without scrolling down past every field. On desktop the
+          button sits at its natural place after the fields.
+          - `sticky bottom-3` pins it 12px above the scroll container's
+            bottom edge once its natural position would scroll past
+          - `z-30` keeps it above the OR/Apple/Google block that follows
+            in document order — those slide BEHIND the button as the user
+            scrolls past them, hidden by the button's opaque gradient
+          - `lg:static lg:bottom-auto lg:z-auto` reverts the behavior on
+            desktop where the form fits comfortably in one screen */}
       <button onClick={handlePrimary} disabled={!valid}
-        className="mt-5 lg-btn-primary lg-shine lg-aura squircle-md py-3.5 w-full sf text-[14.5px] font-semibold">
+        className="mt-5 lg-btn-primary lg-shine lg-aura squircle-md py-3.5 w-full sf text-[14.5px] font-semibold sticky bottom-3 z-30 lg:static lg:bottom-auto lg:z-auto">
         {isSignUp ? 'Continue' : 'Sign in'}
       </button>
       {!isSignUp && (
@@ -8582,8 +8593,13 @@ const App = () => {
         <div className={`glass-app app-stage`} data-theme={theme} dir={locale === 'he' ? 'rtl' : 'ltr'}>
           <div className="stage-phone">
             <div className="phone" data-theme={theme}>
-              <div className="phone-screen relative" style={{ minHeight: '100vh' }}>
-                <AuthSubScreen step={authStep} onBack={() => navigate('auth')} onRequestNewLink={() => navigate('auth/forgot')} />
+              <div className="phone-screen relative">
+                {/* scroll-area wrap matches the main auth fix above —
+                    forgot/reset password screens also need to scroll
+                    on phone. */}
+                <div className="scroll-area">
+                  <AuthSubScreen step={authStep} onBack={() => navigate('auth')} onRequestNewLink={() => navigate('auth/forgot')} />
+                </div>
               </div>
             </div>
           </div>
@@ -8595,11 +8611,18 @@ const App = () => {
     }
     return (
       <div className={`glass-app app-stage`} data-theme={theme} dir={locale === 'he' ? 'rtl' : 'ltr'}>
-        {/* PHONE — ClientLogoHero + form */}
+        {/* PHONE — ClientLogoHero + form.
+            .scroll-area wrap added: without it the phone-screen's
+            overflow:hidden clips the Sign Up form (the fields below the
+            fold became unreachable on phone). Post-auth tabs already
+            wrap their content in .scroll-area, auth had been missing
+            this. */}
         <div className="stage-phone">
           <div className="phone" data-theme={theme}>
             <div className="phone-screen">
-              <SignInScreen onSignIn={onSignIn} onSignUp={onSignUp} onOpenInvite={onOpenInviteFromAuth} />
+              <div className="scroll-area">
+                <SignInScreen onSignIn={onSignIn} onSignUp={onSignUp} onOpenInvite={onOpenInviteFromAuth} />
+              </div>
             </div>
           </div>
         </div>
