@@ -42,6 +42,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://rsms.me/inter/inter.css">
 
 <style>
 /* =================================================================
@@ -950,7 +951,12 @@
      editorial serif/mono pairing doesn't leak into the rest of the
      prototype (which uses its own SF stack). */
   .sd-root .sd-serif { font-family: 'Instrument Serif', Georgia, serif; }
-  .sd-root .sd-mono  { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace; font-feature-settings: 'tnum'; }
+  /* sd-mono is the storydrop's eyebrow/meta voice. Swapped from
+     JetBrains Mono (read as "techy code" per user critique) to Inter,
+     which still gives the precise, tight tabular feel for ALL-CAPS
+     tracking-wide labels but pairs cleanly with the Instrument Serif
+     editorial display body — same voice as the broader Halo product. */
+  .sd-root .sd-mono  { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif; font-feature-settings: 'tnum', 'ss03', 'cv11'; font-weight: 500; }
   .sd-root .sd-tx    { color: var(--sd-cream-95); }
   .sd-root .sd-tx85  { color: var(--sd-cream-85); }
   .sd-root .sd-tx70  { color: var(--sd-cream-70); }
@@ -961,6 +967,17 @@
   .sd-root .sd-tx15  { color: var(--sd-cream-15); }
   .sd-root .sd-tx-cyan { color: var(--sd-cyan-tx); }
   .sd-root .sd-bdr-08 { border-color: var(--sd-cream-08); }
+
+  /* Scroll prompt vertical line — elongates downward on a 2.4s loop,
+     suggests the act of scrolling without resorting to a heavy chevron.
+     scaleY animates from 0 → 1 then fades; the keyframes split the
+     phases so the line draws in, holds briefly, then resets. */
+  @keyframes sdScrollLine {
+    0%   { transform: scaleY(0);   opacity: 0; }
+    20%  { opacity: 1; }
+    70%  { transform: scaleY(1);   opacity: 1; }
+    100% { transform: scaleY(1);   opacity: 0; }
+  }
 
   /* Headline glitch — RGB-split feel on the big "+6" stat. */
   @keyframes sdGlitchRed {
@@ -7291,7 +7308,12 @@ const SD_GAME = {
   scoreHome: 64, scoreAway: 58, venue: 'Eastside Prep Gym', result: 'W',
 };
 const SD_HEADLINE = {
-  big: '+6', mid: 'in the final 8 minutes', eyebrow: 'The closer',
+  big: '+6',
+  /* "points in the final 8 minutes" reads as prose and removes the
+     prior ambiguity where "+6" alone read as score margin / steals /
+     anything. The word "points" anchors the unit immediately. */
+  mid: 'points in the final 8 minutes',
+  eyebrow: 'The closer',
   gameLine: 'Career-best 24 pts · W 64–58',
 };
 const SD_STAT_TICKER = [
@@ -7470,7 +7492,15 @@ const SD_Hero = () => {
           Halo Story Drop · Apr 4
         </span>
       </div>
-      <div className="relative z-10 flex flex-col items-center" style={{ maxWidth: '14ch' }}>
+      {/* Inner column — the eyebrow + +6 are tight around the
+          numeric hero, but the mid line ("points in the final 8 minutes")
+          needs more room and reads as one prose line on desktop.
+          Solution: remove the 14ch parent constraint and let each row
+          be its own width. The mid line gets `whitespace-nowrap` on lg+
+          so it never breaks awkwardly across desktop widths; mobile
+          (<lg) keeps natural wrap since the line is shorter than the
+          viewport at smaller font sizes anyway. */}
+      <div className="relative z-10 flex flex-col items-center">
         <div className="sd-rh1 sd-mono text-[11px] tracking-[0.35em] uppercase sd-tx55 mb-2">{SD_HEADLINE.eyebrow}</div>
         <div className="sd-rh2" style={{ padding: '0.05em 0.14em' }}>
           <div className="relative" key={glitchKey}>
@@ -7479,7 +7509,7 @@ const SD_Hero = () => {
             <div className="relative sd-serif"                        style={{ fontSize: 'clamp(7rem, 20vw, 16rem)', fontWeight: 400, lineHeight: 0.95, letterSpacing: '-0.015em', color: 'var(--sd-cream)' }}>{SD_HEADLINE.big}</div>
           </div>
         </div>
-        <div className="sd-rh3 sd-serif italic sd-tx85 mt-1" style={{ fontSize: 'clamp(1.3rem, 3vw, 2.2rem)', lineHeight: 1.1, letterSpacing: '-0.01em' }}>
+        <div className="sd-rh3 sd-serif italic sd-tx85 mt-1 lg:whitespace-nowrap" style={{ fontSize: 'clamp(1.3rem, 3vw, 2.2rem)', lineHeight: 1.1, letterSpacing: '-0.01em' }}>
           {SD_HEADLINE.mid}
         </div>
       </div>
@@ -7494,8 +7524,38 @@ const SD_Hero = () => {
         </div>
         <div className="h-px w-16 sm:w-24" style={{ background: 'var(--sd-cream-15)' }} />
       </div>
+      {/* Byline meta — prefix with "GAME · " so the date here is clearly
+          the game date (Apr 3), separate from the "Halo Story Drop · Apr 4"
+          header date above (which is the drop publish date). The two
+          dates are intentionally different and now reading order tells
+          the user that. */}
       <div className="sd-rh4 relative z-10 sd-mono text-[11px] tracking-[0.30em] uppercase sd-tx45 mt-5">
-        {SD_GAME.shortDate} · {SD_HEADLINE.gameLine}
+        Game · {SD_GAME.shortDate} · {SD_HEADLINE.gameLine}
+      </div>
+      {/* Bottom-center scroll prompt — promoted to "you can't miss it"
+          per critique. Now it's the SOLE scroll affordance (the corner
+          SD_ScrollBadge was removed). Layered composition:
+            · Vertical hairline that elongates on a 2.4s loop, suggesting
+              the act of scrolling down without being a heavy chevron
+            · "SCROLL TO READ" mono caption above the line
+            · Subtle cyan glow at the line's bottom terminus so the eye
+              tracks the motion
+          Bigger text, taller animation, brighter opacity than v1. */}
+      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-3 pointer-events-none sd-rh4"
+        aria-hidden="true">
+        <div className="sd-mono text-[11px] tracking-[0.40em] uppercase font-semibold"
+          style={{ color: 'rgba(240,235,225,0.78)' }}>
+          Scroll to read
+        </div>
+        <div className="relative" style={{ height: 48, width: 1 }}>
+          <div style={{
+            position: 'absolute', insetInlineStart: 0, top: 0, width: 1,
+            background: 'linear-gradient(180deg, transparent 0%, rgba(0,214,254,0.85) 100%)',
+            animation: 'sdScrollLine 2.4s ease-in-out infinite',
+            transformOrigin: 'top',
+            boxShadow: '0 0 8px rgba(0,214,254,0.55)',
+          }} />
+        </div>
       </div>
     </section>
   );
@@ -8066,7 +8126,10 @@ const StorytellingDropViewer = ({ storyId, onClose, onPickMoment }) => {
         <SD_ScoreBoard scrollEl={scrollEl} />
         <SD_Closing scrollEl={scrollEl} onPickMoment={onPickMoment} />
       </div>
-      <SD_ScrollBadge visible={badgeVisible} />
+      {/* SD_ScrollBadge removed per critique — corner brand mark was
+          beautiful but invisible to most users. The bottom-center
+          scroll prompt inside SD_Hero now carries the affordance
+          alone, more prominently. */}
       <button onClick={onClose} aria-label="Close"
         className="fixed top-4 end-4 z-[110] w-10 h-10 lg-glass squircle-sm flex items-center justify-center text-white">
         <Icon name="close" size={12} stroke={1.8} />
