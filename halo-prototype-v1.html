@@ -600,6 +600,22 @@
     .lg-live-stage { aspect-ratio: 24 / 9; }
   }
 
+  /* Onboarding step scroll bodies — needed because the orchestrator
+     stacks <Stepper><scroll body><Dock> inside a flex column, and on
+     iOS Safari the scroll body needs three things to scroll reliably:
+       1. `-webkit-overflow-scrolling: touch` — native momentum scroll
+          (otherwise iPhone falls back to choppy synchronous scrolling)
+       2. `overscroll-behavior: contain` — keeps an exhausted inner
+          scroll from being hijacked by rubber-band on the outer .phone
+       3. `overflow-y: auto` — obviously
+     Replace `flex-1 min-h-0 overflow-y-auto` with
+     `flex-1 min-h-0 onb-scroll` in step bodies. */
+  .onb-scroll {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
   /* ====================================================================
      STORY DROP — Tal Weiss scrollytelling
      ====================================================================
@@ -724,14 +740,44 @@
     box-shadow: 0 0 8px rgba(0,214,254,0.45);
   }
 
-  /* Layer-promote every sticky section + the QuarterScroll track. The
-     direct-DOM transforms set by the rAF scroll callbacks become cheap
-     compositor-only updates instead of full repaints. */
-  .sd-root .sticky { will-change: transform; transform: translateZ(0); }
+  /* Layer hints only — `transform: translateZ(0)` on a sticky element
+     creates a new containing block that disrupts sticky binding in iOS
+     Safari and some Chromium versions. `will-change: transform` is the
+     safer hint: tells the compositor to prepare a layer without
+     committing to one until paint. */
+  .sd-root .sticky { will-change: transform; }
+  /* Track only — the QuarterScroll track isn't sticky-positioned itself,
+     it's a transformed sibling, so translateZ is safe here. */
   .sd-root .sd-q-track { will-change: transform; transform: translateZ(0); backface-visibility: hidden; }
-  /* Mobile: also containment-isolate each quarter panel so its big
-     ghost-letter glyph doesn't repaint everything around it. */
-  .sd-root .sd-q-panel { contain: layout paint style; }
+
+  /* Mobile QuarterScroll override — the 400vw horizontal slide gets
+     converted to a vertical stack on phones. The JS-set transform on
+     the track is overridden so panels flow as a column, and the section
+     stops being a 460vh sticky container (since vertical stacking
+     doesn't need scroll-locked staging). Way fewer paints per scroll
+     tick on mobile. */
+  @media (max-width: 767px) {
+    .sd-root .sd-q-scroll-section { height: auto !important; }
+    .sd-root .sd-q-scroll-section > .sticky {
+      position: relative !important;
+      height: auto !important;
+      overflow: visible !important;
+    }
+    .sd-root .sd-q-track {
+      width: 100% !important;
+      flex-direction: column !important;
+      transform: none !important;
+      transition: none !important;
+    }
+    .sd-root .sd-q-panel {
+      width: 100% !important;
+      height: auto !important;
+      min-height: 80vh !important;
+      flex-shrink: 0 !important;
+    }
+    .sd-root .sd-q-indicators { display: none !important; }
+    .sd-root .sd-q-header { position: relative !important; }
+  }
 
   /* Video frame — VHS scan lines + corner brackets for the small 9:16
      clip thumbs and the larger inline clips in the anchored open. */
@@ -1193,6 +1239,55 @@ const ROSTER = [
   { id: 'r23', name: 'Olivia Hart',    number: 33, position: 'C',  teamId: 't15', claimed: false },
 ];
 
+/* Auto-fill rosters for every team in OB_TEAMS_DB that doesn't have
+   hand-authored players above. The fan flow's PlayersStep filters
+   ROSTER by teamId — if a chosen team has no entries, the accordion
+   shows "0 players" and the user has nothing to follow. Generates 6
+   deterministic players per team (same teamId → same names on every
+   render) so the demo data stays stable across reloads. */
+const _DEMO_FIRST = [
+  'Alex','Tyler','Jordan','Riley','Cameron','Quinn','Drew','Avery','Logan','Hayden',
+  'Parker','Skylar','Reese','Marley','Sage','Casey','Morgan','Phoenix','Rowan','Emerson',
+];
+const _DEMO_LAST = [
+  'Bennett','Carter','Davis','Edwards','Foster','Gates','Hill','Irving','Jenkins','Knight',
+  'Lambert','Nash','Owens','Ramos','Stone','Tate','Vance','Whitlock','Young','Zane',
+];
+const _DEMO_POS = ['PG','SG','SF','PF','C'];
+const _seed = (s) => s.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+const _r = (seed, i) => ((seed * 9301 + 49297 + i * 17) % 233280) / 233280;
+const _synthRoster = (teamId) => {
+  const s = _seed(teamId);
+  const used = new Set();
+  const out = [];
+  for (let i = 0; i < 6; i++) {
+    const fn = _DEMO_FIRST[Math.floor(_r(s, i * 4)     * _DEMO_FIRST.length)];
+    const ln = _DEMO_LAST[ Math.floor(_r(s, i * 4 + 1) * _DEMO_LAST.length)];
+    let num  =             Math.floor(_r(s, i * 4 + 2) * 40) + 1;
+    while (used.has(num)) num = (num % 50) + 1;
+    used.add(num);
+    out.push({
+      id:        `${teamId}-r${i}`,
+      name:      `${fn} ${ln}`,
+      number:    num,
+      position:  _DEMO_POS[Math.floor(_r(s, i * 4 + 3) * _DEMO_POS.length)],
+      teamId,
+      claimed:   false,
+    });
+  }
+  return out;
+};
+/* Mutate ROSTER at module load so every team has at least one player
+   to follow. Hand-authored entries above are kept verbatim. */
+(() => {
+  const teamsCovered = new Set(ROSTER.map(p => p.teamId));
+  OB_TEAMS_DB.forEach(t => {
+    if (!teamsCovered.has(t.id)) {
+      _synthRoster(t.id).forEach(p => ROSTER.push(p));
+    }
+  });
+})();
+
 const RIVAL_STARS = [
   { id: 'rv1', name: 'Marcus Webb',   number: 4,  position: 'PG', teamInitial: 'WC', teamName: 'Hawks',   role: 'Division MVP'  },
   { id: 'rv2', name: 'Devon Hayes',   number: 11, position: 'SF', teamInitial: 'MH', teamName: 'Bears',   role: 'Top scorer'    },
@@ -1200,13 +1295,15 @@ const RIVAL_STARS = [
   { id: 'rv4', name: 'Jaylen Reeves', number: 7,  position: 'PG', teamInitial: 'WC', teamName: 'Hawks',   role: 'Rising star'   },
 ];
 
-/* PERSONA_KINDS — picker meta. May 2026 product call: coach is shown but
-   disabled (functionality not yet ready). Flip `disabled: false` to enable. */
+/* PERSONA_KINDS — picker meta. Enabled personas (Player, Fan) sit on
+   top; disabled "coming soon" personas (Parent, Coach) sink to the
+   bottom so the user's eye lands on actionable choices first. Flip the
+   `disabled` flag when each persona's flow ships. */
 const PERSONA_KINDS = [
-  { kind: 'player', title: 'Player',          sub: "I'm on a team. Show me my game.",                featured: true  },
-  { kind: 'parent', title: 'Parent',          sub: 'My kid plays. I want their highlights & games.', featured: false },
-  { kind: 'fan',    title: 'Fan / Supporter', sub: 'I follow teams and players, no kid on a roster.',featured: false },
-  { kind: 'coach',  title: 'Coach',           sub: 'Coming soon.',                                    featured: false, disabled: true },
+  { kind: 'player', title: 'Player',          sub: "I'm on a team. Show me my game.",                  featured: true  },
+  { kind: 'fan',    title: 'Fan / Supporter', sub: 'I follow teams and players, no kid on a roster.',  featured: false },
+  { kind: 'parent', title: 'Parent',          sub: 'Coming soon.',                                      featured: false, disabled: true },
+  { kind: 'coach',  title: 'Coach',           sub: 'Coming soon.',                                      featured: false, disabled: true },
 ];
 
 /* ============================================================
@@ -1564,15 +1661,31 @@ const OnboardStepper = ({ step, total, onBack, label }) => (
   </div>
 );
 
-/* OnboardDock — bottom-of-step CTA container. Previously styled as a
-   blurred sticky footer with a hairline border-top, designed to overlay
-   an internally-scrolling step body inside a fixed-height card. With the
-   wider fix (card grows with content, page scrolls) the dock now flows
-   naturally at the end of each step, so we drop the bottom-fade,
-   blur, and border-top — they were artifacts of the old sticky-overlay
-   pattern. Outer padding kept so CTAs don't kiss the card edge. */
+/* OnboardDock — bottom CTA container.
+   Sticky-bottom is DESKTOP-ONLY (`lg:sticky lg:bottom-0`). On mobile we
+   intentionally fall back to plain flex flow, because iOS Safari has a
+   well-documented bug where `position: sticky` siblings of an
+   `overflow-y: auto` element inside a flex-column parent silently kill
+   the scrollable child's scroll handler. Symptom on iPhone: the entire
+   step body becomes unscrollable — even though the dock looks fine.
+
+   The mobile fallback is fine because on phone, the orchestrator card
+   fills the viewport via absolute inset-0 and the flex layout already
+   pins the dock to the bottom of the visible card — no sticky needed
+   to guarantee "Continue is always visible". Desktop still benefits
+   from sticky because the card grows with content and the page is the
+   scrolling ancestor; without sticky the dock would scroll off-screen
+   inside long steps. */
 const OnboardDock = ({ children }) => (
-  <div className="shrink-0 px-5 pb-6 pt-4 relative" style={{ flexShrink: 0, zIndex: 30 }}>
+  <div className="shrink-0 px-5 pb-6 pt-4 lg:sticky lg:bottom-0"
+    style={{
+      flexShrink: 0,
+      zIndex: 30,
+      background: 'linear-gradient(180deg, rgba(8,12,20,0) 0%, rgba(8,12,20,0.65) 35%, rgba(8,12,20,0.92) 100%)',
+      backdropFilter: 'blur(10px)',
+      WebkitBackdropFilter: 'blur(10px)',
+      borderTop: '1px solid rgba(255,255,255,0.06)',
+    }}>
     <div className="lg:max-w-[440px] lg:mx-auto">{children}</div>
   </div>
 );
@@ -3466,10 +3579,14 @@ const GlassField = ({ label, type = 'text', value, onChange, placeholder, autoFo
    Apple / Google / form Continue all branch on `mode`. */
 const SignInForm = ({ onSubmit, onSignUp }) => {
   const [mode, setMode] = useState('signin');
+  /* Pre-fill with the Tal Weiss demo persona so BOTH tabs (Sign In and
+     Sign Up) are one-tap-Continue. Password satisfies the stricter
+     sign-up rules (≥8 chars, 1 uppercase, 1 digit). confirmPw matches
+     so the validator passes when the user flips into Sign Up mode. */
   const [email, setEmail] = useState('tal@halo.tv');
-  const [password, setPassword] = useState('halohalo');
-  const [name, setName] = useState('');
-  const [confirmPw, setConfirmPw] = useState('');
+  const [password, setPassword] = useState('Halohalo1');
+  const [name, setName] = useState('Tal Weiss');
+  const [confirmPw, setConfirmPw] = useState('Halohalo1');
   const [showPw, setShowPw] = useState(false);
   const isSignUp = mode === 'signup';
   const valid = isSignUp
@@ -6510,17 +6627,23 @@ const SD_AnchoredOpen = ({ scrollEl }) => {
       const scrollable = sec.offsetHeight - window.innerHeight;
       if (scrollable <= 0) return;
       const p = Math.max(0, Math.min(1, -rect.top / scrollable));
-      const fall = Math.min(1, p / 0.65);
+      /* Fall completes at p=0.5 (was 0.65) — jersey hits its landing
+         spot halfway through the section so the user sees the "landed"
+         editorial reveal for the remaining 90vh of scroll instead of
+         only the last 60vh. Feels less rushed. */
+      const fall = Math.min(1, p / 0.5);
       const eased = fall * fall;
       const ballTopVh = -30 + 100 * eased;
       const rotation = fall * 380;
       /* Drive the jersey transform via DOM — no React render, no
-         transition CSS competing with our requestAnimationFrame loop. */
+         transition CSS competing with our requestAnimationFrame loop.
+         No translateZ here either — it can interfere with the sticky
+         parent's positioning. */
       if (jersey) {
         jersey.style.top = ballTopVh + 'vh';
-        jersey.style.transform = `translateX(-50%) translateZ(0) rotate(${rotation}deg)`;
+        jersey.style.transform = `translateX(-50%) rotate(${rotation}deg)`;
       }
-      const isLanded = p > 0.65;
+      const isLanded = p > 0.5;
       if (isLanded !== lastLandedRef.current) {
         lastLandedRef.current = isLanded;
         setLanded(isLanded);
@@ -6540,7 +6663,12 @@ const SD_AnchoredOpen = ({ scrollEl }) => {
   }, [scrollEl]);
 
   return (
-    <section ref={sectionRef} className="relative" style={{ height: '240vh' }}>
+    /* 180vh (was 240vh): 100vh sticky phase + 80vh of "play through"
+       runway is enough for the jersey-fall animation; the extra 60vh
+       was just empty unsticking. The `landed` flag flips at p > 0.5
+       (was 0.65) so the cyan-flash + text reveal happens earlier in the
+       scroll. */
+    <section ref={sectionRef} className="relative" style={{ height: '180vh' }}>
       <div className="sticky top-0 h-screen overflow-hidden flex items-end justify-center">
         <div className="absolute top-14 inset-x-0 text-center px-6 z-10 transition-opacity duration-500"
           style={{ opacity: landed ? 0 : 1 }}>
@@ -6551,14 +6679,14 @@ const SD_AnchoredOpen = ({ scrollEl }) => {
         </div>
         <div ref={jerseyRef} className="absolute left-1/2 z-20" style={{
           top: '-30vh',
-          /* Initial transform sets translateZ(0) to GPU-promote the
-             layer so subsequent scroll-driven transform updates only
-             touch the compositor, never re-paint. */
-          transform: 'translateX(-50%) translateZ(0)',
+          transform: 'translateX(-50%)',
           filter: 'drop-shadow(0 18px 32px rgba(0,0,0,0.55))',
           opacity: landed ? 0 : 1,
           transition: 'opacity 300ms ease',
           transitionDelay: landed ? '120ms' : '0ms',
+          /* will-change alone hints the compositor without forcing a
+             new containing block (which would interfere with the sticky
+             parent's positioning context). */
           willChange: 'transform, top',
         }}>
           <SD_JerseyPlaque size={130} />
@@ -6697,10 +6825,15 @@ const SD_QuarterScroll = ({ scrollEl }) => {
 
   useEffect(() => {
     if (!scrollEl) return;
+    /* On mobile the QuarterScroll converts to a vertical panel stack via
+       CSS (see media query). The scroll handler then has nothing to
+       drive — bail out so we don't burn frames on no-op work. */
+    const isMobile = () => window.matchMedia('(max-width: 767px)').matches;
     const onScroll = () => {
       if (rafRef.current) return;
       rafRef.current = requestAnimationFrame(() => {
         rafRef.current = null;
+        if (isMobile()) return;
         const sec = sectionRef.current;
         if (!sec) return;
         const rect = sec.getBoundingClientRect();
@@ -6712,8 +6845,7 @@ const SD_QuarterScroll = ({ scrollEl }) => {
         if (progressRef.current) progressRef.current.style.width = `${p * 100}%`;
         const a = Math.max(0, Math.min(3, Math.round(p * 3)));
         /* Skip the React render when active hasn't actually flipped to a
-           new panel. React's setState bails on equal values internally,
-           but the extra function call + scheduler work isn't free. */
+           new panel. */
         if (a !== activeRef.current) {
           activeRef.current = a;
           setActive(a);
@@ -6729,23 +6861,26 @@ const SD_QuarterScroll = ({ scrollEl }) => {
   }, [scrollEl]);
 
   return (
-    <section ref={sectionRef} className="relative" style={{ height: '460vh' }}>
+    /* 400vh (was 460vh): 100vh sticky phase + 300vh of scroll = 100vh
+       per quarter transition. Tighter pacing.
+       sd-q-scroll-section / sd-q-indicators / sd-q-header tags are the
+       mobile-override hooks — phones convert this whole thing to a
+       vertical stack of panels (no sticky horizontal track), which is
+       drastically lighter than rendering 4 viewport-wide panels at once. */
+    <section ref={sectionRef} className="sd-q-scroll-section relative" style={{ height: '400vh' }}>
       <div className="sticky top-0 h-screen overflow-hidden">
         <div ref={progressRef} className="absolute top-0 start-0 h-[3px] sd-progress-bar z-30" style={{ width: '0%' }} />
-        <div className="absolute top-7 inset-x-0 text-center z-20 pointer-events-none">
+        <div className="sd-q-header absolute top-7 inset-x-0 text-center z-20 pointer-events-none">
           <div className="sd-mono text-[10px] tracking-[0.30em] uppercase sd-tx30 mb-0.5">Quarter by quarter</div>
           <div className="sd-serif italic sd-tx85" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.25rem)' }}>how all 24 happened</div>
         </div>
-        {/* sd-q-track adds GPU-layer hints (via CSS). The 80ms linear
-            transition smooths fast wheel-fling but doesn't lag the
-            user's finger. */}
         <div ref={trackRef} className="sd-q-track flex h-full"
           style={{ width: '400vw', transition: 'transform 80ms linear' }}>
           {SD_QUARTERS.map((q, i) => (
             <SD_QuarterPanel key={i} q={q} isActive={active === i} />
           ))}
         </div>
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-7 z-30">
+        <div className="sd-q-indicators absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-7 z-30">
           {SD_QUARTERS.map((q, i) => (
             <div key={i} className="sd-mono text-[11px] tracking-[0.25em] uppercase transition-all duration-300"
               style={{
@@ -6768,9 +6903,13 @@ const SD_ScoreBoard = ({ scrollEl }) => {
        option — we pass the overlay's scroll container so the threshold
        triggers when the section enters the overlay's viewport, not the
        document's. */
+    /* threshold 0.05 (was 0.35) — fire as soon as the scoreboard slides
+       even slightly into view. The 0.35 threshold meant the user had
+       scrolled 35vh into a 100vh section before the score animated,
+       which read as empty scroll. */
     const obs = new IntersectionObserver(
       ([e]) => { if (e.isIntersecting) setVis(true); },
-      { root: scrollEl, threshold: 0.35 }
+      { root: scrollEl, threshold: 0.05 }
     );
     if (ref.current) obs.observe(ref.current);
     return () => obs.disconnect();
@@ -6824,9 +6963,12 @@ const SD_Closing = ({ scrollEl, onPickMoment }) => {
   const [hoverIdx, setHoverIdx] = useState(null);
   useEffect(() => {
     if (!scrollEl) return;
+    /* threshold 0.05 (was 0.20) — same reasoning as ScoreBoard: fire on
+       first intersection so the section doesn't look empty during its
+       opening run-in. */
     const obs = new IntersectionObserver(
       (entries) => entries.forEach(e => { if (e.isIntersecting) setVisible(true); }),
-      { root: scrollEl, threshold: 0.20 }
+      { root: scrollEl, threshold: 0.05 }
     );
     if (wrapRef.current) obs.observe(wrapRef.current);
     return () => obs.disconnect();
@@ -6992,16 +7134,15 @@ const StorytellingDropViewer = ({ storyId, onClose, onPickMoment }) => {
   }, [scrollEl]);
   return (
     <div data-theme="dark" className="fixed inset-0 z-[100] sd-root anim-fade">
-      {/* contain: paint isolates this layer's rendering work from the
-          underlying app tree so animations behind the overlay (live ember
-          tally, shine sweeps, conic gradients) don't trigger repaints
-          inside the scrollytelling. translateZ(0) GPU-promotes the
-          scroll container. */}
+      {/* Plain overflow scroll — no transform, no `contain: paint`. Both
+          previously broke `position: sticky` resolution inside the
+          overlay (sticky children unstuck on first scroll, exposing the
+          tall containing sections as 100-360vh of empty scroll). The
+          isolation we still get from `fixed inset-0` on the parent is
+          enough; aggressive containment was a premature optimization. */}
       <div ref={scrollRef} className="absolute inset-0 overflow-y-auto"
         style={{
           overflowX: 'clip',
-          contain: 'layout paint style',
-          transform: 'translateZ(0)',
           WebkitOverflowScrolling: 'touch',
         }}>
         <SD_Hero />
@@ -7405,7 +7546,7 @@ const OnboardingStub = ({ flow, onDone, onExit }) => (
       style={{ background: 'linear-gradient(180deg, var(--vignette-corner) 0%, transparent 30%, transparent 70%, var(--vignette-corner-soft) 100%)' }} />
     <div className="absolute inset-0 z-10 flex flex-col">
       <OnboardStepper step={1} total={flow === 'player' ? 5 : 3} onBack={onExit} label={flow === 'player' ? 'Player onboarding' : 'Welcome to Halo'} />
-      <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-8 pb-[120px] flex flex-col items-center justify-center text-center anim-fade">
+      <div className="flex-1 min-h-0 onb-scroll px-6 pt-8 pb-[120px] flex flex-col items-center justify-center text-center anim-fade">
         <div className="w-16 h-16 lg-glass-strong squircle-md flex items-center justify-center mb-5"
           style={{ color: 'var(--brand-cyan-text)' }}>
           <Icon name={flow === 'player' ? 'profile' : 'star'} size={28} stroke={1.8} />
@@ -7529,11 +7670,13 @@ const PersonaCard = ({ kind, title, sub, featured, selected, disabled, onClick }
 };
 
 /* ── PersonaStep ──────────────────────────────────────────────────
-   Step 1 of generic Onboarding — picks one of the four personas. */
-const PersonaStep = ({ onPick }) => (
+   Step 1 of generic Onboarding — picks one of the four personas.
+   onBack now wired (routes to auth screen) so the user isn't trapped
+   in onboarding when they meant to sign in instead. */
+const PersonaStep = ({ onPick, onBack }) => (
   <>
-    <OnboardStepper step={1} total={3} label="Step 1 of 3" />
-    <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-4 pb-[120px] anim-fade">
+    <OnboardStepper step={1} total={3} onBack={onBack} label="Step 1 of 3" />
+    <div className="flex-1 min-h-0 onb-scroll px-6 pt-4 pb-[120px] anim-fade">
       <h1 className="sf-display text-[26px] font-bold text-white leading-[1.05] tracking-[-0.025em] mb-2">
         Welcome to Halo
       </h1>
@@ -7714,7 +7857,7 @@ const TeamsStep = ({ chosen, setChosen, onBack, onNext }) => {
   return (
     <>
       <OnboardStepper step={2} total={3} onBack={onBack} label="Step 2 of 3" />
-      <div className="flex-1 min-h-0 overflow-y-auto px-5 pt-4 pb-[120px] anim-fade">
+      <div className="flex-1 min-h-0 onb-scroll px-5 pt-4 pb-[120px] anim-fade">
         <h1 className="sf-display text-[24px] font-bold text-white leading-[1.05] tracking-[-0.025em] mb-2">
           Pick teams to follow
         </h1>
@@ -7922,7 +8065,7 @@ const PlayersStep = ({ chosenTeams, chosenPlayers, togglePlayer, setChosenPlayer
   return (
     <>
       <OnboardStepper step={3} total={3} onBack={onBack} label="Step 3 of 3" />
-      <div className="flex-1 min-h-0 overflow-y-auto px-5 pt-4 pb-[120px] anim-fade">
+      <div className="flex-1 min-h-0 onb-scroll px-5 pt-4 pb-[120px] anim-fade">
         <h1 className="sf-display text-[24px] font-bold text-white leading-[1.05] tracking-[-0.025em] mb-2">
           Follow players you care about
         </h1>
@@ -7968,10 +8111,15 @@ const PlayersStep = ({ chosenTeams, chosenPlayers, togglePlayer, setChosenPlayer
    Player branch short-circuits to #/onboard/player (the coach-invite
    PlayerOnboarding flow — handled by Phase 2). Coach is disabled in
    PersonaStep per DS spec. */
-const FanOnboarding = ({ onDone }) => {
+/* onExit — fired when the user hits the back chevron from step 1
+   (PersonaStep). Routes back to the auth screen so they can sign in
+   instead of continuing onboarding. The App provides this prop. */
+const FanOnboarding = ({ onDone, onExit }) => {
   const [step, setStep] = useState('persona');
   const [persona, setPersona] = useState('fan');
-  const [chosenTeams, setChosenTeams] = useState([]);
+  /* Pre-select Varsity (t1) so step 2 (TeamsStep) ships in with one
+     team chosen — Continue button is enabled immediately for demos. */
+  const [chosenTeams, setChosenTeams] = useState(['t1']);
   const [chosenPlayers, setChosenPlayers] = useState({});
   const togglePlayer = (id) => setChosenPlayers(prev => ({ ...prev, [id]: !prev[id] }));
   const onPickPersona = (kind) => {
@@ -8007,7 +8155,7 @@ const FanOnboarding = ({ onDone }) => {
         style={{ minHeight: 0 }}>
         <div className="relative flex flex-col flex-1 lg:flex-none lg:min-h-[640px]"
           style={{}}>
-          {step === 'persona' && <PersonaStep onPick={onPickPersona} />}
+          {step === 'persona' && <PersonaStep onPick={onPickPersona} onBack={onExit} />}
           {step === 'teams' && (
             <TeamsStep chosen={chosenTeams} setChosen={setChosenTeams}
               onBack={() => setStep('persona')}
@@ -8034,10 +8182,17 @@ const FanOnboarding = ({ onDone }) => {
    Visual: big team-initial disc + "You're invited" eyebrow + headline +
    team chip + sign-up / sign-in CTAs. Drops the coach avatar + whistle
    chip + "ADDED BY COACH SARAH" line. */
-const PlayerInviteEntry = ({ teamId, onSignUp, onSignIn }) => {
+/* PlayerInviteEntry — first screen a player sees after tapping a coach
+   invite link. Now wears the same OnboardStepper as the rest of the
+   flow so the back chevron is consistent with the auth route they came
+   from. step={1} total={4} treats invite + signup/signin as the same
+   step ("get into your account"); teams-locked is step 2, etc. */
+const PlayerInviteEntry = ({ teamId, onSignUp, onSignIn, onBack }) => {
   const team = OB_TEAMS_DB.find(tm => tm.id === teamId);
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-14 pb-[120px] anim-fade flex flex-col">
+    <>
+    <OnboardStepper step={1} total={4} onBack={onBack} label="Step 1 of 4" />
+    <div className="flex-1 min-h-0 onb-scroll px-6 pt-4 pb-[120px] anim-fade flex flex-col">
       <div className="flex-1 flex flex-col items-center justify-center text-center">
         {/* Team disc — initial-letterform, no photo (players don't have one yet). */}
         <div className="relative mb-6" style={{ width: 120, height: 120 }}>
@@ -8103,6 +8258,7 @@ const PlayerInviteEntry = ({ teamId, onSignUp, onSignIn }) => {
         </button>
       </div>
     </div>
+    </>
   );
 };
 
@@ -8319,20 +8475,51 @@ const SignUpSelect = ({ label, value, onChange, options, placeholder }) => (
   </div>
 );
 
-const FullSignUpScreen = ({ onSubmit, onSwitchToSignIn }) => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPw, setConfirmPw] = useState('');
+/* form values can be passed in (controlled by the orchestrator) so that
+   when the user backs out to invite-entry and returns, the fields are
+   retained instead of re-blanked. If no `form` prop is passed, the
+   component falls back to its own internal useState. onBack adds the
+   first chrome (OnboardStepper) to this screen so the user can return
+   to the invite-entry / cancel signup. */
+const FullSignUpScreen = ({ onSubmit, onSwitchToSignIn, onBack, form, setForm }) => {
+  /* When `form` is provided we derive values from it and write back via
+     setForm; otherwise we manage internal state. Using two separate
+     code paths via tiny helpers keeps the JSX below identical to before. */
+  /* Fallback state for standalone usage (when no `form` prop is passed).
+     Pre-filled with the Tal Weiss demo persona so the standalone signup
+     from /auth is also one-tap-Continue. */
+  const _internalState = {
+    name: useState('Tal Weiss'),
+    email: useState('tal@halo.tv'),
+    password: useState('Halohalo1'),
+    confirmPw: useState('Halohalo1'),
+    birthDate: useState('2008-05-14'),
+    gender: useState('Male'),
+    country: useState('US'),
+    phoneCountry: useState('US'),
+    phone: useState('5551234567'),
+  };
+  const get = (k, fallbackPair) => form ? (form[k] ?? '') : fallbackPair[0];
+  const set = (k, fallbackPair) => (v) => form ? setForm(f => ({ ...f, [k]: v })) : fallbackPair[1](v);
+  const name         = get('name',         _internalState.name);
+  const email        = get('email',        _internalState.email);
+  const password     = get('password',     _internalState.password);
+  const confirmPw    = get('confirmPw',    _internalState.confirmPw);
+  const birthDate    = get('birthDate',    _internalState.birthDate);
+  const gender       = get('gender',       _internalState.gender);
+  const country      = get('country',      _internalState.country);
+  const phoneCountry = form ? (form.phoneCountry ?? 'US') : _internalState.phoneCountry[0];
+  const phone        = get('phone',        _internalState.phone);
+  const setName         = set('name',         _internalState.name);
+  const setEmail        = set('email',        _internalState.email);
+  const setPassword     = set('password',     _internalState.password);
+  const setConfirmPw    = set('confirmPw',    _internalState.confirmPw);
+  const setBirthDate    = set('birthDate',    _internalState.birthDate);
+  const setGender       = set('gender',       _internalState.gender);
+  const setCountry      = set('country',      _internalState.country);
+  const setPhoneCountry = set('phoneCountry', _internalState.phoneCountry);
+  const setPhone        = set('phone',        _internalState.phone);
   const [showPw, setShowPw] = useState(false);
-  const [birthDate, setBirthDate] = useState('');
-  const [gender, setGender] = useState('');
-  /* Country owns ISO code (US, IL, ...) rather than display name now that
-     the data structure carries dial + flag. Pre-seed with 'US' so the
-     phone dial-code dropdown shows something on first render. */
-  const [country, setCountry] = useState('');
-  const [phoneCountry, setPhoneCountry] = useState('US');
-  const [phone, setPhone] = useState('');
   const toggleShowPw = () => setShowPw(v => !v);
 
   const pwOk = password.length >= 8 && /[A-Z]/.test(password) && /[0-9]/.test(password);
@@ -8356,9 +8543,15 @@ const FullSignUpScreen = ({ onSubmit, onSwitchToSignIn }) => {
 
   /* No outer px-5 here — each section owns its own horizontal padding so
      the inline Continue button below renders at the same width as the
-     inputs (vs. previously being double-padded by OnboardDock). */
+     inputs (vs. previously being double-padded by OnboardDock).
+     OnboardStepper added so the user can back out of signup to the
+     invite-entry screen they came from. Only renders when onBack is
+     provided (i.e. when used inside PlayerOnboarding) — keeps the
+     standalone usage of FullSignUpScreen un-stepperised. */
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto pt-10 pb-12 anim-fade">
+    <>
+    {onBack && <OnboardStepper step={1} total={4} onBack={onBack} label="Step 1 of 4" />}
+    <div className="flex-1 min-h-0 onb-scroll pt-10 pb-12 anim-fade">
       <div className="px-5">
         <h1 className="sf-display text-[28px] font-bold text-white leading-[1.05] tracking-[-0.025em] mb-2">Create your account</h1>
         <p className="sf text-[13px] leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.65)' }}>
@@ -8434,6 +8627,7 @@ const FullSignUpScreen = ({ onSubmit, onSwitchToSignIn }) => {
         </button>
       </div>{/* /px-5 inner column */}
     </div>
+    </>
   );
 };
 
@@ -8457,7 +8651,7 @@ const TeamsStepLocked = ({ lockedTeamId, chosen, setChosen, onBack, onNext }) =>
   return (
     <>
       <OnboardStepper step={2} total={4} onBack={onBack} label="Step 2 of 4" />
-      <div className="flex-1 min-h-0 overflow-y-auto px-5 pt-4 pb-[120px] anim-fade">
+      <div className="flex-1 min-h-0 onb-scroll px-5 pt-4 pb-[120px] anim-fade">
         <h1 className="sf-display text-[24px] font-bold text-white leading-[1.05] tracking-[-0.025em] mb-2">
           Your team
         </h1>
@@ -8667,7 +8861,7 @@ const ClaimAndFollow = ({ teamId, claimedSelfId, setClaimedSelfId, chosenPlayers
   return (
     <>
       <OnboardStepper step={3} total={4} onBack={onBack} label="Step 3 of 4" />
-      <div className="flex-1 min-h-0 overflow-y-auto px-5 pt-4 pb-[120px] anim-fade">
+      <div className="flex-1 min-h-0 onb-scroll px-5 pt-4 pb-[120px] anim-fade">
         <h1 className="sf-display text-[24px] font-bold text-white leading-[1.05] tracking-[-0.025em] mb-2">
           Which one is you?
         </h1>
@@ -8918,11 +9112,33 @@ const NotifUpsell = ({ onAllow, onSkip, onBack }) => (
        → notif-upsell → done(Home) */
 const DEFAULT_INVITE = { teamId: 't1' };
 
-const PlayerOnboarding = ({ onDone, inviteContext = DEFAULT_INVITE }) => {
+const PlayerOnboarding = ({ onDone, onExit, inviteContext = DEFAULT_INVITE }) => {
   const [step, setStep] = useState('invite-entry');
   const [chosenTeams, setChosenTeams] = useState([inviteContext.teamId]);
   const [chosenPlayers, setChosenPlayers] = useState({});
-  const [claimedSelfId, setClaimedSelfId] = useState(null);
+  /* Pre-claim Tal Weiss (r1 = #7 SG on Varsity) so the user can hit
+     Continue on ClaimAndFollow immediately during demo. Setting this
+     here triggers the auto-follow effect inside ClaimAndFollow that
+     fans-out followed teammates. */
+  const [claimedSelfId, setClaimedSelfId] = useState('r1');
+  /* Lifted signup form state — lives in the orchestrator so backing out
+     of TeamsStepLocked to fix a typo retains every field. Per the
+     May-2026 design call (TeamsLocked back → signup with pre-filled
+     form). Values are pre-filled with the Tal Weiss demo persona so
+     every screen of the player flow is immediately Continue-able
+     without typing during a demo. Password satisfies the validation
+     (8+ chars, 1 uppercase, 1 number). */
+  const [signupForm, setSignupForm] = useState({
+    name: 'Tal Weiss',
+    email: 'tal@halo.tv',
+    password: 'Halohalo1',
+    confirmPw: 'Halohalo1',
+    birthDate: '2008-05-14',
+    gender: 'Male',
+    country: 'US',
+    phoneCountry: 'US',
+    phone: '5551234567',
+  });
   /* w-full is critical on desktop — without it, this div is a flex child
      of `.stage-desktop` (display:flex) and would shrink to the inner
      card's 480px width, pinning the whole onboarding flow to the
@@ -8948,22 +9164,33 @@ const PlayerOnboarding = ({ onDone, inviteContext = DEFAULT_INVITE }) => {
           {step === 'invite-entry' && (
             <PlayerInviteEntry teamId={inviteContext.teamId}
               onSignUp={() => setStep('signup')}
-              onSignIn={() => setStep('signin')} />
+              onSignIn={() => setStep('signin')}
+              onBack={onExit} />
           )}
           {step === 'signup' && (
             <FullSignUpScreen
+              form={signupForm} setForm={setSignupForm}
               onSubmit={() => setStep('teams-locked')}
-              onSwitchToSignIn={() => setStep('signin')} />
+              onSwitchToSignIn={() => setStep('signin')}
+              onBack={() => setStep('invite-entry')} />
           )}
           {step === 'signin' && (
-            <div className="flex-1 min-h-0 overflow-y-auto">
-              <SignInForm onSubmit={() => setStep('teams-locked')} />
-            </div>
+            <>
+              <OnboardStepper step={1} total={4} onBack={() => setStep('invite-entry')} label="Step 1 of 4" />
+              <div className="flex-1 min-h-0 onb-scroll px-5 pt-6">
+                <SignInForm onSubmit={() => setStep('teams-locked')} />
+              </div>
+            </>
           )}
           {step === 'teams-locked' && (
             <TeamsStepLocked lockedTeamId={inviteContext.teamId}
               chosen={chosenTeams} setChosen={setChosenTeams}
-              onBack={() => setStep('invite-entry')}
+              /* Back goes to signup (not invite-entry) — the user has
+                 already created their account, so returning to a
+                 pre-account screen would feel like undoing it. With the
+                 lifted signupForm state above, all fields are still
+                 there if they need to edit one. */
+              onBack={() => setStep('signup')}
               onNext={() => setStep('claim-and-follow')} />
           )}
           {step === 'claim-and-follow' && (
@@ -9389,17 +9616,21 @@ const App = () => {
   // (onboarding screens own the canvas; no SideNav/BottomNav chrome).
   if (onboardFlow) {
     const Flow = onboardFlow === 'player' ? PlayerOnboarding : FanOnboarding;
+    /* onExit — fired when the user hits the back chevron from the first
+       onboarding screen. Routes back to the auth screen so they can
+       sign in instead of continuing onboarding. */
+    const onExitOnboard = () => navigate('auth');
     return (
       <div className={`glass-app app-stage`} data-theme={theme} dir={locale === 'he' ? 'rtl' : 'ltr'}>
         <div className="stage-phone">
           <div className="phone" data-theme={theme}>
             <div className="phone-screen relative" style={{ minHeight: '100vh' }}>
-              <Flow onDone={onOnboardDone} />
+              <Flow onDone={onOnboardDone} onExit={onExitOnboard} />
             </div>
           </div>
         </div>
         <div className="stage-desktop relative" style={{ minHeight: '100vh' }}>
-          <Flow onDone={onOnboardDone} />
+          <Flow onDone={onOnboardDone} onExit={onExitOnboard} />
         </div>
       </div>
     );
