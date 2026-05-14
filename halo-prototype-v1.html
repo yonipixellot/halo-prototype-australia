@@ -783,6 +783,141 @@
     z-index: 10;
   }
 
+  /* === ONBOARDING DESKTOP "SIDEBAR + CANVAS" TREATMENT ===
+     Player onboarding on desktop uses a SaaS-style persistent left
+     sidebar (260px) + full-bleed right content area (no centered card).
+     Mobile is untouched — sidebar is `hidden lg:flex`, the
+     OnboardStepper continues to render at the top of the content on
+     mobile and only hides on >= 1280px (where the sidebar shows the
+     same progress info). Scoped via .onb-with-sidebar on the
+     PlayerOnboarding outer so fan flow isn't affected. */
+  @media (min-width: 1280px) {
+    .onb-with-sidebar .onb-stepper { display: none; }
+  }
+  /* Sidebar item — past/current/future styling driven by data-state */
+  .onb-sidebar-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: start;
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: inherit;
+    transition: background 180ms ease;
+  }
+  .onb-sidebar-step:hover { background: var(--hatch-grain); }
+  .onb-sidebar-step[data-state="current"] { background: var(--brand-cyan-soft); }
+  .onb-sidebar-step-num {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 12.5px; font-weight: 700;
+    transition: background 180ms ease, color 180ms ease, border-color 180ms ease;
+  }
+  .onb-sidebar-step[data-state="future"] .onb-sidebar-step-num {
+    background: transparent; border: 1px solid var(--glass-card-border);
+    color: var(--text-faint);
+  }
+  .onb-sidebar-step[data-state="past"] .onb-sidebar-step-num {
+    background: var(--brand-cyan-soft); border: 1px solid var(--brand-cyan-border);
+    color: var(--brand-cyan-text);
+  }
+  .onb-sidebar-step[data-state="current"] .onb-sidebar-step-num {
+    background: var(--brand-cyan); border: 1px solid var(--brand-cyan);
+    color: #0a0d18;
+  }
+  .onb-sidebar-step-label {
+    font-size: 13.5px; font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.2;
+  }
+  .onb-sidebar-step[data-state="future"] .onb-sidebar-step-label {
+    color: var(--text-faint);
+  }
+  .onb-sidebar-step-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    line-height: 1.3;
+  }
+  /* Connector line between items — runs from this circle down to next */
+  .onb-sidebar-connector {
+    position: absolute;
+    left: 27px;
+    top: 44px;
+    bottom: -10px;
+    width: 1px;
+    background: var(--hairline);
+  }
+  .onb-sidebar-step[data-state="past"] + .onb-sidebar-connector,
+  .onb-sidebar-step[data-state="current"] + .onb-sidebar-connector {
+    background: var(--brand-cyan-border);
+  }
+
+  /* === ONBOARDING DESKTOP "IMMERSIVE HERO" TREATMENT === (unused — kept
+     for reference. The sidebar-canvas pattern above is what ships.) ===
+     Desktop-only chrome that makes player onboarding feel cinematic
+     instead of a phone view stuck in the middle of a wide screen.
+     Mobile keeps the full-bleed card layout (no glass, no orbs) so
+     these rules are scoped to >= 1280px. */
+  @media (min-width: 1280px) {
+    /* Floating card — glass surface, soft outer glow, generous corner
+       radius. Background uses the token so it adapts to light/dark
+       themes (cream-glass in light mode, dark-glass in dark mode). */
+    .onb-card-desktop {
+      background: var(--glass-card-bg);
+      backdrop-filter: blur(28px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      box-shadow:
+        0 32px 80px -20px rgba(0,0,0,0.55),
+        0 0 0 1px var(--glass-card-border),
+        inset 0 1px 0 var(--glass-card-inset-top);
+    }
+
+    /* Atmospheric orbs sitting behind the card. Pure CSS pseudo-elements
+       blurred to soft glows in two brand tints (cyan + violet). They
+       give the immersive depth Stripe/Linear/Vercel hero pages use. */
+    .onb-orbs-desktop {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .onb-orbs-desktop::before,
+    .onb-orbs-desktop::after {
+      content: '';
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.75;
+    }
+    .onb-orbs-desktop::before {
+      width: 520px; height: 520px;
+      top: -160px; left: -120px;
+      background: radial-gradient(circle, rgba(0,214,254,0.30) 0%, transparent 65%);
+    }
+    .onb-orbs-desktop::after {
+      width: 620px; height: 620px;
+      bottom: -200px; right: -140px;
+      background: radial-gradient(circle, rgba(132,88,255,0.26) 0%, transparent 65%);
+    }
+    /* Light-mode orbs — much softer because cream is reflective + the
+       cyan/violet at full saturation looks neon on cream. */
+    [data-theme="light"] .onb-orbs-desktop::before {
+      background: radial-gradient(circle, rgba(0,125,150,0.18) 0%, transparent 65%);
+      opacity: 0.6;
+    }
+    [data-theme="light"] .onb-orbs-desktop::after {
+      background: radial-gradient(circle, rgba(132,88,255,0.14) 0%, transparent 65%);
+      opacity: 0.6;
+    }
+  }
+
   /* ====================================================================
      STORY DROP — Tal Weiss scrollytelling
      ====================================================================
@@ -1801,7 +1936,10 @@ const BottomFade = () => (
      ClaimAndFollow header. Phone: full-bleed absolute layer. Desktop:
      centered max-w with rounded glass card framing. */
 const OnboardStepper = ({ step, total, onBack, label }) => (
-  <div className="shrink-0 relative z-20 px-5 pt-12 pb-3"
+  /* onb-stepper class is the hook for the desktop sidebar-canvas
+     pattern (see CSS): when inside `.onb-with-sidebar` it hides on lg+
+     because the sidebar replaces it. */
+  <div className="onb-stepper shrink-0 relative z-20 px-5 pt-12 pb-3"
     style={{
       background: 'linear-gradient(180deg, var(--header-fade-start) 0%, var(--header-fade-mid) 80%, transparent 100%)',
       backdropFilter: 'blur(8px)',
@@ -3962,12 +4100,99 @@ const HighlightCircles = ({ onPickMoment, onOpenGame, onOpenGameVideo, onOpenAth
   );
 };
 
-/* GameCard — morphing variants. Minimal port: NextGameTeaser, Live, JustEnded, Ready */
-const GameCard = ({ state = 'off', onOpenGame, onOpenDrop }) => {
+/* GameCard — morphing variants.
+   Renders 5 states from the DS spec (off | pre | live | just-ended | ready).
+   `error` is intentionally skipped for the prototype.
+
+   Demo cycle: tapping any variant's eyebrow strip advances the displayed
+   state. The off state (NextGameTeaser) is the resting home; tapping its
+   eyebrow ENTERS the game-day cycle at `pre`. Once inside the cycle,
+   tapping advances through pre → live → just-ended → ready → pre — never
+   returns to off (off is non-cyclic).
+
+   Internal state lets the demo work even when the parent passes a fixed
+   `state` prop — we use the prop as the initial value, then override on
+   user interaction. */
+const GAME_CYCLE = ['pre', 'live', 'just-ended', 'ready'];
+const nextDemoState = (s) => {
+  if (s === 'off') return 'pre';
+  const i = GAME_CYCLE.indexOf(s);
+  return GAME_CYCLE[(i + 1) % GAME_CYCLE.length];
+};
+
+/* CycleEyebrow — reusable tappable eyebrow strip. Renders a row with a
+   pulse dot + uppercase tracking-wide label, and on tap calls onCycle to
+   advance the demo. The cursor + active-scale make it discoverable as a
+   tap target without ruining the editorial feel. */
+const CycleEyebrow = ({ children, onCycle, color = 'var(--brand-cyan-text)', glow = '0 0 12px rgba(0,214,254,0.95), 0 0 4px rgba(0,214,254,0.65)', trailing }) => (
+  <div className="relative z-10 px-4 pt-4 pb-2 flex items-center justify-between">
+    <button onClick={onCycle} className="flex items-center gap-2 -m-1 p-1 squircle-sm transition-all active:scale-[0.96]"
+      style={{ background: 'transparent' }} title="Tap to cycle demo state">
+      <div className="w-2 h-2 rounded-full anim-pulse-dot" style={{ background: color, boxShadow: glow }} />
+      <span className="sf text-[10.5px] tracking-[0.18em] uppercase font-bold" style={{ color }}>{children}</span>
+    </button>
+    {trailing}
+  </div>
+);
+
+const GameCard = ({ state: initialState = 'off', onOpenGame, onOpenDrop }) => {
+  const [state, setState] = useState(initialState);
+  const cycle = () => setState(nextDemoState);
+
+  /* ── PRE ── Countdown card (DS GameCardPre, line 8525 in v3.2).
+     Imminent mode (<10 min) bumps the cyan ember + glow. */
+  if (state === 'pre') {
+    const g = SEED_GAMES.find(x => x.status === 'upcoming') || SEED_GAMES[0];
+    const [remaining, setRemaining] = useState(Math.max(0, Math.min(g.kickoffInSec ?? 7200, 7200)));
+    useEffect(() => {
+      const tick = setInterval(() => setRemaining(r => Math.max(0, r - 1)), 1000);
+      return () => clearInterval(tick);
+    }, []);
+    const isImminent = remaining > 0 && remaining < 600;
+    const progress = 100 - Math.min(100, remaining / 72);
+    return (
+      <div className={`relative squircle-md p-4 overflow-hidden lg-aura ${isImminent ? 'lg-pre-imminent' : ''}`}
+        style={{
+          background: `radial-gradient(ellipse 60% 70% at 18% 28%, rgba(0,214,254,${isImminent ? 0.22 : 0.12}) 0%, transparent 60%), radial-gradient(ellipse 60% 70% at 88% 78%, rgba(132,88,255,0.10) 0%, transparent 60%), linear-gradient(180deg, var(--card-base-soft-top) 0%, var(--card-base-soft-bot) 100%)`,
+          border: '1px solid var(--glass-card-border)',
+          backdropFilter: 'blur(36px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(36px) saturate(180%)',
+          boxShadow: `inset 0 1px 0 var(--glass-card-inset-top), var(--glass-card-shadow), 0 0 ${isImminent ? 40 : 20}px -8px rgba(0,214,254,${isImminent ? 0.40 : 0.18})`,
+        }}>
+        <div className="relative z-10 flex items-center mb-3">
+          <button onClick={cycle} className="flex items-center gap-2 -m-1 p-1 squircle-sm active:scale-[0.96]" title="Tap to cycle demo state">
+            <div className="w-1.5 h-1.5 rounded-full bg-halo-cyan anim-pulse-dot" style={{ boxShadow: '0 0 8px rgba(0,214,254,0.7)' }} />
+            <span className="sf text-[10px] font-bold tracking-[0.16em] uppercase" style={{ color: 'var(--brand-cyan-text)' }}>
+              {isImminent ? 'Starting soon' : 'Drop incoming · pre-game'}
+            </span>
+          </button>
+        </div>
+        <div className="relative z-10">
+          <div className="sf-display text-[20px] font-bold tracking-[-0.015em] leading-none" style={{ color: 'var(--text-primary)' }}>{g.home}</div>
+          <div className="sf text-[12.5px] mt-1" style={{ color: 'var(--text-secondary)' }}>vs {g.away}</div>
+          <div className="sf text-[11px] mt-1" style={{ color: 'var(--text-tertiary)' }}>{g.venue || 'Eastside Gym'}</div>
+        </div>
+        <div className="relative z-10 mt-4 flex items-baseline gap-2">
+          <div className="sf-display text-[34px] font-bold tabular-nums leading-none"
+            style={{ color: 'var(--text-primary)', textShadow: isImminent ? '0 0 18px rgba(0,214,254,0.40)' : 'none' }}>
+            {fmt.countdown(remaining)}
+          </div>
+          <span className="sf text-[11px]" style={{ color: 'var(--text-tertiary)' }}>tipoff</span>
+        </div>
+        <div className="relative z-10 h-[3px] mt-3 overflow-hidden rounded-full" style={{ background: 'var(--hairline-strong)' }}>
+          <div className="h-full bg-halo-cyan" style={{
+            width: progress + '%',
+            transition: 'width 1s linear',
+            boxShadow: `0 0 ${isImminent ? 14 : 8}px rgba(0,214,254,${isImminent ? 0.75 : 0.5})`,
+          }} />
+        </div>
+      </div>
+    );
+  }
+
+  /* ── LIVE ── In-game card with auto-ticking moments + Watch live CTA. */
   if (state === 'live') {
-    const g = SEED_GAMES.find(x => x.status === 'live');
-    // Auto-incrementing moments counter — sympathetic to broadcast feel.
-    // 50% chance every 6s of +1.
+    const g = SEED_GAMES.find(x => x.status === 'live') || SEED_GAMES[0];
     const [moments, setMoments] = useState(g.momentsCount || 5);
     useEffect(() => {
       const t = setInterval(() => setMoments(m => m + (Math.random() > 0.5 ? 1 : 0)), 6000);
@@ -3983,21 +4208,19 @@ const GameCard = ({ state = 'off', onOpenGame, onOpenDrop }) => {
           WebkitBackdropFilter: 'blur(36px) saturate(180%)',
           color: 'var(--text-primary)',
         }}>
-        {/* lg-live-amp overlay — tally rail + broadcast sweep + ambient red mood */}
         <div className="lg-live-amp" aria-hidden="true" />
-        {/* Header strip — LIVE pill + period + moments count */}
         <div className="relative px-4 pt-3 pb-2 lg:px-5 flex items-center justify-between"
           style={{ borderBottom: '1px solid var(--hairline)', zIndex: 2 }}>
-          <div className="live-red squircle-sm px-2 py-1 inline-flex items-center gap-1.5">
+          <button onClick={(e) => { e.stopPropagation(); cycle(); }}
+            className="live-red squircle-sm px-2 py-1 inline-flex items-center gap-1.5 active:scale-[0.96]" title="Tap to cycle demo state">
             <div className="w-2 h-2 rounded-full bg-white anim-pulse-dot" style={{ boxShadow: '0 0 6px rgba(255,255,255,0.95)', flexShrink: 0 }} />
             <span className="sf text-[10px] font-bold tracking-[0.18em] uppercase leading-none" style={{ color: '#FFF' }}>LIVE</span>
-          </div>
+          </button>
           <div className="flex items-center gap-2">
             <span className="sf text-[10px] font-medium tracking-tight" style={{ color: 'var(--text-muted)' }}>{moments} moments</span>
             <span className="sf text-[10px] font-semibold" style={{ color: 'var(--text-tertiary)' }}>· {g.period}</span>
           </div>
         </div>
-        {/* Body row — team name + matchup vs score */}
         <div className="relative px-4 lg:px-5 py-4 flex items-center justify-between" style={{ zIndex: 2 }}>
           <div className="flex-1 min-w-0">
             <div className="sf-display text-[18px] font-bold leading-tight tracking-[-0.015em]" style={{ color: 'var(--text-primary)' }}>{g.home}</div>
@@ -4009,7 +4232,6 @@ const GameCard = ({ state = 'off', onOpenGame, onOpenDrop }) => {
             <span className="text-[28px]" style={{ color: 'var(--text-tertiary)' }}>{g.scoreAway}</span>
           </div>
         </div>
-        {/* Footer row — Watch live CTA pinned trailing */}
         <div className="relative px-4 lg:px-5 pb-3 flex items-center justify-end" style={{ zIndex: 2 }}>
           <button onClick={(e) => { e.stopPropagation(); onOpenGame(g.id); }} className="lg-btn-primary squircle-sm sf text-[12px] font-bold px-4 py-2 flex items-center gap-1.5">
             <svg width={11} height={11} viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><path d="M3 2 L12 7 L3 12 Z" /></svg>
@@ -4019,31 +4241,144 @@ const GameCard = ({ state = 'off', onOpenGame, onOpenDrop }) => {
       </div>
     );
   }
-  if (state === 'ready') {
-    const g = SEED_GAMES.find(x => x.status === 'just-ended');
+
+  /* ── JUST-ENDED ── Score's final, drop assembling. Animated cyan ring +
+     78% progress bar. Direct port of DS GameCardJustEnded. */
+  if (state === 'just-ended') {
+    const g = SEED_GAMES.find(x => x.status === 'just-ended') || SEED_GAMES[0];
     return (
-      <button onClick={() => onOpenDrop(g.id)} className="block w-full lg-ready-ember squircle-lg p-5 text-start relative overflow-hidden lg-aura"
-        style={{ background: `linear-gradient(180deg, var(--card-base-strong-top), var(--card-base-strong-bot))`, color: 'var(--text-primary)', border: '1px solid var(--glass-card-border)' }}>
-        <div className="flex items-center justify-between mb-3">
-          <Eyebrow>Your drop is ready</Eyebrow>
-          <div className="sf text-[11px]" style={{ color: 'var(--text-tertiary)' }}>{g.when}</div>
+      <div className="relative squircle-md overflow-hidden"
+        style={{
+          background: 'radial-gradient(ellipse 50% 70% at 22% 28%, rgba(0,214,254,0.10) 0%, transparent 60%), radial-gradient(ellipse 50% 70% at 80% 78%, rgba(255,170,90,0.08) 0%, transparent 60%), linear-gradient(180deg, var(--card-base-soft-top) 0%, var(--card-base-soft-bot) 100%)',
+          border: '1px solid var(--glass-card-border)',
+          backdropFilter: 'blur(36px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(36px) saturate(180%)',
+          boxShadow: 'inset 0 1px 0 var(--glass-card-inset-top), var(--glass-card-shadow)',
+        }}>
+        <div className="relative z-10 px-4 pt-3 pb-2 flex items-center justify-between" style={{ borderBottom: '1px solid var(--hairline)' }}>
+          <button onClick={cycle} className="flex items-center gap-2 -m-1 p-1 squircle-sm active:scale-[0.96]" title="Tap to cycle demo state">
+            <div className="w-1.5 h-1.5 rounded-full bg-halo-cyan anim-pulse-dot" style={{ boxShadow: '0 0 8px rgba(0,214,254,0.7)' }} />
+            <span className="sf text-[10px] font-bold tracking-[0.14em] uppercase" style={{ color: 'var(--brand-cyan-text)' }}>Drop incoming</span>
+          </button>
+          <span className="sf text-[10px] font-bold tracking-[0.14em] uppercase" style={{ color: 'var(--text-tertiary)' }}>Final</span>
         </div>
-        <div className="sf-display text-[22px] font-bold leading-[1.08] mb-1" style={{ color: 'var(--text-primary)' }}>{g.scoreHome}–{g.scoreAway}, you went off.</div>
-        <div className="sf text-[13px] mb-4" style={{ color: 'var(--text-tertiary)' }}>{g.momentsCount} moments — including a game-winner.</div>
-        <div className="flex items-center gap-2 mb-4">
-          {SEED_MOMENTS.slice(0,4).map((m,i) => (
-            <div key={m.id} className="w-12 h-16 squircle-sm relative overflow-hidden" style={{ background: `linear-gradient(140deg, rgba(0,214,254,0.30), rgba(132,88,255,0.25))`, border: '1px solid var(--glass-card-border)' }}>
-              <div className="absolute bottom-1 end-1 sf text-[8px] font-bold" style={{ color: 'var(--text-primary)' }}>{fmt.dur(m.dur)}</div>
+        <div className="relative z-10 p-4 flex items-end justify-between">
+          <div>
+            <div className="sf-display text-[15px] font-bold tracking-[-0.01em] leading-tight" style={{ color: 'var(--text-primary)' }}>{g.home}</div>
+            <div className="sf text-[11.5px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>vs {g.away}</div>
+          </div>
+          <div className="sf-display text-[28px] font-bold tabular-nums leading-none" style={{ color: 'var(--text-primary)' }}>
+            {g.scoreHome}<span className="mx-2" style={{ color: 'var(--text-faint)' }}>·</span>{g.scoreAway}
+          </div>
+        </div>
+        <div className="relative z-10 px-4 pb-4">
+          <div className="squircle-sm p-3 flex items-center gap-3 lg-prep-card"
+            style={{
+              background: 'var(--glass-card-bg)',
+              border: '1px solid var(--brand-cyan-border)',
+              boxShadow: 'inset 0 1px 0 var(--glass-card-inset-top), 0 4px 14px -6px rgba(0,214,254,0.25)',
+            }}>
+            <div className="relative w-12 h-12 shrink-0 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full lg-prep-spinner"
+                style={{
+                  background: 'conic-gradient(from 0deg, transparent 0deg, transparent 240deg, rgba(0,214,254,0.85) 320deg, rgba(0,214,254,0.95) 340deg, transparent 360deg)',
+                  mask: 'radial-gradient(circle, transparent 14px, black 15px)',
+                  WebkitMask: 'radial-gradient(circle, transparent 14px, black 15px)',
+                }} />
+              <div className="w-7 h-7 rounded-full lg-glass-strong flex items-center justify-center"
+                style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.30), 0 0 12px -2px rgba(0,214,254,0.45)' }}>
+                <svg width={12} height={12} viewBox="0 0 14 14" fill="none" stroke="var(--brand-cyan-text)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={{ width: 12, height: 12, display: 'block' }}>
+                  <path d="M2 7 L5 10 L12 3" />
+                </svg>
+              </div>
             </div>
-          ))}
-          <div className="sf text-[11px] font-semibold" style={{ color: 'var(--brand-cyan-text)' }}>+{g.momentsCount - 4} more</div>
+            <div className="flex-1 min-w-0">
+              <div className="sf text-[12.5px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>{g.momentsCount || 8} moments captured</div>
+              <div className="sf text-[10.5px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>Building drop · 78%</div>
+              <div className="h-[3px] mt-1.5 overflow-hidden rounded-full" style={{ background: 'var(--hairline-strong)' }}>
+                <div className="h-full bg-halo-cyan anim-pulse" style={{ width: '78%', boxShadow: '0 0 10px rgba(0,214,254,0.65)' }} />
+              </div>
+            </div>
+          </div>
         </div>
-        <PrimaryButton full icon="play">Open your drop</PrimaryButton>
+      </div>
+    );
+  }
+
+  /* ── READY ── The payoff. Drop is assembled, tap to reveal.
+     Direct port of DS GameCardReady — stacked-cards bottom block. */
+  if (state === 'ready') {
+    const g = SEED_GAMES.find(x => x.status === 'just-ended') || SEED_GAMES[0];
+    const winning = (g.scoreHome || 0) > (g.scoreAway || 0);
+    const margin = Math.abs((g.scoreHome || 0) - (g.scoreAway || 0));
+    return (
+      <button onClick={() => onOpenDrop(g.id)}
+        className="relative w-full text-start squircle-md overflow-hidden lg-aura lg-shine lg-ready-ember active:scale-[0.98]"
+        style={{
+          background: 'radial-gradient(ellipse 60% 70% at 22% 28%, rgba(0,214,254,0.18) 0%, transparent 60%), radial-gradient(ellipse 60% 70% at 80% 78%, rgba(132,88,255,0.10) 0%, transparent 60%), linear-gradient(180deg, var(--card-base-soft-top) 0%, var(--card-base-soft-bot) 100%)',
+          border: '1px solid var(--brand-cyan-border)',
+          backdropFilter: 'blur(36px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(36px) saturate(180%)',
+          transition: 'transform 120ms cubic-bezier(.2,.8,.2,1)',
+        }}>
+        <div className="relative z-10 px-4 pt-3 pb-2 flex items-center justify-between" style={{ borderBottom: '1px solid var(--hairline)' }}>
+          <div onClick={(e) => { e.stopPropagation(); cycle(); }}
+            className="flex items-center gap-2 -m-1 p-1 squircle-sm cursor-pointer active:scale-[0.96]" title="Tap to cycle demo state">
+            <div className="w-1.5 h-1.5 rounded-full bg-halo-cyan anim-pulse-dot" style={{ boxShadow: '0 0 10px rgba(0,214,254,0.85)' }} />
+            <span className="sf text-[10px] font-bold tracking-[0.14em] uppercase" style={{ color: 'var(--brand-cyan-text)' }}>Your drop is ready</span>
+          </div>
+          <span className="sf text-[10px] font-bold tracking-[0.14em] uppercase" style={{ color: 'var(--brand-cyan-text)' }}>
+            Tap <span className="icon-flip-rtl">›</span>
+          </span>
+        </div>
+        <div className="relative z-10 p-4 flex items-end justify-between">
+          <div>
+            <div className="sf-display text-[15px] font-bold tracking-[-0.01em] leading-tight" style={{ color: 'var(--text-primary)' }}>{g.home}</div>
+            <div className="sf text-[11.5px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>vs {g.away}</div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="sf-display text-[24px] font-bold tabular-nums leading-none" style={{ color: 'var(--text-primary)' }}>
+              {g.scoreHome}<span style={{ color: 'var(--text-faint)' }}> · </span>{g.scoreAway}
+            </div>
+            <div className="sf text-[10px] tracking-[0.16em] uppercase font-bold px-1.5 py-0.5 squircle-sm"
+              style={{
+                background: winning ? 'var(--brand-cyan-soft)' : 'var(--hatch-grain)',
+                border: '1px solid ' + (winning ? 'var(--brand-cyan-border)' : 'var(--hairline-strong)'),
+                color: winning ? 'var(--brand-cyan-text)' : 'var(--text-tertiary)',
+              }}>
+              {winning ? '+' + margin : 'L'}
+            </div>
+          </div>
+        </div>
+        <div className="relative z-10 px-4 pb-4">
+          <div className="relative h-[100px] lg-ready-stack">
+            <div className="absolute inset-x-12 top-3 h-[80px] lg-glass squircle-sm" style={{ transform: 'rotate(-5deg)' }} />
+            <div className="absolute inset-x-8 top-1.5 h-[90px] lg-glass-card squircle-sm" style={{ transform: 'rotate(-2deg)' }} />
+            <div className="absolute inset-x-4 top-0 h-[100px] lg-glass-strong squircle-sm flex items-center justify-between px-4"
+              style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.30), 0 8px 24px -8px rgba(0,214,254,0.35)' }}>
+              <div>
+                <div className="sf-display text-[26px] font-bold leading-none" style={{ color: 'var(--text-primary)' }}>{g.momentsCount || 8}</div>
+                <span className="sf text-[9.5px] tracking-[0.14em] font-bold uppercase mt-1 block" style={{ color: 'var(--text-tertiary)' }}>Moments</span>
+              </div>
+              <div className="text-end">
+                <div className="sf-display text-[20px] font-bold tabular-nums leading-none"
+                  style={{ color: 'var(--brand-cyan-text)', textShadow: '0 0 12px rgba(0,214,254,0.45)' }}>
+                  +{margin || 12} PTS
+                </div>
+                <span className="sf text-[9.5px] tracking-[0.14em] font-bold uppercase mt-1 block" style={{ color: 'var(--text-tertiary)' }}>
+                  {winning ? 'Your night' : 'Bright spots'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
       </button>
     );
   }
-  // default: NextGameTeaser — Daily insight is the HERO, next-game is secondary chrome.
-  // Direct port of DS screens/home/NextGameTeaser.tsx composition.
+
+  /* ── OFF (default) ── NextGameTeaser — Daily insight is the HERO,
+     next-game is secondary chrome. Tapping the eyebrow enters the
+     demo cycle at `pre`. */
   const next = SEED_GAMES.find(x => x.status === 'upcoming');
   const last = SEED_GAMES.find(x => x.status === 'just-ended');
   const lastOpp = last ? last.away.split(' ')[0] : 'Northside';
@@ -4063,13 +4398,13 @@ const GameCard = ({ state = 'off', onOpenGame, onOpenDrop }) => {
         WebkitBackdropFilter: 'blur(36px) saturate(180%)',
         color: 'var(--text-primary)',
       }}>
-      {/* Insight header — eyebrow + vs OPP link */}
+      {/* Insight header — eyebrow (tappable: enters demo cycle) + vs OPP link */}
       <div className="relative z-10 px-4 pt-4 pb-2 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <button onClick={cycle} className="flex items-center gap-2 -m-1 p-1 squircle-sm active:scale-[0.96]" title="Tap to cycle demo state">
           <div className="w-2 h-2 rounded-full bg-halo-cyan anim-pulse-dot"
             style={{ boxShadow: '0 0 12px rgba(0,214,254,0.95), 0 0 4px rgba(0,214,254,0.65)' }} />
           <span className="sf text-[10.5px] tracking-[0.18em] uppercase font-bold" style={{ color: 'var(--brand-cyan-text)' }}>Daily insight · {insight.date}</span>
-        </div>
+        </button>
         <button onClick={() => onOpenGame(last.id)} className="sf text-[10px] tracking-[0.10em] uppercase font-semibold" style={{ color: 'var(--text-tertiary)' }}>
           vs {lastOpp.toUpperCase()} <span className="icon-flip-rtl">›</span>
         </button>
@@ -4279,7 +4614,13 @@ const HomeScreen = ({ gameState, onPickMoment, onOpenGame, onOpenGameVideo, onOp
   <div className="anim-fade pb-28 sf" style={{ color: 'var(--text-primary)' }}>
     {header}
     <HighlightCircles onPickMoment={onPickMoment} onOpenGame={onOpenGame} onOpenGameVideo={onOpenGameVideo} onOpenAthlete={onOpenAthlete} />
-    <div className="px-5 lg:px-8 xl:px-12 mb-7"><GameCard state={gameState} onOpenGame={onOpenGame} onOpenDrop={onOpenDrop} /></div>
+    {/* Morph card — uses ONLY px-5 (phone gutter), no lg:/xl: extra gutter.
+        That way on desktop it extends to .ds-desktop-main's padding edge,
+        matching where the rail cards visually extend through overflow-x-auto
+        bleed (the rails have inner lg:px-8 but their fixed-width children
+        scroll past it). Card now sits flush with the visible rail extents
+        rather than nested two gutters deep. */}
+    <div className="px-5 mb-7"><GameCard state={gameState} onOpenGame={onOpenGame} onOpenDrop={onOpenDrop} /></div>
     <DropsSection onPickMoment={onPickMoment} />
     <FollowingStrip onOpenGame={onOpenGame} />
     <StorytellingDropsRail onOpenStory={onOpenStory} />
@@ -4891,7 +5232,7 @@ const FeaturedHero = ({ onWatch }) => {
               <span className="sf text-[9.5px] tracking-[0.16em] font-bold uppercase text-white">Last match</span>
             </div>
           )}
-          <span className="sf text-[9.5px] tracking-[0.14em] uppercase font-semibold" style={{ color: 'rgba(255,255,255,0.65)' }}>
+          <span className="sf text-[9.5px] tracking-[0.14em] uppercase font-semibold" style={{ color: 'var(--text-tertiary)' }}>
             Basketball · U18
           </span>
         </div>
@@ -4899,7 +5240,7 @@ const FeaturedHero = ({ onWatch }) => {
           {game.home} vs<br />
           <span style={{ color: 'rgba(255,255,255,0.85)' }}>{game.away}</span>
         </h1>
-        <div className="sf text-[12.5px] mt-2" style={{ color: 'rgba(255,255,255,0.75)' }}>
+        <div className="sf text-[12.5px] mt-2" style={{ color: 'var(--text-tertiary)' }}>
           {game.scoreHome != null ? `${game.scoreHome} — ${game.scoreAway}` : (isLive ? game.period : 'Upcoming')}
           {game.momentsCount ? ` · ${game.momentsCount} moments` : ''}
         </div>
@@ -4960,7 +5301,7 @@ const WatchHeroDesktop = ({ onWatch }) => {
               <span className="sf text-[9.5px] tracking-[0.16em] font-bold uppercase text-white">Last match</span>
             </div>
           )}
-          <span className="sf text-[10px] tracking-[0.16em] uppercase font-semibold" style={{ color: 'rgba(255,255,255,0.75)' }}>
+          <span className="sf text-[10px] tracking-[0.16em] uppercase font-semibold" style={{ color: 'var(--text-tertiary)' }}>
             Basketball · U18 · Eastside Gym
           </span>
         </div>
@@ -5097,7 +5438,7 @@ const LivePlayerScreen = ({ game, onClose }) => {
       <div className="absolute bottom-0 inset-x-0 z-10 px-5 lg:px-8 pb-10 lg:pb-12">
         <div className="sf text-[11px] uppercase tracking-[0.18em] font-bold text-halo-cyan mb-2">Now broadcasting</div>
         <h1 className="sf-display font-bold leading-tight tracking-[-0.025em] text-white" style={{ fontSize: 32 }}>
-          {game.home} <span style={{ color: 'rgba(255,255,255,0.65)' }}>vs</span> {game.away}
+          {game.home} <span style={{ color: 'var(--text-tertiary)' }}>vs</span> {game.away}
         </h1>
         <div className="sf-display tabular-nums font-bold leading-none mt-2" style={{ fontSize: 48, color: '#fff' }}>
           {game.scoreHome} <span style={{ color: 'rgba(255,255,255,0.45)' }}>–</span> {game.scoreAway}
@@ -6345,7 +6686,7 @@ const HighlightViewer = ({ momentIndex = 0, onClose, onWatchFullGame }) => {
         style={{ textShadow: '0 2px 12px rgba(0,0,0,0.45)' }}>
         {isPlayerHL && jerseyNum != null ? `#${jerseyNum} ${sectionLabel}` : sectionLabel}
       </div>
-      <div className="sf text-[13px] mb-4" style={{ color: 'rgba(255,255,255,0.75)' }}>
+      <div className="sf text-[13px] mb-4" style={{ color: 'var(--text-tertiary)' }}>
         {m.title}
       </div>
       {game && game.scoreHome != null && (
@@ -7658,7 +7999,7 @@ const PackReveal = ({ gameId, onClose, onPickMoment }) => {
             {moments.length} moments
           </h1>
           <h2 className="sf-display text-[16px] font-bold leading-tight mb-6 text-center"
-            style={{ color: 'rgba(255,255,255,0.65)' }}>
+            style={{ color: 'var(--text-tertiary)' }}>
             from {game ? `${game.home} vs ${game.away}` : 'last game'}
           </h2>
           {/* 3x2 grid of moment thumbs */}
@@ -7748,7 +8089,7 @@ const OnboardingStub = ({ flow, onDone, onExit }) => (
         <h1 className="sf-display text-[24px] font-bold leading-tight tracking-[-0.02em] mb-2">
           {flow === 'player' ? 'Player onboarding' : 'Fan onboarding'}
         </h1>
-        <p className="sf text-[13px] leading-relaxed max-w-[320px]" style={{ color: 'rgba(255,255,255,0.65)' }}>
+        <p className="sf text-[13px] leading-relaxed max-w-[320px]" style={{ color: 'var(--text-tertiary)' }}>
           {flow === 'player'
             ? 'Coach-invite flow — invite-entry → signup/signin → teams-locked → claim-and-follow → notif-upsell. Full port coming in the next turn.'
             : 'Persona picker → teams → players → claim → done. Full port coming in the next turn.'}
@@ -7871,10 +8212,10 @@ const PersonaStep = ({ onPick, onBack }) => (
   <>
     <OnboardStepper step={1} total={3} onBack={onBack} label="Step 1 of 3" />
     <div className="flex-1 onb-scroll px-6 pt-4 pb-[120px] anim-fade">
-      <h1 className="sf-display text-[26px] font-bold text-white leading-[1.05] tracking-[-0.025em] mb-2">
+      <h1 className="sf-display text-[26px] font-bold leading-[1.05] tracking-[-0.025em] mb-2">
         Welcome to Halo
       </h1>
-      <p className="sf text-[13px] leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.65)' }}>
+      <p className="sf text-[13px] leading-relaxed mb-6" style={{ color: 'var(--text-tertiary)' }}>
         Tell us who you are so we can tailor your experience.
       </p>
       <div className="space-y-2.5">
@@ -7998,34 +8339,46 @@ const LeagueAccordion = ({ chosen, toggle, setChosen, query = '' }) => {
                     </button>
                   </div>
                 )}
-                <div className="px-2 pb-2">
+                {/* Square-tile grid: 2 cols on phone, 4 cols on lg+. The
+                    player flow's sidebar-canvas content area is 820px,
+                    so 4 columns sit comfortably (~170px tiles); the fan
+                    flow's narrower 480px centered card squeezes them
+                    tighter (~100px), still readable. */}
+                <div className="px-3 pb-3 grid grid-cols-2 lg:grid-cols-4 gap-2.5">
                   {teams.map(team => {
                     const active = chosen.includes(team.id);
                     return (
                       <button key={team.id} type="button" onClick={() => toggle(team.id)} aria-pressed={active}
-                        className="w-full text-start squircle-sm p-2.5 flex items-center gap-3 lg-aura"
+                        className="relative aspect-square squircle-md p-3 flex flex-col items-center justify-center text-center lg-aura transition-all"
                         style={{
-                          background: active ? 'rgba(0,214,254,0.10)' : 'transparent',
-                          border: active ? '1px solid rgba(0,214,254,0.40)' : '1px solid transparent',
-                          marginBlockEnd: 4,
+                          background: active ? 'rgba(0,214,254,0.10)' : 'var(--glass-card-bg)',
+                          border: '1px solid ' + (active ? 'var(--brand-cyan-border)' : 'var(--glass-card-border)'),
+                          boxShadow: active
+                            ? 'inset 0 1px 0 var(--glass-card-inset-top), 0 0 24px -6px var(--brand-cyan-glow)'
+                            : 'inset 0 1px 0 var(--glass-card-inset-top)',
                         }}>
-                        <div className="w-9 h-9 squircle-sm lg-glass-strong flex items-center justify-center shrink-0">
-                          <span className="sf-display text-[11px] font-bold text-white">{team.initial}</span>
+                        <div className="w-12 h-12 squircle-sm lg-glass-strong flex items-center justify-center mb-2 shrink-0">
+                          <span className="sf-display text-[13.5px] font-bold text-white">{team.initial}</span>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="sf-display text-[13.5px] font-bold leading-tight truncate" style={{ color: 'var(--text-primary)' }}>{team.name}</div>
-                          <div className="sf text-[10.5px] mt-0.5 truncate" style={{ color: 'var(--text-tertiary)' }}>{team.org} · {team.division}</div>
+                        <div className="sf-display text-[13px] font-bold leading-tight tracking-[-0.01em] line-clamp-1 w-full" style={{ color: 'var(--text-primary)' }}>
+                          {team.name}
                         </div>
-                        <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
-                          style={active ? { background: 'var(--brand-cyan)' } : { background: 'var(--hatch-grain)', border: '1px solid var(--hairline-strong)' }}>
-                          {active && (
-                            <svg width={10} height={10} viewBox="0 0 14 14" fill="none" stroke="#000"
-                              strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"
-                              style={{ width: 10, height: 10, display: 'block' }}>
+                        <div className="sf text-[10.5px] leading-tight mt-1 line-clamp-2 w-full" style={{ color: 'var(--text-tertiary)' }}>
+                          {team.org} · {team.division}
+                        </div>
+                        {active && (
+                          <div className="absolute top-2 end-2 w-6 h-6 rounded-full flex items-center justify-center"
+                            style={{
+                              background: 'var(--brand-cyan)',
+                              boxShadow: '0 0 12px var(--brand-cyan-glow), 0 1px 2px rgba(0,0,0,0.30)',
+                              border: '2px solid var(--canvas-bg)',
+                            }}>
+                            <svg width={11} height={11} viewBox="0 0 14 14" fill="none" stroke="#000"
+                              strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
                               <path d="M3 7 L6 10 L11 4" />
                             </svg>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </button>
                     );
                   })}
@@ -8052,10 +8405,10 @@ const TeamsStep = ({ chosen, setChosen, onBack, onNext }) => {
     <>
       <OnboardStepper step={2} total={3} onBack={onBack} label="Step 2 of 3" />
       <div className="flex-1 onb-scroll px-5 pt-4 pb-[120px] anim-fade">
-        <h1 className="sf-display text-[24px] font-bold text-white leading-[1.05] tracking-[-0.025em] mb-2">
+        <h1 className="sf-display text-[24px] font-bold leading-[1.05] tracking-[-0.025em] mb-2">
           Pick teams to follow
         </h1>
-        <p className="sf text-[13px] leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.65)' }}>
+        <p className="sf text-[13px] leading-relaxed mb-6" style={{ color: 'var(--text-tertiary)' }}>
           Add the teams whose games and highlights you want in your feed.
         </p>
         <div className="lg-glass-card squircle-md px-3.5 py-2.5 flex items-center gap-2.5 mb-4">
@@ -8260,10 +8613,10 @@ const PlayersStep = ({ chosenTeams, chosenPlayers, togglePlayer, setChosenPlayer
     <>
       <OnboardStepper step={3} total={3} onBack={onBack} label="Step 3 of 3" />
       <div className="flex-1 onb-scroll px-5 pt-4 pb-[120px] anim-fade">
-        <h1 className="sf-display text-[24px] font-bold text-white leading-[1.05] tracking-[-0.025em] mb-2">
+        <h1 className="sf-display text-[24px] font-bold leading-[1.05] tracking-[-0.025em] mb-2">
           Follow players you care about
         </h1>
-        <p className="sf text-[13px] leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.65)' }}>
+        <p className="sf text-[13px] leading-relaxed mb-6" style={{ color: 'var(--text-tertiary)' }}>
           We'll surface their highlights and notify you when they're live.
         </p>
         <div className="lg-glass-card squircle-md px-3.5 py-2.5 flex items-center gap-2.5 mb-4">
@@ -8362,7 +8715,7 @@ const FanOnboarding = ({ onDone, onExit }) => {
      button buried below the fold" complaint in one shot — sticky
      binds to the single scroll container regardless of device. */
   return (
-    <div data-theme="dark" className="anim-fade text-white sf" style={{ position: 'absolute', inset: 0, background: 'var(--canvas-bg)' }}>
+    <div className="anim-fade sf" style={{ position: 'absolute', inset: 0, background: 'var(--canvas-bg)', color: 'var(--text-primary)' }}>
       <div className="lg-atmosphere" />
       <div className="absolute inset-0 z-[1] pointer-events-none"
         style={{ background: 'linear-gradient(180deg, var(--vignette-corner) 0%, transparent 30%, transparent 70%, var(--vignette-corner-soft) 100%)' }} />
@@ -8428,7 +8781,7 @@ const PlayerInviteEntry = ({ teamId, onSignUp, onSignIn, onBack }) => {
           You're invited
         </p>
         {/* Headline */}
-        <h1 className="sf-display font-bold text-white leading-[1.05] tracking-[-0.025em] mb-3" style={{ fontSize: 30 }}>
+        <h1 className="sf-display font-bold leading-[1.05] tracking-[-0.025em] mb-3" style={{ fontSize: 30 }}>
           Welcome to Halo
         </h1>
         {/* Team chip */}
@@ -8764,67 +9117,128 @@ const FullSignUpScreen = ({ onSubmit, onSwitchToSignIn, onBack, form, setForm })
   return (
     <>
     {onBack && <OnboardStepper step={1} total={4} onBack={onBack} label="Step 1 of 4" />}
-    <div className="flex-1 onb-scroll pt-10 pb-12 anim-fade">
+    {/* Mobile: pb-[120px] keeps the form's last field above the sticky
+        OnboardDock that gets pinned below. Desktop: pb-12 is enough because
+        the Continue button is inline (no sticky dock there — the sidebar-
+        canvas right column would dwarf a 440px-wide dock). */}
+    <div className="flex-1 onb-scroll pt-10 pb-[120px] lg:pb-12 anim-fade">
       <div className="px-5">
-        <h1 className="sf-display text-[28px] font-bold text-white leading-[1.05] tracking-[-0.025em] mb-2">Create your account</h1>
-        <p className="sf text-[13px] leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.65)' }}>
+        <h1 className="sf-display text-[28px] font-bold leading-[1.05] tracking-[-0.025em] mb-2">Create your account</h1>
+        <p className="sf text-[13px] leading-relaxed mb-6" style={{ color: 'var(--text-tertiary)' }}>
           We use this to verify you're old enough and to deliver your highlights.
         </p>
-        <div className="space-y-3">
-          <SignUpField label="Full name" value={name} onChange={setName} placeholder="Tal Weiss" autoFocus />
-          <SignUpField label="Email" type="email" value={email} onChange={setEmail} placeholder="you@school.com" />
-          <SignUpField label="Password" type="password" value={password} onChange={setPassword} placeholder="Strong password"
-            hint="Min 8 characters, 1 uppercase, 1 number" showPw={showPw} onToggleShowPw={toggleShowPw} />
-          <SignUpField label="Confirm password" type="password" value={confirmPw} onChange={setConfirmPw} placeholder="Re-enter password"
-            hint={confirmPw && !pwMatch ? "Passwords don't match" : null} showPw={showPw} onToggleShowPw={toggleShowPw} />
-          {/* Custom 3-column date picker (Month / Day / Year) replaces the
-              native date input. Cleaner on dark theme + works on every
-              browser without the OS date sheet. */}
-          <BirthDatePicker value={birthDate} onChange={setBirthDate} />
-          {/* Phone with country dial code + flag. Country selector here is
-              independent from the Country field below so a Canadian-born
-              user living in the US can keep their +1 number without
-              picking US as their country. */}
-          <PhoneField countryCode={phoneCountry} onCountryChange={setPhoneCountry}
-            phone={phone} onPhoneChange={setPhone} />
-          {isUnder13 ? (
-            <div className="squircle-md p-4" style={{ background: 'rgba(220,38,38,0.10)', border: '1px solid rgba(220,38,38,0.40)' }}>
-              <div className="sf-display text-[14px] font-bold mb-1" style={{ color: '#fca5a5' }}>You need to be 13 or older</div>
-              <p className="sf text-[12px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.65)' }}>
-                Halo accounts are restricted to ages 13 and up. Ask your parent or coach to set this up with you.
-              </p>
+        {/* === Sectioned signup form ===
+            Mobile: single column, no section headings (linear flow). Each
+            grid block falls back to grid-cols-1 with vertical gap-3.
+            Desktop (lg+): two labeled sections — "Account" + "Profile" —
+            each a 2-col grid, fitting everything on one screen without
+            scroll on a typical 768–900px viewport.
+            Section heading uses `hidden lg:flex` so mobile stays clean. */}
+        <div className="space-y-5 lg:space-y-7">
+          {/* ── Account ── */}
+          <section>
+            <div className="hidden lg:flex items-center gap-3 mb-3">
+              <span className="sf text-[10.5px] tracking-[0.2em] uppercase font-bold" style={{ color: 'var(--text-tertiary)' }}>Account</span>
+              <div className="flex-1 h-px" style={{ background: 'var(--hairline)' }} />
             </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
+              <SignUpField label="Full name" value={name} onChange={setName} placeholder="Tal Weiss" autoFocus />
+              <SignUpField label="Email" type="email" value={email} onChange={setEmail} placeholder="you@school.com" />
+              <SignUpField label="Password" type="password" value={password} onChange={setPassword} placeholder="Strong password"
+                hint="Min 8 characters, 1 uppercase, 1 number" showPw={showPw} onToggleShowPw={toggleShowPw} />
+              <SignUpField label="Confirm password" type="password" value={confirmPw} onChange={setConfirmPw} placeholder="Re-enter password"
+                hint={confirmPw && !pwMatch ? "Passwords don't match" : null} showPw={showPw} onToggleShowPw={toggleShowPw} />
+            </div>
+          </section>
+
+          {/* ── Profile ── (or under-13 short-circuit) */}
+          {isUnder13 ? (
+            <section>
+              <div className="hidden lg:flex items-center gap-3 mb-3">
+                <span className="sf text-[10.5px] tracking-[0.2em] uppercase font-bold" style={{ color: 'var(--text-tertiary)' }}>Profile</span>
+                <div className="flex-1 h-px" style={{ background: 'var(--hairline)' }} />
+              </div>
+              <BirthDatePicker value={birthDate} onChange={setBirthDate} />
+              <div className="mt-3 squircle-md p-4" style={{ background: 'rgba(220,38,38,0.10)', border: '1px solid rgba(220,38,38,0.40)' }}>
+                <div className="sf-display text-[14px] font-bold mb-1" style={{ color: '#fca5a5' }}>You need to be 13 or older</div>
+                <p className="sf text-[12px] leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>
+                  Halo accounts are restricted to ages 13 and up. Ask your parent or coach to set this up with you.
+                </p>
+              </div>
+            </section>
           ) : (
-            <>
-              <SignUpSelect label="Gender" value={gender} onChange={setGender} options={GENDERS} placeholder="Select your gender" />
-              {/* Country select now sources from the COUNTRIES table — each
-                  option carries an emoji flag + display name. Stored value
-                  is ISO code. Label sits ABOVE the card so the field
-                  matches the rest of the sign-up form. */}
-              <div>
-                <SignUpFieldLabel>Country</SignUpFieldLabel>
-                <div className="lg-glass-card squircle-md px-3.5 py-3">
-                  <select value={country} onChange={(e) => setCountry(e.target.value)}
-                    className="auth-input sf text-[14.5px] w-full" style={{ background: 'transparent' }}>
-                    <option value="" disabled style={{ background: '#0a0d18' }}>Select your country</option>
-                    {COUNTRIES.map(c => (
-                      <option key={c.code} value={c.code} style={{ background: '#0a0d18' }}>
-                        {c.flag} {c.name}
-                      </option>
-                    ))}
-                  </select>
+            <section>
+              <div className="hidden lg:flex items-center gap-3 mb-3">
+                <span className="sf text-[10.5px] tracking-[0.2em] uppercase font-bold" style={{ color: 'var(--text-tertiary)' }}>Profile</span>
+                <div className="flex-1 h-px" style={{ background: 'var(--hairline)' }} />
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
+                {/* DOB + Phone are wider components (3 dropdowns / country+number),
+                    but they still fit comfortably in a half-column at ~290px
+                    cell width on lg cards. */}
+                <BirthDatePicker value={birthDate} onChange={setBirthDate} />
+                <PhoneField countryCode={phoneCountry} onCountryChange={setPhoneCountry}
+                  phone={phone} onPhoneChange={setPhone} />
+                <SignUpSelect label="Gender" value={gender} onChange={setGender} options={GENDERS} placeholder="Select your gender" />
+                {/* Country select — inline because it sources from COUNTRIES
+                    (emoji flag + display name) and stores ISO code, not a
+                    plain string like SignUpSelect's generic options[]. */}
+                <div>
+                  <SignUpFieldLabel>Country</SignUpFieldLabel>
+                  <div className="lg-glass-card squircle-md px-3.5 py-3">
+                    <select value={country} onChange={(e) => setCountry(e.target.value)}
+                      className="auth-input sf text-[14.5px] w-full" style={{ background: 'transparent' }}>
+                      <option value="" disabled style={{ background: '#0a0d18' }}>Select your country</option>
+                      {COUNTRIES.map(c => (
+                        <option key={c.code} value={c.code} style={{ background: '#0a0d18' }}>
+                          {c.flag} {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
-            </>
+            </section>
           )}
         </div>
 
-        {/* Inline Continue button — sits in the form's px-5 column so it
-            renders at exactly the input-row width. (Previously wrapped in
-            OnboardDock, which double-padded and ran narrower than the
-            inputs above.) Adequate bottom space comes from outer pb-12. */}
+        {/* DESKTOP-ONLY inline Continue + sign-in link.
+            Renders inside the form's px-5 column at the same width as the
+            inputs. We can't use OnboardDock here because the desktop layout
+            is sidebar-canvas (820px right column) — a 440px-capped sticky
+            dock would look stranded and the form's tab order would feel
+            broken with a floating CTA over wide content. Mobile gets the
+            sticky dock version below as a sibling. */}
+        <div className="hidden lg:block">
+          <button onClick={valid ? onSubmit : undefined} disabled={!valid}
+            className="mt-7 squircle-md py-4 w-full sf text-[14.5px] font-semibold transition-all"
+            style={{
+              color: !valid ? 'rgba(255,255,255,0.40)' : '#0a0d18',
+              background: !valid ? 'var(--glass-card-bg)' : 'linear-gradient(180deg, rgba(0,235,255,1) 0%, rgba(0,200,250,1) 100%)',
+              border: !valid ? '1px solid var(--glass-card-border)' : 'none',
+              boxShadow: !valid ? 'none' : '0 8px 24px -8px rgba(0,214,254,0.55), inset 0 1px 0 rgba(255,255,255,0.40)',
+              cursor: !valid ? 'not-allowed' : 'pointer',
+            }}>
+            Continue
+          </button>
+          <button onClick={onSwitchToSignIn} className="w-full sf text-[12px] text-center mt-2.5"
+            style={{ color: 'var(--text-tertiary)' }}>
+            Already have an account? <span className="font-semibold" style={{ color: 'var(--brand-cyan-text)' }}>Sign in</span>
+          </button>
+        </div>
+      </div>{/* /px-5 inner column */}
+    </div>
+    {/* MOBILE-ONLY sticky CTA dock.
+        OnboardDock binds sticky to the orchestrator's .onb-scroll-area
+        outer (PlayerOnboarding owns the only scroll container). The dock
+        stays pinned to the viewport bottom while the form scrolls behind.
+        Bottom-aligned sign-in link doubles as the "secondary" action so
+        the user never has to scroll past the last form field to either
+        continue OR switch flows. */}
+    <div className="lg:hidden">
+      <OnboardDock>
         <button onClick={valid ? onSubmit : undefined} disabled={!valid}
-          className="mt-7 squircle-md py-4 w-full sf text-[14.5px] font-semibold transition-all"
+          className="squircle-md py-4 w-full sf text-[14.5px] font-semibold transition-all"
           style={{
             color: !valid ? 'rgba(255,255,255,0.40)' : '#0a0d18',
             background: !valid ? 'var(--glass-card-bg)' : 'linear-gradient(180deg, rgba(0,235,255,1) 0%, rgba(0,200,250,1) 100%)',
@@ -8838,7 +9252,7 @@ const FullSignUpScreen = ({ onSubmit, onSwitchToSignIn, onBack, form, setForm })
           style={{ color: 'var(--text-tertiary)' }}>
           Already have an account? <span className="font-semibold" style={{ color: 'var(--brand-cyan-text)' }}>Sign in</span>
         </button>
-      </div>{/* /px-5 inner column */}
+      </OnboardDock>
     </div>
     </>
   );
@@ -8865,10 +9279,10 @@ const TeamsStepLocked = ({ lockedTeamId, chosen, setChosen, onBack, onNext }) =>
     <>
       <OnboardStepper step={2} total={4} onBack={onBack} label="Step 2 of 4" />
       <div className="flex-1 onb-scroll px-5 pt-4 pb-[120px] anim-fade">
-        <h1 className="sf-display text-[24px] font-bold text-white leading-[1.05] tracking-[-0.025em] mb-2">
+        <h1 className="sf-display text-[24px] font-bold leading-[1.05] tracking-[-0.025em] mb-2">
           Your team
         </h1>
-        <p className="sf text-[13px] leading-relaxed mb-5" style={{ color: 'rgba(255,255,255,0.65)' }}>
+        <p className="sf text-[13px] leading-relaxed mb-5" style={{ color: 'var(--text-tertiary)' }}>
           You were added to this team via your invite. Add more teams to follow below.
         </p>
         {/* Locked-team hero card */}
@@ -9075,10 +9489,10 @@ const ClaimAndFollow = ({ teamId, claimedSelfId, setClaimedSelfId, chosenPlayers
     <>
       <OnboardStepper step={3} total={4} onBack={onBack} label="Step 3 of 4" />
       <div className="flex-1 onb-scroll px-5 pt-4 pb-[120px] anim-fade">
-        <h1 className="sf-display text-[24px] font-bold text-white leading-[1.05] tracking-[-0.025em] mb-2">
+        <h1 className="sf-display text-[24px] font-bold leading-[1.05] tracking-[-0.025em] mb-2">
           Which one is you?
         </h1>
-        <p className="sf text-[13px] leading-relaxed mb-5" style={{ color: 'rgba(255,255,255,0.65)' }}>
+        <p className="sf text-[13px] leading-relaxed mb-5" style={{ color: 'var(--text-tertiary)' }}>
           Tap your jersey to claim it. We'll auto-follow your teammates so their highlights show up too.
         </p>
         {team && (
@@ -9272,7 +9686,7 @@ const NotifUpsell = ({ onAllow, onSkip, onBack }) => (
               boxShadow: '0 0 14px rgba(0,214,254,0.7), 0 0 0 3px var(--canvas-bg)',
             }} />
         </div>
-        <h1 className="sf-display font-bold text-white leading-[1.05] tracking-[-0.025em] mb-3" style={{ fontSize: 28 }}>
+        <h1 className="sf-display font-bold leading-[1.05] tracking-[-0.025em] mb-3" style={{ fontSize: 28 }}>
           Never miss a moment
         </h1>
         <p className="sf text-[14px] leading-relaxed mb-7 max-w-[300px]" style={{ color: 'var(--text-tertiary)' }}>
@@ -9325,6 +9739,93 @@ const NotifUpsell = ({ onAllow, onSkip, onBack }) => (
        → notif-upsell → done(Home) */
 const DEFAULT_INVITE = { teamId: 't1' };
 
+/* OnboardSidebar — desktop-only persistent rail showing the player flow
+   as a vertical step list. Sits inside .onb-with-sidebar > flex-row;
+   `hidden lg:flex` on the outer so mobile never sees it. Steps are
+   clickable for demo navigation; in production this would gate to
+   completed steps only via a `reached` index. */
+const ONB_PLAYER_STEPS = [
+  { id: 1, label: 'Welcome',       sub: 'Tap into your team',  matches: ['invite-entry', 'signup', 'signin'] },
+  { id: 2, label: 'Teams',         sub: 'Pick who to follow',  matches: ['teams-locked'] },
+  { id: 3, label: 'Players',       sub: 'Claim your jersey',   matches: ['claim-and-follow'] },
+  { id: 4, label: 'Notifications', sub: 'Stay in the loop',    matches: ['notif-upsell'] },
+];
+const STEP_TO_STEP_KEY = {
+  1: 'invite-entry',
+  2: 'teams-locked',
+  3: 'claim-and-follow',
+  4: 'notif-upsell',
+};
+
+const OnboardSidebar = ({ currentStep, onJumpTo, onExit }) => {
+  const currentIdx = ONB_PLAYER_STEPS.findIndex(s => s.matches.includes(currentStep));
+  return (
+    <aside className="hidden lg:flex flex-col shrink-0"
+      style={{
+        width: 280,
+        borderInlineEnd: '1px solid var(--hairline)',
+        background: 'var(--canvas-bg-soft)',
+      }}>
+      {/* Brand + close cluster */}
+      <div className="px-6 pt-8 pb-10 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-[10px] flex items-center justify-center sf-display"
+            style={{
+              background: 'linear-gradient(135deg, rgba(0,214,254,0.95) 0%, rgba(0,150,200,1) 100%)',
+              color: '#0a0d18', fontSize: 18, fontWeight: 800, letterSpacing: '-0.04em',
+              boxShadow: '0 0 18px rgba(0,214,254,0.30)',
+            }}>H</div>
+          <span className="sf-display text-[15px] font-bold tracking-[-0.01em]" style={{ color: 'var(--text-primary)' }}>Halo</span>
+        </div>
+        {onExit && (
+          <button onClick={onExit} aria-label="Exit onboarding"
+            className="w-8 h-8 lg-glass squircle-sm flex items-center justify-center"
+            style={{ color: 'var(--text-secondary)' }}>
+            <Icon name="close" size={11} stroke={1.8} />
+          </button>
+        )}
+      </div>
+
+      {/* Step list */}
+      <nav className="flex-1 px-3 relative">
+        {ONB_PLAYER_STEPS.map((s, i) => {
+          const state = i < currentIdx ? 'past' : i === currentIdx ? 'current' : 'future';
+          const canJump = state !== 'future';
+          return (
+            <div key={s.id} className="relative">
+              <button type="button"
+                className="onb-sidebar-step"
+                data-state={state}
+                onClick={() => canJump && onJumpTo && onJumpTo(STEP_TO_STEP_KEY[s.id])}
+                disabled={!canJump}>
+                <div className="onb-sidebar-step-num">
+                  {state === 'past' ? (
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 7 L6 10 L11 4" />
+                    </svg>
+                  ) : s.id}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="onb-sidebar-step-label">{s.label}</div>
+                  <div className="onb-sidebar-step-sub">{s.sub}</div>
+                </div>
+              </button>
+              {i < ONB_PLAYER_STEPS.length - 1 && <div className="onb-sidebar-connector" />}
+            </div>
+          );
+        })}
+      </nav>
+
+      {/* Bottom — quiet help link area */}
+      <div className="px-6 py-6">
+        <div className="sf text-[11px]" style={{ color: 'var(--text-faint)' }}>
+          Step {currentIdx + 1} of {ONB_PLAYER_STEPS.length} · Player onboarding
+        </div>
+      </div>
+    </aside>
+  );
+};
+
 const PlayerOnboarding = ({ onDone, onExit, inviteContext = DEFAULT_INVITE }) => {
   const [step, setStep] = useState('invite-entry');
   const [chosenTeams, setChosenTeams] = useState([inviteContext.teamId]);
@@ -9357,16 +9858,30 @@ const PlayerOnboarding = ({ onDone, onExit, inviteContext = DEFAULT_INVITE }) =>
      card's 480px width, pinning the whole onboarding flow to the
      inline-start edge of the viewport. With w-full the outer div spans
      the full track and the inner card's `lg:mx-auto` centers it. */
-  /* Same single-scroll-container architecture as FanOnboarding. See the
-     ASCII diagram there for the full rationale. The card grows naturally
-     inside .onb-scroll-area, sticky descendants bind to it. */
+  /* Player onboarding — desktop wears a SaaS sidebar-canvas layout:
+     persistent left rail (280px) with vertical step list, full-bleed
+     right content (no card border). Mobile stays exactly as before —
+     full-bleed scroll with the OnboardStepper at the top. The two
+     layouts share the same step components; only the orchestrator
+     wrapper changes between viewports.
+
+     `.onb-with-sidebar` class on the outer scopes the CSS rule that
+     hides nested OnboardSteppers on lg+ so the sidebar isn't duplicated
+     by an in-content stepper. Fan flow's stepper is unaffected because
+     it doesn't carry this class. */
   return (
-    <div data-theme="dark" className="anim-fade text-white sf" style={{ position: 'absolute', inset: 0, background: 'var(--canvas-bg)' }}>
+    <div className="anim-fade sf onb-with-sidebar" style={{ position: 'absolute', inset: 0, background: 'var(--canvas-bg)', color: 'var(--text-primary)' }}>
       <div className="lg-atmosphere" />
       <div className="absolute inset-0 z-[1] pointer-events-none"
         style={{ background: 'linear-gradient(180deg, var(--vignette-corner) 0%, transparent 30%, transparent 70%, var(--vignette-corner-soft) 100%)' }} />
-      <div className="flex-1 onb-scroll-area">
-        <div className="relative flex flex-col min-h-full lg:max-w-[480px] lg:mx-auto lg:my-10 lg:rounded-[24px] lg:border lg:border-white/10 lg:min-h-[640px]">
+      <div className="absolute inset-0 z-10 flex flex-col lg:flex-row">
+        <OnboardSidebar
+          currentStep={step}
+          onJumpTo={(s) => setStep(s)}
+          onExit={onExit} />
+        <main className="relative flex-1 min-w-0">
+          <div className="onb-scroll-area">
+            <div className="relative flex flex-col min-h-full lg:max-w-[820px] lg:mx-auto lg:px-12 lg:py-2">
           {step === 'invite-entry' && (
             <PlayerInviteEntry teamId={inviteContext.teamId}
               onSignUp={() => setStep('signup')}
@@ -9410,8 +9925,10 @@ const PlayerOnboarding = ({ onDone, onExit, inviteContext = DEFAULT_INVITE }) =>
             <NotifUpsell onBack={() => setStep('claim-and-follow')}
               onAllow={onDone} onSkip={onDone} />
           )}
-        </div>
-      </div>
+            </div>{/* /content max-width wrapper */}
+          </div>{/* /onb-scroll-area */}
+        </main>
+      </div>{/* /flex-row sidebar+content */}
     </div>
   );
 };
@@ -9487,7 +10004,7 @@ const ForgotPasswordScreen = ({ onBack }) => {
         <h1 className="sf-display text-[24px] font-bold text-white leading-tight tracking-[-0.022em] mb-2">
           Check your inbox
         </h1>
-        <p className="sf text-[13px] leading-relaxed max-w-[260px] mx-auto mb-8" style={{ color: 'rgba(255,255,255,0.65)' }}>
+        <p className="sf text-[13px] leading-relaxed max-w-[260px] mx-auto mb-8" style={{ color: 'var(--text-tertiary)' }}>
           We sent a reset link to {email || 'your email'}. If it doesn't show in a minute, peek in spam.
         </p>
         <button onClick={onBack}
@@ -9567,7 +10084,7 @@ const ResetPasswordScreen = ({ onBack, onRequestNewLink, invalidToken = false })
         <h1 className="sf-display text-[24px] font-bold text-white leading-tight tracking-[-0.022em] mb-2">
           This link expired
         </h1>
-        <p className="sf text-[13px] leading-relaxed max-w-[260px] mx-auto mb-8" style={{ color: 'rgba(255,255,255,0.65)' }}>
+        <p className="sf text-[13px] leading-relaxed max-w-[260px] mx-auto mb-8" style={{ color: 'var(--text-tertiary)' }}>
           For your security, reset links work once and only for an hour. Request a fresh one.
         </p>
         <button onClick={onRequestNewLink}
@@ -9597,7 +10114,7 @@ const ResetPasswordScreen = ({ onBack, onRequestNewLink, invalidToken = false })
         <h1 className="sf-display text-[24px] font-bold text-white leading-tight tracking-[-0.022em] mb-2">
           Password updated
         </h1>
-        <p className="sf text-[13px] leading-relaxed max-w-[260px] mx-auto mb-8" style={{ color: 'rgba(255,255,255,0.65)' }}>
+        <p className="sf text-[13px] leading-relaxed max-w-[260px] mx-auto mb-8" style={{ color: 'var(--text-tertiary)' }}>
           All set. Sign in with your new password.
         </p>
         <button onClick={onBack}
