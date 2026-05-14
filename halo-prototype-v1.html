@@ -72,7 +72,11 @@
   .scroll-area { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
   .scroll-area::-webkit-scrollbar { width: 0; display: none; }
   .hatch { background-image: repeating-linear-gradient(45deg, rgba(0,0,0,0.04) 0, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 6px); }
-  .hatch-dark { background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.06) 0, rgba(255,255,255,0.06) 1px, transparent 1px, transparent 6px); }
+  /* Theme-aware textural hatch — was hardcoded rgba(255,255,255,0.06)
+     which painted invisibly on the cream canvas in light mode. The
+     --hatch-pattern token resolves to a light tint on dark surfaces and
+     a dark tint on light surfaces, so textural depth survives the flip. */
+  .hatch-dark { background-image: repeating-linear-gradient(45deg, var(--hatch-pattern) 0, var(--hatch-pattern) 1px, transparent 1px, transparent 6px); }
 
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
   @keyframes ping { 0%{transform:scale(1);opacity:1} 75%,100%{transform:scale(2.4);opacity:0} }
@@ -173,13 +177,107 @@
     --state-live:       #DC2626;
     --state-live-glow:  rgba(220,38,38,0.55);
     --state-live-soft:  rgba(220,38,38,0.20);
+    /* Hatch pattern token — light tint on dark in dark mode, dark tint
+       on cream in light mode. .hatch-dark consumes this so texture
+       depth survives the theme flip. */
+    --hatch-pattern:    rgba(255,255,255,0.06);
     /* Auth segmented toggle — bright-white active state in dark mode */
     --auth-tab-active-bg:   #ffffff;
     --auth-tab-active-text: #0a0c12;
     /* Client co-brand navy — matches BrandPanel + ClientLogoHero */
     --client-accent: #0a1f3d;
   }
-  /* === LIGHT MODE === */
+
+  /* === DARK MODE OVERRIDE ===
+     :root holds the dark-mode defaults, and [data-theme="light"] below
+     overrides for light mode. BUT — onboarding, auth, video viewers
+     etc. all set data-theme="dark" on their own root to *force* dark
+     regardless of the user's preference. Without this selector that
+     attribute is inert, and when the user is in light mode the
+     force-dark subtree silently inherits light tokens — leaving every
+     hardcoded white-on-dark component (headlines, the dock gradient,
+     etc.) painted onto a cream canvas.
+
+     Duplicating the dark token values under [data-theme="dark"]
+     re-asserts them whenever the attribute appears anywhere in the
+     tree, so the force-dark pattern actually works. Tokens stay in
+     sync with :root by being verbatim copies. */
+  [data-theme="dark"] {
+    --canvas-bg: #000;
+    --canvas-bg-soft: #030308;
+    --text-primary:   #fff;
+    --text-secondary: rgba(255,255,255,0.85);
+    --text-tertiary:  rgba(255,255,255,0.65);
+    --text-muted:     rgba(255,255,255,0.55);
+    --text-faint:     rgba(255,255,255,0.45);
+    --text-disabled:  rgba(255,255,255,0.25);
+    --glass-bg:        rgba(20,22,30,0.55);
+    --glass-card-bg:   rgba(28,30,40,0.42);
+    --glass-strong-bg: rgba(255,255,255,0.10);
+    --menu-surface:    rgba(20,22,32,0.88);
+    --glass-border:        rgba(255,255,255,0.08);
+    --glass-card-border:   rgba(255,255,255,0.10);
+    --glass-strong-border: rgba(255,255,255,0.18);
+    --hairline: rgba(255,255,255,0.08);
+    --hairline-soft: rgba(255,255,255,0.06);
+    --hairline-strong: rgba(255,255,255,0.12);
+    --glass-inset-top:        rgba(255,255,255,0.10);
+    --glass-card-inset-top:   rgba(255,255,255,0.14);
+    --glass-strong-inset-top: rgba(255,255,255,0.24);
+    --glass-shadow:        0 8px 24px -8px rgba(0,0,0,0.40);
+    --glass-card-shadow:   0 12px 40px -12px rgba(0,0,0,0.55);
+    --glass-strong-shadow: 0 16px 48px -16px rgba(0,0,0,0.55);
+    --brand-cyan:       #00D6FE;
+    --brand-cyan-text:  #00D6FE;
+    --brand-cyan-deep:  #0099B8;
+    --brand-cyan-soft:  rgba(0,214,254,0.15);
+    --brand-cyan-glow:  rgba(0,214,254,0.50);
+    --brand-cyan-border: rgba(0,214,254,0.45);
+    --btn-primary-spec:  rgba(255,255,255,0.95);
+    --btn-primary-glow:  rgba(0,214,254,0.28);
+    --btn-disabled-spec: rgba(255,255,255,0.40);
+    --btn-disabled-bg:   rgba(255,255,255,0.32);
+    --btn-disabled-text: rgba(20,20,26,0.62);
+    --atm-tint-1: rgba(0,214,254,0.05);
+    --atm-tint-2: rgba(132,88,255,0.04);
+    --atm-tint-3: rgba(255,92,158,0.03);
+    --atm-base-start: #000;
+    --atm-base-mid:   #030308;
+    --atm-base-end:   #000;
+    --btn-primary-bg:   rgba(255,255,255,0.96);
+    --btn-primary-text: #000;
+    --btn-primary-border: rgba(255,255,255,0.6);
+    --btn-primary-shadow: 0 6px 18px -6px rgba(0,0,0,0.40);
+    --hatch-grain: rgba(255,255,255,0.06);
+    --hatch-pattern: rgba(255,255,255,0.06);
+    --header-fade-start: rgba(0,0,0,0.85);
+    --header-fade-mid:   rgba(0,0,0,0.55);
+    --bottom-fade-start: rgba(0,0,0,0);
+    --bottom-fade-mid:   rgba(0,0,0,0.75);
+    --bottom-fade-end:   rgba(0,0,0,0.95);
+    --vignette-corner:        rgba(6,8,15,0.45);
+    --vignette-corner-soft:   rgba(6,8,15,0.55);
+    --card-base-strong-top: rgba(20,22,30,0.92);
+    --card-base-strong-bot: rgba(8,10,16,0.96);
+    --card-base-soft-top:   rgba(20,22,30,0.55);
+    --card-base-soft-bot:   rgba(10,12,20,0.55);
+    --card-base-faint-top:  rgba(28,30,40,0.42);
+    --card-base-faint-bot:  rgba(20,22,30,0.42);
+    --ink-surface:      rgba(255,255,255,0.10);
+    --ink-surface-text: #fff;
+    --state-live:       #DC2626;
+    --state-live-glow:  rgba(220,38,38,0.55);
+    --state-live-soft:  rgba(220,38,38,0.20);
+    --auth-tab-active-bg:   #ffffff;
+    --auth-tab-active-text: #0a0c12;
+    --client-accent: #0a1f3d;
+  }
+
+  /* === LIGHT MODE ===
+     Mid-May 2026 audit: filled in token gaps that were cascading through
+     to dark-mode values (--brand-cyan, --state-live*), bumped low-contrast
+     text tokens to AA-passing levels, and added a shared --hatch-pattern
+     so .hatch-dark adapts to theme. */
   [data-theme="light"] {
     --canvas-bg: #FAF7F2;
     --canvas-bg-soft: #F5F1EA;
@@ -187,8 +285,13 @@
     --text-secondary: rgba(20,20,26,0.92);
     --text-tertiary:  rgba(20,20,26,0.78);
     --text-muted:     rgba(20,20,26,0.66);
-    --text-faint:     rgba(20,20,26,0.55);
-    --text-disabled:  rgba(20,20,26,0.34);
+    /* --text-faint bumped from 0.55 → 0.62 — was borderline AA-large on
+       the cream + atmosphere backdrop, now solidly readable. */
+    --text-faint:     rgba(20,20,26,0.62);
+    /* --text-disabled bumped from 0.34 → 0.46 — disabled state is now
+       AA-passing for normal text (≈4.7:1 on cream) so screen-reader users
+       can still read greyed labels and disabled controls. */
+    --text-disabled:  rgba(20,20,26,0.46);
     --glass-bg:        rgba(255,255,255,0.65);
     --glass-card-bg:   rgba(255,255,255,0.55);
     --glass-strong-bg: rgba(255,255,255,0.85);
@@ -205,10 +308,29 @@
     --glass-shadow:        0 4px 16px -6px rgba(60,40,20,0.08);
     --glass-card-shadow:   0 8px 28px -10px rgba(60,40,20,0.10);
     --glass-strong-shadow: 0 12px 32px -12px rgba(60,40,20,0.12);
+    /* Cyan accent — light mode uses a DEEPER cyan because the bright
+       #00D6FE from dark mode washes to ~2.5:1 contrast on cream (fails
+       AA). The deep #007D96 used for text already passes; we now point
+       --brand-cyan (the decorative accent) at the same value so live
+       dots, pulse rings, focus halos, and ember effects no longer
+       render as low-contrast noise. */
+    --brand-cyan:      #007D96;
+    --brand-cyan-deep: #005C70;
     --brand-cyan-text: #007D96;
     --brand-cyan-soft: rgba(0,125,150,0.12);
     --brand-cyan-glow: rgba(0,125,150,0.30);
     --brand-cyan-border: rgba(0,125,150,0.40);
+    /* LIVE red — slightly deeper red (C8232C vs DC2626) for stronger
+       contrast against the warm cream canvas. Glow + soft variants
+       toned down significantly so a LIVE pulse doesn't look like a
+       fire-alarm against a soft background. */
+    --state-live:      #C8232C;
+    --state-live-glow: rgba(200,35,44,0.30);
+    --state-live-soft: rgba(200,35,44,0.10);
+    /* Hatch pattern token — see :root for dark-mode value. Used by
+       .hatch-dark so it adapts to theme instead of painting invisible
+       white-on-cream texture. */
+    --hatch-pattern:   rgba(26,26,31,0.05);
     --btn-primary-spec:  rgba(255,255,255,0.22);
     --btn-primary-glow:  rgba(0,125,150,0.32);
     --btn-disabled-spec: rgba(255,255,255,0.12);
@@ -281,6 +403,29 @@
   .lg-glass        { background: var(--glass-bg);        backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border: 1px solid var(--glass-border);        box-shadow: inset 0 1px 0 var(--glass-inset-top), var(--glass-shadow); }
   .lg-glass-card   { background: var(--glass-card-bg);   backdrop-filter: blur(36px) saturate(180%); -webkit-backdrop-filter: blur(36px) saturate(180%); border: 1px solid var(--glass-card-border);   box-shadow: inset 0 1px 0 var(--glass-card-inset-top), var(--glass-card-shadow); }
   .lg-glass-strong { background: var(--glass-strong-bg); backdrop-filter: blur(48px) saturate(200%); -webkit-backdrop-filter: blur(48px) saturate(200%); border: 1px solid var(--glass-strong-border); box-shadow: inset 0 1px 0 var(--glass-strong-inset-top), var(--glass-strong-shadow); }
+  /* Light-mode glass overrides — the heavy 24–48px blur is designed to
+     pick up the dark gradient atmosphere as depth. On cream that just
+     blurs cream into cream (no visible "glass" effect), and the heavy
+     blur is GPU-expensive for zero visual return. Drop to a refined
+     10–14px frosted treatment with a slightly warmer tint so cards
+     read as crisp paper, not muddy glass. Borders are also bumped to
+     a higher opacity so the hairline survives the cream-on-cream
+     contrast crunch (was barely visible at 0.08 / 0.10 / 0.12). */
+  [data-theme="light"] .lg-glass {
+    backdrop-filter: blur(10px) saturate(120%);
+    -webkit-backdrop-filter: blur(10px) saturate(120%);
+    border-color: rgba(26,26,31,0.14);
+  }
+  [data-theme="light"] .lg-glass-card {
+    backdrop-filter: blur(12px) saturate(125%);
+    -webkit-backdrop-filter: blur(12px) saturate(125%);
+    border-color: rgba(26,26,31,0.16);
+  }
+  [data-theme="light"] .lg-glass-strong {
+    backdrop-filter: blur(14px) saturate(130%);
+    -webkit-backdrop-filter: blur(14px) saturate(130%);
+    border-color: rgba(26,26,31,0.18);
+  }
 
   .lg-btn-primary {
     background: linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.08) 100%), var(--btn-primary-bg);
@@ -318,10 +463,12 @@
   }
   .lg-live-ember { animation: lg-live-ember 2.4s cubic-bezier(.45, 0, .45, 1) infinite; }
 
-  /* Cyan ready ember */
+  /* Cyan ready ember — uses tokens so the glow tracks the theme's
+     adjusted cyan instead of staying bright-neon and washing out on
+     cream in light mode. */
   @keyframes lg-ready-ember {
-    0%, 100% { box-shadow: inset 0 1px 0 var(--glass-card-inset-top), var(--glass-card-shadow), 0 0 24px -6px rgba(0,214,254,0.30); }
-    50%      { box-shadow: inset 0 1px 0 var(--glass-card-inset-top), var(--glass-card-shadow), 0 0 56px -4px rgba(0,214,254,0.55); }
+    0%, 100% { box-shadow: inset 0 1px 0 var(--glass-card-inset-top), var(--glass-card-shadow), 0 0 24px -6px var(--brand-cyan-soft); }
+    50%      { box-shadow: inset 0 1px 0 var(--glass-card-inset-top), var(--glass-card-shadow), 0 0 56px -4px var(--brand-cyan-glow); }
   }
   .lg-ready-ember { animation: lg-ready-ember 2.6s cubic-bezier(.45,0,.45,1) infinite; }
 
@@ -1392,7 +1539,10 @@ const IdentityCircle = ({ kind = 'team', avatar, team, label, isClaimed, isNew, 
   const isLive = kind === 'team' && !!liveGame;
   const isUnclaimed = kind === 'player' && isClaimed === false;
   const isClaimedPlayer = kind === 'player' && isClaimed === true;
-  const ringColor = isLive ? 'var(--state-live)' : isUnclaimed ? 'rgba(0,214,254,0.55)' : 'var(--brand-cyan)';
+  /* ringColor: forced-cyan rgba was a bright-mode leak — tracked the
+     theme's cyan token instead so unclaimed-player rings don't wash
+     out on cream in light mode. */
+  const ringColor = isLive ? 'var(--state-live)' : isUnclaimed ? 'var(--brand-cyan-border)' : 'var(--brand-cyan)';
   const ringStyle = isUnclaimed ? 'dashed' : 'solid';
   const ringWidth = isLive ? 3 : isUnclaimed ? 1.75 : 2.5;
 
@@ -3700,12 +3850,32 @@ const InviteIconButton = ({ onClick }) => (
   </button>
 );
 
+/* AuthThemeToggle — sun/moon button placed next to InviteIconButton on
+   the auth screen so the user can flip theme before signing in. After
+   sign-in the SideNav (desktop) / SideMenu (phone) own the toggle, but
+   pre-auth there's nowhere else to put it. Sits inline-start of the
+   invite icon so the two affordances form a small cluster in the top
+   corner. */
+const AuthThemeToggle = ({ theme, onClick }) => (
+  <button onClick={onClick}
+    aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+    title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+    className="absolute top-5 z-50 w-11 h-11 lg-glass squircle-sm flex items-center justify-center transition-colors hover:bg-white/10"
+    /* Sits 12px (end-3 of the invite button's 44px + gap) inside the
+       invite icon. `inset-inline-end: calc(1.25rem + 44px + 8px)` =
+       20 (end-5) + 44 (button) + 8 (gap) = 72px from trailing edge. */
+    style={{ insetInlineEnd: 'calc(1.25rem + 44px + 8px)', color: 'var(--text-primary)' }}>
+    <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={17} stroke={1.6} />
+  </button>
+);
+
 /* Phone version of auth — ClientLogoHero + form.
    onSignIn / onSignUp split — Sign-In lands on Home, Sign-Up enters the
    onboarding persona picker. Mirrors the desktop split below.
    onOpenInvite (optional) renders a small mail-icon affordance in the
-   top-end of the screen that routes to PlayerInviteEntry. */
-const SignInScreen = ({ onSignIn, onSignUp, onOpenInvite }) => (
+   top-end of the screen that routes to PlayerInviteEntry. theme +
+   onToggleTheme render the sun/moon flip beside it. */
+const SignInScreen = ({ onSignIn, onSignUp, onOpenInvite, theme, onToggleTheme }) => (
   <div className="anim-fade pb-8 sf relative min-h-full" style={{ color: 'var(--text-primary)' }}>
     <div className="lg-atmosphere" />
     <div className="absolute inset-0 z-[1] pointer-events-none" style={{ background: 'linear-gradient(180deg, var(--vignette-corner) 0%, transparent 30%, transparent 70%, var(--vignette-corner-soft) 100%)' }} />
@@ -3713,6 +3883,7 @@ const SignInScreen = ({ onSignIn, onSignUp, onOpenInvite }) => (
       <ClientLogoHero />
       <SignInForm onSubmit={onSignIn} onSignUp={onSignUp} />
     </div>
+    {onToggleTheme && <AuthThemeToggle theme={theme} onClick={onToggleTheme} />}
     {onOpenInvite && <InviteIconButton onClick={onOpenInvite} />}
   </div>
 );
@@ -4879,14 +5050,19 @@ const WatchSearchInput = ({ query, setQuery, onPickGame }) => {
           </button>
         )}
       </div>
+      {/* Search dropdown — was hardcoded rgba(20,22,30,0.95) which
+          overrode lg-glass-strong's token-driven background and made
+          the dropdown a dark island on cream in light mode. Now it
+          relies entirely on lg-glass-strong's CSS for theme-aware
+          surface, with text using --text-primary / --text-muted. */}
       {focused && matches.length > 0 && (
-        <div className="absolute top-full inset-x-0 mt-2 lg-glass-strong squircle-md p-1 z-50" style={{ background: 'rgba(20,22,30,0.95)', backdropFilter: 'blur(36px) saturate(180%)', WebkitBackdropFilter: 'blur(36px) saturate(180%)' }}>
+        <div className="absolute top-full inset-x-0 mt-2 lg-glass-strong squircle-md p-1 z-50">
           {matches.map(g => (
             <button key={g.id} onMouseDown={() => { onPickGame(g.id, g.status); setQuery(''); }}
               className="w-full flex items-center gap-2.5 px-3 py-2 squircle-sm hover:bg-white/5 text-start">
               <Icon name="search" size={11} />
-              <span className="sf text-[12.5px] flex-1" style={{ color: '#fff' }}>{g.home} vs {g.away}</span>
-              <span className="sf text-[10px]" style={{ color: 'rgba(255,255,255,0.55)' }}>
+              <span className="sf text-[12.5px] flex-1" style={{ color: 'var(--text-primary)' }}>{g.home} vs {g.away}</span>
+              <span className="sf text-[10px]" style={{ color: 'var(--text-muted)' }}>
                 {g.status === 'live' ? 'LIVE' : g.status === 'upcoming' ? fmt.until(g.kickoffInSec) : 'Final'}
               </span>
             </button>
@@ -6587,14 +6763,18 @@ const SD_Hero = () => {
           {SD_HEADLINE.mid}
         </div>
       </div>
-      <div className="sd-rh4 relative z-10 flex items-center gap-5 mt-12">
-        <div className="h-px w-12" style={{ background: 'var(--sd-cream-15)' }} />
-        <div className="sd-serif italic sd-tx70" style={{ fontSize: 'clamp(0.95rem, 1.4vw, 1.15rem)' }}>
-          {SD_PLAYER.name} <span className="not-italic mx-1 sd-tx-cyan">#{SD_PLAYER.number}</span> · vs {SD_GAME.opponent}
+      {/* Byline — bumped ~3× to make "Tal Weiss #7 · vs Northside" read
+          as a confident editorial subtitle instead of caption text.
+          Hairlines and gap scaled proportionally so the composition
+          breathes at the new size. */}
+      <div className="sd-rh4 relative z-10 flex items-center gap-7 sm:gap-10 mt-14 flex-wrap justify-center">
+        <div className="h-px w-16 sm:w-24" style={{ background: 'var(--sd-cream-15)' }} />
+        <div className="sd-serif italic sd-tx text-center" style={{ fontSize: 'clamp(2.6rem, 4.2vw, 3.4rem)', lineHeight: 1.1, letterSpacing: '-0.015em' }}>
+          {SD_PLAYER.name} <span className="not-italic mx-2 sd-tx-cyan">#{SD_PLAYER.number}</span> · vs {SD_GAME.opponent}
         </div>
-        <div className="h-px w-12" style={{ background: 'var(--sd-cream-15)' }} />
+        <div className="h-px w-16 sm:w-24" style={{ background: 'var(--sd-cream-15)' }} />
       </div>
-      <div className="sd-rh4 relative z-10 sd-mono text-[10px] tracking-[0.30em] uppercase sd-tx30 mt-3">
+      <div className="sd-rh4 relative z-10 sd-mono text-[11px] tracking-[0.30em] uppercase sd-tx45 mt-5">
         {SD_GAME.shortDate} · {SD_HEADLINE.gameLine}
       </div>
     </section>
@@ -9707,7 +9887,8 @@ const App = () => {
           <div className="phone" data-theme={theme}>
             <div className="phone-screen">
               <div className="scroll-area">
-                <SignInScreen onSignIn={onSignIn} onSignUp={onSignUp} onOpenInvite={onOpenInviteFromAuth} />
+                <SignInScreen onSignIn={onSignIn} onSignUp={onSignUp} onOpenInvite={onOpenInviteFromAuth}
+                  theme={theme} onToggleTheme={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} />
               </div>
             </div>
           </div>
@@ -9716,10 +9897,11 @@ const App = () => {
             position:relative is required so the InviteIconButton below
             anchors to this stage instead of the document body. */}
         <div className="stage-desktop" style={{ minHeight: '100vh', position: 'relative', color: 'var(--text-primary)', background: 'var(--canvas-bg)' }}>
-          {/* Mail-icon entry point for invited players. Sits in the
-              top-end corner above the BrandPanel + form split. Same
-              handler as the phone version, same destination
-              (#/onboard/player). */}
+          {/* Top-corner cluster — theme toggle inline-start of the
+              invite mail icon. Both anchor to .stage-desktop (position
+              relative). Pre-auth there's no SideNav yet, so this is
+              where the theme flip lives until the user signs in. */}
+          <AuthThemeToggle theme={theme} onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} />
           <InviteIconButton onClick={onOpenInviteFromAuth} />
           <aside data-theme="dark" aria-hidden="true"
             style={{
