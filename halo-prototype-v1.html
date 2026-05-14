@@ -464,7 +464,17 @@
     .stage-desktop { display: none !important; }
     .phone {
       width: 100vw;
+      /* 100dvh, not 100vh. iOS Safari reports `100vh` as the LARGEST
+         possible viewport (with the address bar hidden). On a fresh
+         page load with the bar visible that's ~85px taller than what
+         the user actually sees — pushing the OnboardDock and Continue
+         button below the visible fold and making the flow feel like
+         "scrolling is stuck". `100dvh` tracks the dynamic viewport
+         instead, sizing the phone to whatever the user currently sees.
+         Supported on iOS Safari 15.4+. Fallback `height: 100vh` first
+         so older browsers don't render an unsized element. */
       height: 100vh;
+      height: 100dvh;
       min-height: 100dvh;
       border-radius: 0;
       border: none;
@@ -600,20 +610,30 @@
     .lg-live-stage { aspect-ratio: 24 / 9; }
   }
 
-  /* Onboarding step scroll bodies — needed because the orchestrator
-     stacks <Stepper><scroll body><Dock> inside a flex column, and on
-     iOS Safari the scroll body needs three things to scroll reliably:
-       1. `-webkit-overflow-scrolling: touch` — native momentum scroll
-          (otherwise iPhone falls back to choppy synchronous scrolling)
-       2. `overscroll-behavior: contain` — keeps an exhausted inner
-          scroll from being hijacked by rubber-band on the outer .phone
-       3. `overflow-y: auto` — obviously
-     Replace `flex-1 min-h-0 overflow-y-auto` with
-     `flex-1 min-h-0 onb-scroll` in step bodies. */
+  /* Onboarding step bodies.
+     The orchestrator now owns a single scroll container at its outermost
+     layer (see FanOnboarding / PlayerOnboarding `.onb-scroll-area`).
+     Step bodies just flow their content — no overflow:auto here, or we'd
+     nest scroll contexts and re-trigger the iOS Safari sticky/flex bug.
+     This class kept so existing step-body classNames still parse, but
+     it's now a no-op layout hook. */
   .onb-scroll {
+    /* intentionally empty — kept as a hook in case we need to scope
+       step-body-specific tweaks in future */
+  }
+
+  /* The single onboarding scroll surface. Lives on the orchestrator
+     outer's inner div. iOS-safe (native momentum + scroll-chain
+     containment). Sticky descendants (OnboardDock, OnboardStepper if
+     we ever make it sticky) bind to THIS as their scroll ancestor. */
+  .onb-scroll-area {
+    position: absolute;
+    inset: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
+    z-index: 10;
   }
 
   /* ====================================================================
@@ -1662,22 +1682,16 @@ const OnboardStepper = ({ step, total, onBack, label }) => (
 );
 
 /* OnboardDock — bottom CTA container.
-   Sticky-bottom is DESKTOP-ONLY (`lg:sticky lg:bottom-0`). On mobile we
-   intentionally fall back to plain flex flow, because iOS Safari has a
-   well-documented bug where `position: sticky` siblings of an
-   `overflow-y: auto` element inside a flex-column parent silently kill
-   the scrollable child's scroll handler. Symptom on iPhone: the entire
-   step body becomes unscrollable — even though the dock looks fine.
-
-   The mobile fallback is fine because on phone, the orchestrator card
-   fills the viewport via absolute inset-0 and the flex layout already
-   pins the dock to the bottom of the visible card — no sticky needed
-   to guarantee "Continue is always visible". Desktop still benefits
-   from sticky because the card grows with content and the page is the
-   scrolling ancestor; without sticky the dock would scroll off-screen
-   inside long steps. */
+   Sticky on both mobile and desktop now, because the orchestrator
+   rewrite (May 2026) puts a single, reliable scroll container at the
+   outer (.onb-scroll-area). The dock binds to it via sticky bottom:0
+   and stays pinned to the viewport bottom while the step content
+   scrolls behind. The earlier iOS-Safari sticky-flex bug is moot now
+   because the step body no longer has its own overflow:auto — the
+   single scroll container is the orchestrator outer, and the dock is
+   not a sibling of any other scroll context. */
 const OnboardDock = ({ children }) => (
-  <div className="shrink-0 px-5 pb-6 pt-4 lg:sticky lg:bottom-0"
+  <div className="shrink-0 px-5 pb-6 pt-4 sticky bottom-0"
     style={{
       flexShrink: 0,
       zIndex: 30,
@@ -7546,7 +7560,7 @@ const OnboardingStub = ({ flow, onDone, onExit }) => (
       style={{ background: 'linear-gradient(180deg, var(--vignette-corner) 0%, transparent 30%, transparent 70%, var(--vignette-corner-soft) 100%)' }} />
     <div className="absolute inset-0 z-10 flex flex-col">
       <OnboardStepper step={1} total={flow === 'player' ? 5 : 3} onBack={onExit} label={flow === 'player' ? 'Player onboarding' : 'Welcome to Halo'} />
-      <div className="flex-1 min-h-0 onb-scroll px-6 pt-8 pb-[120px] flex flex-col items-center justify-center text-center anim-fade">
+      <div className="flex-1 onb-scroll px-6 pt-8 pb-[120px] flex flex-col items-center justify-center text-center anim-fade">
         <div className="w-16 h-16 lg-glass-strong squircle-md flex items-center justify-center mb-5"
           style={{ color: 'var(--brand-cyan-text)' }}>
           <Icon name={flow === 'player' ? 'profile' : 'star'} size={28} stroke={1.8} />
@@ -7676,7 +7690,7 @@ const PersonaCard = ({ kind, title, sub, featured, selected, disabled, onClick }
 const PersonaStep = ({ onPick, onBack }) => (
   <>
     <OnboardStepper step={1} total={3} onBack={onBack} label="Step 1 of 3" />
-    <div className="flex-1 min-h-0 onb-scroll px-6 pt-4 pb-[120px] anim-fade">
+    <div className="flex-1 onb-scroll px-6 pt-4 pb-[120px] anim-fade">
       <h1 className="sf-display text-[26px] font-bold text-white leading-[1.05] tracking-[-0.025em] mb-2">
         Welcome to Halo
       </h1>
@@ -7857,7 +7871,7 @@ const TeamsStep = ({ chosen, setChosen, onBack, onNext }) => {
   return (
     <>
       <OnboardStepper step={2} total={3} onBack={onBack} label="Step 2 of 3" />
-      <div className="flex-1 min-h-0 onb-scroll px-5 pt-4 pb-[120px] anim-fade">
+      <div className="flex-1 onb-scroll px-5 pt-4 pb-[120px] anim-fade">
         <h1 className="sf-display text-[24px] font-bold text-white leading-[1.05] tracking-[-0.025em] mb-2">
           Pick teams to follow
         </h1>
@@ -8065,7 +8079,7 @@ const PlayersStep = ({ chosenTeams, chosenPlayers, togglePlayer, setChosenPlayer
   return (
     <>
       <OnboardStepper step={3} total={3} onBack={onBack} label="Step 3 of 3" />
-      <div className="flex-1 min-h-0 onb-scroll px-5 pt-4 pb-[120px] anim-fade">
+      <div className="flex-1 onb-scroll px-5 pt-4 pb-[120px] anim-fade">
         <h1 className="sf-display text-[24px] font-bold text-white leading-[1.05] tracking-[-0.025em] mb-2">
           Follow players you care about
         </h1>
@@ -8142,19 +8156,38 @@ const FanOnboarding = ({ onDone, onExit }) => {
   /* w-full required so the outer div spans the full .stage-desktop flex
      track. Without it, the parent flex shrinks this div to the card's
      480px width and the whole flow sticks to the inline-start edge. */
+  /* Single-scroll-container architecture (May 2026 rewrite after
+     desktop + iOS scroll bugs):
+     ┌─────────────────────────────────────────────────────────────┐
+     │ shell: position:absolute inset:0, fills .phone-screen or    │
+     │         .stage-desktop, contains atmosphere + scroll-area   │
+     │ ┌─────────────────────────────────────────────────────────┐ │
+     │ │ atmosphere/vignette: absolute, behind everything,       │ │
+     │ │ pointer-events:none, don't scroll                       │ │
+     │ └─────────────────────────────────────────────────────────┘ │
+     │ ┌─────────────────────────────────────────────────────────┐ │
+     │ │ scroll-area: absolute inset:0, overflow-y:auto — the    │ │
+     │ │ ONLY scroll container. iOS-safe via -webkit + contain   │ │
+     │ │   ┌─────────────────────────────────────────────────┐   │ │
+     │ │   │ card: flex flex-col min-h-full (mobile), or     │   │ │
+     │ │   │ lg:max-w-480 lg:mx-auto lg:my-10 (desktop).     │   │ │
+     │ │   │ Stepper, step body, Dock flow as flex children. │   │ │
+     │ │   │ Dock has position:sticky bottom:0 → binds to    │   │ │
+     │ │   │ scroll-area, stays at viewport bottom while     │   │ │
+     │ │   │ content scrolls behind it.                      │   │ │
+     │ │   └─────────────────────────────────────────────────┘   │ │
+     │ └─────────────────────────────────────────────────────────┘ │
+     └─────────────────────────────────────────────────────────────┘
+     This kills the iOS sticky-flex bug AND the desktop "Continue
+     button buried below the fold" complaint in one shot — sticky
+     binds to the single scroll container regardless of device. */
   return (
-    <div data-theme="dark" className="anim-fade text-white sf relative w-full" style={{ minHeight: '100vh', background: 'var(--canvas-bg)' }}>
+    <div data-theme="dark" className="anim-fade text-white sf" style={{ position: 'absolute', inset: 0, background: 'var(--canvas-bg)' }}>
       <div className="lg-atmosphere" />
       <div className="absolute inset-0 z-[1] pointer-events-none"
         style={{ background: 'linear-gradient(180deg, var(--vignette-corner) 0%, transparent 30%, transparent 70%, var(--vignette-corner-soft) 100%)' }} />
-      {/* Card wrapper — phone fills via absolute, desktop centers as card.
-          Desktop now grows with content (was locked at 820px max which
-          clipped long steps). See PlayerOnboarding comment for full
-          rationale; same wide fix applied here for consistency. */}
-      <div className="absolute inset-0 z-10 flex flex-col lg:static lg:max-w-[480px] lg:mx-auto lg:my-10 lg:rounded-[24px] lg:border lg:border-white/10"
-        style={{ minHeight: 0 }}>
-        <div className="relative flex flex-col flex-1 lg:flex-none lg:min-h-[640px]"
-          style={{}}>
+      <div className="flex-1 onb-scroll-area">
+        <div className="relative flex flex-col min-h-full lg:max-w-[480px] lg:mx-auto lg:my-10 lg:rounded-[24px] lg:border lg:border-white/10 lg:min-h-[640px]">
           {step === 'persona' && <PersonaStep onPick={onPickPersona} onBack={onExit} />}
           {step === 'teams' && (
             <TeamsStep chosen={chosenTeams} setChosen={setChosenTeams}
@@ -8192,7 +8225,7 @@ const PlayerInviteEntry = ({ teamId, onSignUp, onSignIn, onBack }) => {
   return (
     <>
     <OnboardStepper step={1} total={4} onBack={onBack} label="Step 1 of 4" />
-    <div className="flex-1 min-h-0 onb-scroll px-6 pt-4 pb-[120px] anim-fade flex flex-col">
+    <div className="flex-1 onb-scroll px-6 pt-4 pb-[120px] anim-fade flex flex-col">
       <div className="flex-1 flex flex-col items-center justify-center text-center">
         {/* Team disc — initial-letterform, no photo (players don't have one yet). */}
         <div className="relative mb-6" style={{ width: 120, height: 120 }}>
@@ -8551,7 +8584,7 @@ const FullSignUpScreen = ({ onSubmit, onSwitchToSignIn, onBack, form, setForm })
   return (
     <>
     {onBack && <OnboardStepper step={1} total={4} onBack={onBack} label="Step 1 of 4" />}
-    <div className="flex-1 min-h-0 onb-scroll pt-10 pb-12 anim-fade">
+    <div className="flex-1 onb-scroll pt-10 pb-12 anim-fade">
       <div className="px-5">
         <h1 className="sf-display text-[28px] font-bold text-white leading-[1.05] tracking-[-0.025em] mb-2">Create your account</h1>
         <p className="sf text-[13px] leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.65)' }}>
@@ -8651,7 +8684,7 @@ const TeamsStepLocked = ({ lockedTeamId, chosen, setChosen, onBack, onNext }) =>
   return (
     <>
       <OnboardStepper step={2} total={4} onBack={onBack} label="Step 2 of 4" />
-      <div className="flex-1 min-h-0 onb-scroll px-5 pt-4 pb-[120px] anim-fade">
+      <div className="flex-1 onb-scroll px-5 pt-4 pb-[120px] anim-fade">
         <h1 className="sf-display text-[24px] font-bold text-white leading-[1.05] tracking-[-0.025em] mb-2">
           Your team
         </h1>
@@ -8861,7 +8894,7 @@ const ClaimAndFollow = ({ teamId, claimedSelfId, setClaimedSelfId, chosenPlayers
   return (
     <>
       <OnboardStepper step={3} total={4} onBack={onBack} label="Step 3 of 4" />
-      <div className="flex-1 min-h-0 onb-scroll px-5 pt-4 pb-[120px] anim-fade">
+      <div className="flex-1 onb-scroll px-5 pt-4 pb-[120px] anim-fade">
         <h1 className="sf-display text-[24px] font-bold text-white leading-[1.05] tracking-[-0.025em] mb-2">
           Which one is you?
         </h1>
@@ -9144,23 +9177,16 @@ const PlayerOnboarding = ({ onDone, onExit, inviteContext = DEFAULT_INVITE }) =>
      card's 480px width, pinning the whole onboarding flow to the
      inline-start edge of the viewport. With w-full the outer div spans
      the full track and the inner card's `lg:mx-auto` centers it. */
+  /* Same single-scroll-container architecture as FanOnboarding. See the
+     ASCII diagram there for the full rationale. The card grows naturally
+     inside .onb-scroll-area, sticky descendants bind to it. */
   return (
-    <div data-theme="dark" className="anim-fade text-white sf relative w-full" style={{ minHeight: '100vh', background: 'var(--canvas-bg)' }}>
+    <div data-theme="dark" className="anim-fade text-white sf" style={{ position: 'absolute', inset: 0, background: 'var(--canvas-bg)' }}>
       <div className="lg-atmosphere" />
       <div className="absolute inset-0 z-[1] pointer-events-none"
         style={{ background: 'linear-gradient(180deg, var(--vignette-corner) 0%, transparent 30%, transparent 70%, var(--vignette-corner-soft) 100%)' }} />
-      {/* Desktop sizing — was previously locked to lg:h-[calc(100vh-80px)]
-          lg:max-h-[820px] with lg:overflow-hidden, which clipped any step
-          whose content exceeded ~820px (NotifUpsell perks, the expanded
-          FullSignUpScreen, ClaimAndFollow with many players, etc.). Now
-          the card has a generous min-height so short steps still look
-          like a card, but it grows freely with content and the PAGE
-          handles scroll instead of an internal scrollbox under a sticky
-          dock. Phone layout (absolute inset-0) untouched — that path
-          still wants viewport-locked sizing. */}
-      <div className="absolute inset-0 z-10 flex flex-col lg:static lg:max-w-[480px] lg:mx-auto lg:my-10 lg:rounded-[24px] lg:border lg:border-white/10"
-        style={{ minHeight: 0 }}>
-        <div className="relative flex flex-col flex-1 lg:flex-none lg:min-h-[640px]">
+      <div className="flex-1 onb-scroll-area">
+        <div className="relative flex flex-col min-h-full lg:max-w-[480px] lg:mx-auto lg:my-10 lg:rounded-[24px] lg:border lg:border-white/10 lg:min-h-[640px]">
           {step === 'invite-entry' && (
             <PlayerInviteEntry teamId={inviteContext.teamId}
               onSignUp={() => setStep('signup')}
@@ -9177,7 +9203,7 @@ const PlayerOnboarding = ({ onDone, onExit, inviteContext = DEFAULT_INVITE }) =>
           {step === 'signin' && (
             <>
               <OnboardStepper step={1} total={4} onBack={() => setStep('invite-entry')} label="Step 1 of 4" />
-              <div className="flex-1 min-h-0 onb-scroll px-5 pt-6">
+              <div className="flex-1 onb-scroll px-5 pt-6">
                 <SignInForm onSubmit={() => setStep('teams-locked')} />
               </div>
             </>
@@ -9624,7 +9650,11 @@ const App = () => {
       <div className={`glass-app app-stage`} data-theme={theme} dir={locale === 'he' ? 'rtl' : 'ltr'}>
         <div className="stage-phone">
           <div className="phone" data-theme={theme}>
-            <div className="phone-screen relative" style={{ minHeight: '100vh' }}>
+            {/* 100dvh, not 100vh — see .phone CSS rationale. The
+                phone-screen wrapper has to match the .phone height
+                exactly or the orchestrator card's `absolute inset:0`
+                stretches past the visible viewport. */}
+            <div className="phone-screen relative" style={{ minHeight: '100dvh' }}>
               <Flow onDone={onOnboardDone} onExit={onExitOnboard} />
             </div>
           </div>
