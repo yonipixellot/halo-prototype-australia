@@ -1299,6 +1299,32 @@ const SEED_CAPTURES = [
     hue: { a: 'rgba(255,210,80,0.36)', b: 'rgba(255,90,50,0.30)' },
     caption: 'Sarah\'s warmup form',
   },
+  /* More horizontal videos so the rail mixes orientations visually
+     (per user request). Captioned to feel like courtside cinematography. */
+  {
+    id: 'cap_seed_8', kind: 'video-h', gameId: 'gE',
+    taggedPlayerId: 'r1', tagApprovalStatus: 'approved', privacy: 'public',
+    capturedBy: 'Mia R.', capturedAt: Date.now() - 17 * 3600 * 1000,
+    hue: { a: 'rgba(132,88,255,0.42)', b: 'rgba(255,90,158,0.30)' },
+    caption: 'Half-court press · 3 stops in a row',
+    duration: 22,
+  },
+  {
+    id: 'cap_seed_9', kind: 'video-h', gameId: 'gE',
+    taggedPlayerId: null, tagApprovalStatus: null, privacy: 'public',
+    capturedBy: 'Avery T.', capturedAt: Date.now() - 16 * 3600 * 1000,
+    hue: { a: 'rgba(255,140,40,0.42)', b: 'rgba(0,170,220,0.30)' },
+    caption: 'Bench eruption · Q4 lead change',
+    duration: 14,
+  },
+  {
+    id: 'cap_seed_10', kind: 'video-h', gameId: 'gE',
+    taggedPlayerId: 'r1', tagApprovalStatus: 'approved', privacy: 'public',
+    capturedBy: 'Coach Levi', capturedAt: Date.now() - 15 * 3600 * 1000,
+    hue: { a: 'rgba(74,222,128,0.40)', b: 'rgba(132,88,255,0.30)' },
+    caption: 'Time-out sequence · diagrammed play',
+    duration: 28,
+  },
 ];
 
 const STORYTELLING_DROPS = [
@@ -6485,7 +6511,9 @@ const CaptureThumb = ({ capture, onClick, size = 'md' }) => {
     sm: 'w-[110px] h-[196px]',
     md: 'w-[140px] h-[249px] lg:w-[160px] lg:h-[284px]',
   };
-  const kindLabel = capture.kind === 'photo' ? 'Photo' : capture.kind === 'video-h' ? 'Video' : 'Video';
+  const isHoriz = capture.kind === 'video-h';
+  const isPhoto = capture.kind === 'photo';
+  const kindLabel = isPhoto ? 'Photo' : isHoriz ? 'Video' : 'Video';
   return (
     <button onClick={onClick}
       className={`relative shrink-0 overflow-hidden squircle-md lg-aura lg-shine transition-transform hover:scale-[1.02] ${CLASSES[size] || CLASSES.md}`}
@@ -6497,8 +6525,41 @@ const CaptureThumb = ({ capture, onClick, size = 'md' }) => {
         boxShadow: 'inset 0 1px 0 var(--glass-card-inset-top), var(--glass-card-shadow)',
       }}>
       <div className="absolute inset-0 hatch opacity-40" />
-      {/* Kind chip top-start */}
-      <div className="absolute top-2.5 start-2.5 lg-glass-strong squircle-sm px-2 py-0.5 z-10">
+      {/* Letterbox treatment for horizontal video — black bars top + bottom
+          inside the 9:16 portrait card so the rail layout stays consistent
+          but the user can SEE that this is a 16:9 clip. The thin bars sit
+          on top of the hue gradient with the same dark-canvas color. */}
+      {isHoriz && (
+        <>
+          <div className="absolute inset-x-0 top-0 h-[14%] z-[5] pointer-events-none" style={{ background: 'rgba(4,6,12,0.85)' }} />
+          <div className="absolute inset-x-0 bottom-0 h-[14%] z-[5] pointer-events-none" style={{ background: 'rgba(4,6,12,0.85)' }} />
+        </>
+      )}
+      {/* Kind chip top-start. Horizontal videos get a wider-aspect glyph
+          (16:9 rectangle) next to the label so they read as wide. */}
+      <div className="absolute top-2.5 start-2.5 lg-glass-strong squircle-sm px-2 py-0.5 z-10 inline-flex items-center gap-1.5">
+        <svg width={11} height={8} viewBox="0 0 16 12" fill="none" stroke="currentColor"
+          strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round"
+          style={{ width: 11, height: 8, display: 'block', color: 'var(--text-primary)' }}>
+          {isPhoto ? (
+            <>
+              <rect x={2} y={2} width={12} height={9} rx={1} />
+              <circle cx={8} cy={6.5} r={2.2} />
+            </>
+          ) : isHoriz ? (
+            <>
+              {/* 16:9 wide rect — reads as horizontal video */}
+              <rect x={1.5} y={3} width={11} height={6} rx={0.5} />
+              <path d="M14 4 L15.5 3 V9 L14 8 Z" fill="currentColor" />
+            </>
+          ) : (
+            <>
+              {/* 9:16 tall rect — vertical video */}
+              <rect x={4} y={1.5} width={6} height={9} rx={0.5} />
+              <path d="M11.5 3.5 L13.5 2.5 V9.5 L11.5 8.5 Z" fill="currentColor" />
+            </>
+          )}
+        </svg>
         <span className="sf text-[9px] font-bold tracking-[0.14em] uppercase leading-none" style={{ color: 'var(--text-primary)' }}>
           {kindLabel}
         </span>
@@ -6798,7 +6859,7 @@ const AthleteProfileScreen = ({ onPickMoment, onBack, onOpenGame, asTab = true, 
                 { key: 'profile',     label: 'Profile' },
                 { key: 'highlights',  label: 'Highlights' },
                 { key: 'bio',         label: 'Bio' },
-                { key: 'fan-captures', label: 'Fan captures', badge: newFanTags },
+                { key: 'fan-captures', label: 'Captured', badge: newFanTags },
               ].map(t => {
                 const active = tab === t.key;
                 return (
@@ -7248,6 +7309,27 @@ const PostGameScreen = ({ gameId, onBack, onPickMoment, captures = [] }) => {
         </div>
       </PgSectionFullBleed>
 
+      {/* From the stands — fan-recorded public captures scoped to this
+          game. Sits directly under Your Highlights as part of the same
+          content stream. Constrained to the SAME lg:max-w-[720px] gutter
+          as the rest of PostGameScreen (the CaptureRail's own
+          px-5 lg:px-8 xl:px-12 then lives inside the centered column,
+          matching how PgSectionFullBleed handles Your Highlights). */}
+      <div className="mt-7 lg:max-w-[720px] lg:mx-auto">
+        <CaptureRail
+          title="From the stands"
+          subtitle="Captured by fans at the venue."
+          captures={(captures || []).filter(c =>
+            c.gameId === gameId && c.privacy === 'public' && (
+              c.taggedPlayerId == null ||
+              c.tagApprovalStatus === 'approved' ||
+              (c.tagApprovalStatus === 'pending' && c.capturedBy === 'You')
+            )
+          )}
+          onPickCapture={(c) => { window.location.hash = '#/capture-view/' + c.id; }}
+          emptyLabel="No fan captures yet for this game." />
+      </div>
+
       {/* Other players — home/away tabs */}
       <OtherPlayersSection game={g} onPickPlayer={() => onPickMoment(0)} />
 
@@ -7259,26 +7341,6 @@ const PostGameScreen = ({ gameId, onBack, onPickMoment, captures = [] }) => {
 
       {/* Player stats — tabbed table */}
       <PlayerStatsSection game={g} />
-
-      {/* From the stands — fan-recorded public captures scoped to this
-          game. Only public + approved (or untagged) show. Mixed-source
-          rail that visually rhymes with Team moments but carries
-          "captured by [fan name]" attribution instead of broadcast
-          metadata. */}
-      <div className="mt-10">
-        <CaptureRail
-          title="From the stands"
-          subtitle="Captured by fans at the venue."
-          captures={(captures || []).filter(c =>
-            c.gameId === gameId && c.privacy === 'public' && (
-              c.taggedPlayerId == null ||                          // untagged + public — always visible
-              c.tagApprovalStatus === 'approved' ||                // tagged + approved — visible to all
-              (c.tagApprovalStatus === 'pending' && c.capturedBy === 'You')  // your own pending — visible to you only
-            )
-          )}
-          onPickCapture={(c) => { window.location.hash = '#/capture-view/' + c.id; }}
-          emptyLabel="No fan captures yet for this game." />
-      </div>
     </div>
   );
 };
