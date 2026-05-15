@@ -42,7 +42,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+<!-- Inter removed as an external dep — rsms.me may be blocked by sandboxed
+     preview iframes (Cowork's preview was rendering pitch black with it
+     loaded). The .sd-mono font-family chain falls back to -apple-system /
+     SF Pro Text / system-ui, all of which are Inter-class sans-serifs on
+     Mac, so the storydrop's typographic intent survives without the CDN. -->
 
 <style>
 /* =================================================================
@@ -946,6 +950,17 @@
     background: var(--sd-canvas);
     color: var(--sd-cream-95);
   }
+  .sd-root::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 200;
+    opacity: 0.045;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 200px 200px;
+  }
 
   /* Typography utility classes scoped under sd-root so the storydrop's
      editorial serif/mono pairing doesn't leak into the rest of the
@@ -1029,7 +1044,7 @@
   .sd-flash-in { animation: sdFlashIn 380ms ease-out forwards; }
 
   /* Reveal-up — used by Closing section once it enters view. */
-  .sd-reveal-up { opacity: 0; transform: translateY(40px); transition: opacity 1s ease, transform 1s ease; }
+  .sd-reveal-up { opacity: 0; transform: translateY(28px); transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.65s cubic-bezier(0.16,1,0.3,1); }
   .sd-reveal-up.sd-visible { opacity: 1; transform: translateY(0); }
 
   /* Hero typewriter-style clip-path reveals (rh1..rh4 in storydrop). */
@@ -1037,10 +1052,10 @@
     from { clip-path: inset(0 0 100% 0); transform: translateY(28px); opacity: 0; }
     to   { clip-path: inset(0 0 0%   0); transform: translateY(0);    opacity: 1; }
   }
-  .sd-rh1 { animation: sdRevealClip 1.1s cubic-bezier(0.16,1,0.3,1) 0.20s both; }
-  .sd-rh2 { animation: sdRevealClip 1.1s cubic-bezier(0.16,1,0.3,1) 0.42s both; }
-  .sd-rh3 { animation: sdRevealClip 1.1s cubic-bezier(0.16,1,0.3,1) 0.62s both; }
-  .sd-rh4 { animation: sdRevealClip 0.9s cubic-bezier(0.16,1,0.3,1) 0.82s both; }
+  .sd-rh1 { animation: sdRevealClip 0.80s cubic-bezier(0.16,1,0.3,1) 0.10s both; }
+  .sd-rh2 { animation: sdRevealClip 0.80s cubic-bezier(0.16,1,0.3,1) 0.24s both; }
+  .sd-rh3 { animation: sdRevealClip 0.80s cubic-bezier(0.16,1,0.3,1) 0.38s both; }
+  .sd-rh4 { animation: sdRevealClip 0.70s cubic-bezier(0.16,1,0.3,1) 0.50s both; }
 
   /* Ghost letter — translucent giant glyph behind each quarter panel. */
   .sd-ghost-letter {
@@ -1182,10 +1197,13 @@ const { useState, useEffect, useReducer, useRef, useMemo, useCallback, Fragment 
 const PLAYER = { id: 'self', name: 'Tal Weiss', number: 7, position: 'SG', team: 'Varsity', initials: 'TW' };
 
 const SEED_GAMES = [
-  { id: 'g1', home: 'Varsity', away: 'Lincoln',         status: 'upcoming', kickoffInSec: 32*3600, venue: 'Eastside Gym' },
+  /* Kickoff times tuned for the Capture Mode tournament demo: g4 in
+     30 min, g1 in 90 min so the venue picker reads as "one live +
+     two starting soon" rather than "one live + finished games". */
+  { id: 'g1', home: 'Varsity', away: 'Lincoln',         status: 'upcoming', kickoffInSec: 90*60,   venue: 'Eastside Gym · Court 1' },
   { id: 'g2', home: 'Varsity', away: 'Northside',       status: 'upcoming', kickoffInSec: 4*86400 },
   { id: 'g3', home: 'Tigers',  away: 'Eastside',        status: 'upcoming', kickoffInSec: 2*86400 },
-  { id: 'g4', home: 'Wolves',  away: 'Falcons',         status: 'upcoming', kickoffInSec: 18*3600 },
+  { id: 'g4', home: 'Wolves',  away: 'Falcons',         status: 'upcoming', kickoffInSec: 30*60,   venue: 'Eastside Gym · Court 2' },
   { id: 'gL', home: 'Varsity', away: 'Westfield Hawks', status: 'live',    scoreHome: 28, scoreAway: 24, period: 'Q2', momentsCount: 5 },
   { id: 'gE', home: 'Varsity', away: 'Northside',       status: 'just-ended', scoreHome: 64, scoreAway: 58, momentsCount: 8, when: 'Yesterday · 7:30 PM' },
   { id: 'gP1', home: 'Varsity', away: 'Lincoln',        status: 'final',  scoreHome: 71, scoreAway: 63, when: '3 days ago' },
@@ -1199,6 +1217,83 @@ const SEED_MOMENTS = [
   { id: 'm4', gameId: 'gE', title: 'Half-court 3',      sub: 'Q3 · 1:22', dur: 12, tag: 'streak', rx: 22 },
   { id: 'm5', gameId: 'gE', title: 'Crossover floater', sub: 'Q4 · 6:04', dur: 10, tag: null,    rx: 9  },
   { id: 'm6', gameId: 'gE', title: 'No-look pass',      sub: 'Q1 · 7:33', dur: 14, tag: 'hot',    rx: 16 },
+];
+
+/* SEED_CAPTURES — fan-recorded media from games. Seeded so the
+   "Fan captures" rail on player profiles + "From the stands" rail on
+   game pages have content on first load. Each capture carries:
+     - kind: 'photo' | 'video-v' | 'video-h'
+     - gameId: which game it was recorded at
+     - taggedPlayerId: roster id, or null
+     - tagApprovalStatus: null (untagged) | 'pending' | 'approved' | 'declined'
+     - privacy: 'private' | 'public' — only public+approved show on rails
+     - capturedBy: display name of the fan (mock)
+     - hue: { a, b } gradient pair for mock thumb (no real media)
+     - capturedAt: ms timestamp for ordering
+   In production, captures would carry real media URLs + poster frames. */
+const SEED_CAPTURES = [
+  /* Approved fan captures tagged for r1 — these populate Tal Weiss's
+     "Fan captures" tab on landing. Mix of vertical/horizontal video +
+     photos so the demo shows all three kinds rendering. */
+  {
+    id: 'cap_seed_1', kind: 'video-v', gameId: 'gE',
+    taggedPlayerId: 'r1', tagApprovalStatus: 'approved', privacy: 'public',
+    capturedBy: 'Dana M.', capturedAt: Date.now() - 22 * 3600 * 1000,
+    hue: { a: 'rgba(255,90,158,0.40)', b: 'rgba(0,214,254,0.30)' },
+    caption: 'View from row 8 — that crossover',
+    duration: 12,
+  },
+  {
+    id: 'cap_seed_2', kind: 'photo', gameId: 'gE',
+    taggedPlayerId: 'r1', tagApprovalStatus: 'approved', privacy: 'public',
+    capturedBy: 'Marcus L.', capturedAt: Date.now() - 23 * 3600 * 1000,
+    hue: { a: 'rgba(255,210,80,0.40)', b: 'rgba(255,90,50,0.30)' },
+    caption: 'Tip-off line · #7 in focus',
+  },
+  {
+    id: 'cap_seed_3', kind: 'video-h', gameId: 'gE',
+    taggedPlayerId: 'r1', tagApprovalStatus: 'approved', privacy: 'public',
+    capturedBy: 'Coach Levi', capturedAt: Date.now() - 21 * 3600 * 1000,
+    hue: { a: 'rgba(74,222,128,0.36)', b: 'rgba(0,170,220,0.30)' },
+    caption: 'Q4 corner three — full bench reaction',
+    duration: 18,
+  },
+  /* Pending tag — drives the NEW badge on the Fan captures tab. */
+  {
+    id: 'cap_seed_4', kind: 'video-v', gameId: 'gE',
+    taggedPlayerId: 'r1', tagApprovalStatus: 'pending', privacy: 'public',
+    capturedBy: 'Jordan P.', capturedAt: Date.now() - 90 * 60 * 1000,
+    hue: { a: 'rgba(132,88,255,0.42)', b: 'rgba(0,214,254,0.30)' },
+    caption: 'Pickoff steal at the half-line',
+    duration: 9,
+  },
+  /* Untagged public captures — appear on game pages "From the stands"
+     rail but not on player profiles. */
+  {
+    id: 'cap_seed_5', kind: 'video-h', gameId: 'gE',
+    taggedPlayerId: null, tagApprovalStatus: null, privacy: 'public',
+    capturedBy: 'Sam K.', capturedAt: Date.now() - 20 * 3600 * 1000,
+    hue: { a: 'rgba(0,170,220,0.40)', b: 'rgba(132,88,255,0.30)' },
+    caption: 'The crowd erupting · final buzzer',
+    duration: 24,
+  },
+  {
+    id: 'cap_seed_6', kind: 'photo', gameId: 'gE',
+    taggedPlayerId: null, tagApprovalStatus: null, privacy: 'public',
+    capturedBy: 'Riley B.', capturedAt: Date.now() - 19 * 3600 * 1000,
+    hue: { a: 'rgba(255,140,40,0.42)', b: 'rgba(255,210,80,0.30)' },
+    caption: 'Half-time scoreboard — 35–32',
+  },
+  /* Player r2 tagged — shows up if someone visits Sarah's profile.
+     Photographer is the demo user "You" so it surfaces in
+     "My captures" too. */
+  {
+    id: 'cap_seed_7', kind: 'photo', gameId: 'gE',
+    taggedPlayerId: 'r2', tagApprovalStatus: 'approved', privacy: 'public',
+    capturedBy: 'You', capturedAt: Date.now() - 18 * 3600 * 1000,
+    hue: { a: 'rgba(255,210,80,0.36)', b: 'rgba(255,90,50,0.30)' },
+    caption: 'Sarah\'s warmup form',
+  },
 ];
 
 const STORYTELLING_DROPS = [
@@ -1667,6 +1762,14 @@ const Icon = ({ name, size = 18, stroke = 1.6 }) => {
     card:    'M2 5 H18 V15 H2 Z M2 8.5 H18 M5 12 H8',
     info:    'M10 3 a7 7 0 1 0 0 14 a7 7 0 0 0 0 -14 Z M10 9 V14 M10 6.5 V7',
     mail:    'M2.5 5 H17.5 V15 H2.5 Z M3 5.5 L10 11 L17 5.5',
+    /* Map pin — used by SideMenu's "I'm at the venue" demo toggle and
+       Capture Mode chrome. Teardrop pin outline + inner dot. */
+    'map-pin': 'M10 2 a5.5 5.5 0 0 0 -5.5 5.5 c0 4 5.5 9.5 5.5 9.5 s5.5 -5.5 5.5 -9.5 a5.5 5.5 0 0 0 -5.5 -5.5 Z M10 5.5 a2 2 0 1 1 0 4 a2 2 0 0 1 0 -4 Z',
+    /* Camera — Capture Mode CTA + camera flow chrome. Body + lens. */
+    camera:  'M2.5 6 H6 L7.5 4 H12.5 L14 6 H17.5 V16 H2.5 Z M10 8 a3 3 0 1 0 0 6 a3 3 0 0 0 0 -6 Z',
+    /* Eye / eye-off — privacy toggles in capture review. */
+    eye:     'M1 10 s3 -6 9 -6 s9 6 9 6 s-3 6 -9 6 s-9 -6 -9 -6 Z M10 7 a3 3 0 1 0 0 6 a3 3 0 0 0 0 -6 Z',
+    'eye-off': 'M3 3 L17 17 M9 5 c3 -1 6 0 8 5 c-1 2 -2 3 -3 4 M11 15 c-3 1 -6 0 -8 -5 c1 -2 2 -3 3 -4',
   };
   return (
     <svg width={size} height={size} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round">
@@ -3603,7 +3706,7 @@ const SettingsModal = ({ onClose, theme, onTheme, onSignOut, locale, setLocale, 
 
 /* SideMenu — phone paged drawer. (Desktop now uses SettingsModal instead;
    the drawer pattern is preserved verbatim for phone users.) */
-const SideMenu = ({ onClose, onNav, theme, onTheme, onSignOut, locale, setLocale, emailVerified, onVerifyEmail, onDemoPlayerInvite }) => {
+const SideMenu = ({ onClose, onNav, theme, onTheme, onSignOut, locale, setLocale, emailVerified, onVerifyEmail, onDemoPlayerInvite, atVenue, onToggleAtVenue }) => {
   const [page, setPage] = useState('root');
 
   useEffect(() => {
@@ -3751,6 +3854,16 @@ const SideMenu = ({ onClose, onNav, theme, onTheme, onSignOut, locale, setLocale
                 <MenuItem icon="mail" label="Player invite"
                   trailing="DEMO" hideChevron
                   onClick={onDemoPlayerInvite} />
+              )}
+
+              {/* Demo · At venue toggle — mocks the geofence trigger that
+                  in production would flip Capture Mode on when the user is
+                  within 100m of a game venue. Flipping this here morphs the
+                  home GameCard to its capture variant immediately. */}
+              {onToggleAtVenue && (
+                <MenuItem icon="map-pin" label="I'm at the venue"
+                  trailing={atVenue ? 'ON' : 'DEMO'} hideChevron
+                  onClick={onToggleAtVenue} />
               )}
 
               {/* Wide separator before destructive Sign Out */}
@@ -4456,11 +4569,76 @@ const MorphLiveCard = ({ cycle, goPrev, goNext, onOpenGame }) => {
   );
 };
 
+/* MorphCaptureCard — 6th variant for the home morph card, triggered
+   by the "I'm at the venue" demo toggle in SideMenu. Replaces the
+   normal morph cycle entirely while atVenue is true (no StateNav
+   arrows since this is a venue-state, not a game-state cycle).
+
+   Visual language: red live-red ember (mirrors LiveCard's urgency),
+   broadcast-style "RECORDING SOON" eyebrow with red pulse-dot, big
+   editorial headline, red-CTA "Open camera". The card uses
+   lg-live-ember + a subtle red ambient glow so it reads as a
+   "this moment is happening" signal rather than the calm cyan of
+   the other states. */
+const MorphCaptureCard = ({ onStartCapture }) => {
+  return (
+    <div role="button" tabIndex={0} onClick={onStartCapture}
+      className="relative w-full text-start squircle-md overflow-hidden lg-aura lg-shine lg-live-ember cursor-pointer transition-transform hover:scale-[1.005] active:scale-[0.995]"
+      style={{
+        background:
+          'radial-gradient(ellipse 70% 60% at 20% 30%, rgba(220,38,38,0.30) 0%, transparent 60%),' +
+          'radial-gradient(ellipse 70% 60% at 85% 80%, rgba(255,90,50,0.22) 0%, transparent 60%),' +
+          'linear-gradient(180deg, #1a0d10 0%, #0a0608 100%)',
+        border: '1px solid rgba(220,38,38,0.55)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.10), 0 0 32px -8px rgba(220,38,38,0.40), 0 12px 32px -10px rgba(0,0,0,0.55)',
+      }}>
+      <div className="absolute inset-0 hatch-dark opacity-40 pointer-events-none" />
+      {/* Eyebrow strip — broadcast-red with pulse-dot. No StateNav here
+          because this card is toggle-triggered, not in the demo cycle. */}
+      <div className="relative z-10 px-4 pt-4 pb-2 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full anim-pulse-dot"
+            style={{ background: '#ff3636', boxShadow: '0 0 12px rgba(255,54,54,0.95), 0 0 4px rgba(255,54,54,0.65)' }} />
+          <span className="sf text-[10.5px] tracking-[0.18em] uppercase font-bold" style={{ color: '#ff7575' }}>At venue · Capture mode</span>
+        </div>
+        <span className="sf text-[9.5px] tracking-[0.22em] uppercase font-bold" style={{ color: 'rgba(255,255,255,0.45)' }}>Demo</span>
+      </div>
+      {/* Hero body — big headline + supporting prose. Tight composition
+          so the CTA below has visual room without scrolling. */}
+      <div className="relative z-10 px-4 pb-3">
+        <div className="sf-display text-[24px] font-bold leading-[1.05] tracking-[-0.025em] text-white mb-1.5">
+          Capture this game
+        </div>
+        <div className="sf text-[12.5px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.65)' }}>
+          Record from where you're sitting. Photos, vertical or horizontal video.
+        </div>
+      </div>
+      {/* CTA — red gradient pill with camera glyph + "Open camera". */}
+      <div className="relative z-10 px-4 pb-4 pt-1">
+        <button onClick={(e) => { e.stopPropagation(); onStartCapture(); }}
+          className="w-full squircle-sm py-3 sf text-[13px] font-bold flex items-center justify-center gap-2 transition-transform hover:scale-[1.01] active:scale-[0.99]"
+          style={{
+            color: '#fff',
+            background: 'linear-gradient(180deg, rgba(255,54,54,1) 0%, rgba(200,30,30,1) 100%)',
+            boxShadow: '0 8px 24px -8px rgba(255,54,54,0.55), inset 0 1px 0 rgba(255,255,255,0.30)',
+          }}>
+          <svg width={14} height={14} viewBox="0 0 20 20" fill="none" stroke="currentColor"
+            strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
+            style={{ width: 14, height: 14, display: 'block' }}>
+            <path d="M2.5 6 H6 L7.5 4 H12.5 L14 6 H17.5 V16 H2.5 Z M10 8 a3 3 0 1 0 0 6 a3 3 0 0 0 0 -6 Z" />
+          </svg>
+          <span>Open camera</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
 /* MorphJustEndedCard / MorphReadyCard / MorphOffCard — these branches
    don't have their own hooks, so they're rendered inline as plain JSX
    sub-trees from GameCard's switch below. Only PRE + LIVE needed
    component extraction (they call useState/useEffect for tickers). */
-const GameCard = ({ state: initialState = 'off', onOpenGame, onOpenDrop }) => {
+const GameCard = ({ state: initialState = 'off', onOpenGame, onOpenDrop, atVenue = false, onStartCapture }) => {
   const [state, setState] = useState(initialState);
   /* Notify-me overlay state — driven by Notify me CTAs on PRE + just-ended
      variants. Lives at GameCard root so:
@@ -4474,6 +4652,14 @@ const GameCard = ({ state: initialState = 'off', onOpenGame, onOpenDrop }) => {
   const cycle = () => setState(nextDemoState);
   const goPrev = () => setState(s => advanceState(s, -1));
   const goNext = () => setState(s => advanceState(s, +1));
+
+  /* Capture override — when the "I'm at the venue" SideMenu toggle is
+     on, the morph card becomes the red-glow Capture variant regardless
+     of any other state. Returns early before the normal switch since
+     atVenue trumps the demo cycle (no StateNav arrows on capture). */
+  if (atVenue) {
+    return <MorphCaptureCard onStartCapture={onStartCapture || (() => { window.location.hash = '#/capture'; })} />;
+  }
 
   /* Render strategy: every state branch assigns `card`, then a single
      fragment return wraps the card + the optional overlay. That way the
@@ -4893,7 +5079,7 @@ const TeamMomentsRail = ({ onOpenGameVideo }) => (
   </div>
 );
 
-const HomeScreen = ({ gameState, onPickMoment, onOpenGame, onOpenGameVideo, onOpenStory, onOpenAthlete, onOpenDrop, header }) => (
+const HomeScreen = ({ gameState, onPickMoment, onOpenGame, onOpenGameVideo, onOpenStory, onOpenAthlete, onOpenDrop, header, atVenue, onStartCapture }) => (
   <div className="anim-fade pb-28 sf" style={{ color: 'var(--text-primary)' }}>
     {header}
     <HighlightCircles onPickMoment={onPickMoment} onOpenGame={onOpenGame} onOpenGameVideo={onOpenGameVideo} onOpenAthlete={onOpenAthlete} />
@@ -4903,7 +5089,7 @@ const HomeScreen = ({ gameState, onPickMoment, onOpenGame, onOpenGameVideo, onOp
         bleed (the rails have inner lg:px-8 but their fixed-width children
         scroll past it). Card now sits flush with the visible rail extents
         rather than nested two gutters deep. */}
-    <div className="px-5 mb-7"><GameCard state={gameState} onOpenGame={onOpenGame} onOpenDrop={onOpenDrop} /></div>
+    <div className="px-5 mb-7"><GameCard state={gameState} onOpenGame={onOpenGame} onOpenDrop={onOpenDrop} atVenue={atVenue} onStartCapture={onStartCapture} /></div>
     <DropsSection onPickMoment={onPickMoment} />
     <FollowingStrip onOpenGame={onOpenGame} />
     <StorytellingDropsRail onOpenStory={onOpenStory} />
@@ -6284,7 +6470,272 @@ const BioTabBody = () => {
   );
 };
 
-const AthleteProfileScreen = ({ onPickMoment, onBack, onOpenGame, asTab = true }) => {
+/* CaptureThumb — 9:16 thumbnail used by all three capture-surfacing
+   rails (From the stands · Fan captures · My captures). Hue-based
+   gradient backdrop (each capture carries its own a/b hue pair),
+   kind chip top-start, fan name + caption bottom overlay, tagged
+   player jersey chip top-end if present. */
+const CaptureThumb = ({ capture, onClick, size = 'md' }) => {
+  const CLASSES = {
+    sm: 'w-[110px] h-[196px]',
+    md: 'w-[140px] h-[249px] lg:w-[160px] lg:h-[284px]',
+  };
+  const kindLabel = capture.kind === 'photo' ? 'Photo' : capture.kind === 'video-h' ? 'Video' : 'Video';
+  return (
+    <button onClick={onClick}
+      className={`relative shrink-0 overflow-hidden squircle-md lg-aura lg-shine transition-transform hover:scale-[1.02] ${CLASSES[size] || CLASSES.md}`}
+      style={{
+        background: `radial-gradient(ellipse 70% 50% at 30% 30%, ${capture.hue.a} 0%, transparent 60%), radial-gradient(ellipse 70% 50% at 75% 75%, ${capture.hue.b} 0%, transparent 60%), linear-gradient(180deg, var(--card-base-soft-top) 0%, var(--card-base-soft-bot) 100%)`,
+        border: '1px solid var(--glass-card-border)',
+        backdropFilter: 'blur(36px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(36px) saturate(180%)',
+        boxShadow: 'inset 0 1px 0 var(--glass-card-inset-top), var(--glass-card-shadow)',
+      }}>
+      <div className="absolute inset-0 hatch opacity-40" />
+      {/* Kind chip top-start */}
+      <div className="absolute top-2.5 start-2.5 lg-glass-strong squircle-sm px-2 py-0.5 z-10">
+        <span className="sf text-[9px] font-bold tracking-[0.14em] uppercase leading-none" style={{ color: 'var(--text-primary)' }}>
+          {kindLabel}
+        </span>
+      </div>
+      {/* Tag chip top-end. Three states:
+            · approved → cyan jersey number disc (visible to all)
+            · pending  → amber "PENDING" pill (visible only to the uploader)
+            · declined → no chip (capture stays hidden anyway) */}
+      {capture.taggedPlayerId && capture.tagApprovalStatus === 'approved' && (
+        <div className="absolute top-2.5 end-2.5 w-6 h-6 squircle-sm flex items-center justify-center z-10"
+          style={{ background: 'var(--brand-cyan-soft)', border: '1px solid var(--brand-cyan-border)', color: 'var(--brand-cyan-text)' }}>
+          <span className="sf-display text-[9.5px] font-bold tabular-nums leading-none">
+            {capture.taggedPlayerId === 'r1' ? '7' : capture.taggedPlayerId === 'r2' ? '12' : '#'}
+          </span>
+        </div>
+      )}
+      {capture.taggedPlayerId && capture.tagApprovalStatus === 'pending' && (
+        <div className="absolute top-2.5 end-2.5 squircle-sm flex items-center gap-1 px-1.5 py-0.5 z-10"
+          style={{ background: 'rgba(255,170,90,0.18)', border: '1px solid rgba(255,170,90,0.55)' }}>
+          <span className="w-1.5 h-1.5 rounded-full anim-pulse-dot" style={{ background: 'rgba(255,170,90,0.95)' }} />
+          <span className="sf text-[8.5px] tracking-[0.14em] uppercase font-bold leading-none"
+            style={{ color: 'rgba(255,200,140,0.95)' }}>Pending</span>
+        </div>
+      )}
+      {/* Bottom fade — fan name + caption */}
+      <div className="absolute inset-x-0 bottom-0 px-3 pt-9 pb-3 z-10"
+        style={{ background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 60%, rgba(0,0,0,0.95) 100%)' }}>
+        <div className="sf text-[9.5px] tracking-[0.16em] uppercase font-bold mb-0.5" style={{ color: 'rgba(255,255,255,0.55)' }}>
+          {capture.capturedBy || 'You'}
+        </div>
+        <div className="sf-display text-[12.5px] font-bold leading-tight tracking-[-0.01em] text-start clip2 text-white">
+          {capture.caption || 'From the stands'}
+        </div>
+      </div>
+    </button>
+  );
+};
+
+/* CaptureViewer — full-overlay detail view for a single capture. Opens
+   when a CaptureThumb is tapped. Same vocabulary as HighlightViewer
+   (phone-shape 9:16 frame on desktop, full-bleed on phone) but with
+   capture-specific chrome: kind label, fan attribution, caption, tag
+   status, captured-at relative time, share + report affordances.
+   In production each capture would carry a real video src / image URL;
+   here we render the hue-gradient poster as the visual placeholder. */
+const fmtCapturedAt = (ts) => {
+  const sec = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+  if (sec < 60) return 'just now';
+  if (sec < 3600) return Math.floor(sec / 60) + 'm ago';
+  if (sec < 86400) return Math.floor(sec / 3600) + 'h ago';
+  return Math.floor(sec / 86400) + 'd ago';
+};
+const CaptureViewer = ({ captureId, captures, onClose }) => {
+  const capture = (captures || []).find(c => c.id === captureId);
+  /* Roster lookup — used to render the tagged-player chip with their
+     jersey number + name. Hardcoded mock; in production this comes
+     from the team roster API tied to the capture's gameId. */
+  const ROSTER = {
+    r1: { name: 'Tal Weiss', number: 7 },
+    r2: { name: 'Sarah Kim', number: 12 },
+    r3: { name: 'Dylan Torres', number: 23 },
+    r4: { name: 'Marcus Lee', number: 9 },
+  };
+  if (!capture) return null;
+  const isVideo = capture.kind === 'video-v' || capture.kind === 'video-h';
+  const isHorizontal = capture.kind === 'video-h';
+  const player = capture.taggedPlayerId ? ROSTER[capture.taggedPlayerId] : null;
+  const game = SEED_GAMES.find(g => g.id === capture.gameId);
+  return (
+    <div data-theme="dark" className="fixed inset-0 z-[100] anim-fade flex flex-col text-white sf"
+      style={{
+        background:
+          'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,40,72,0.45) 0%, transparent 55%),' +
+          'radial-gradient(ellipse 70% 50% at 50% 100%, rgba(132,88,255,0.18) 0%, transparent 60%),' +
+          '#04060c',
+      }}>
+      {/* Top chrome — close + kind label */}
+      <div className="shrink-0 relative z-30 flex items-center justify-between px-5 lg:px-8 pt-4 pb-3">
+        <div className="sf text-[9.5px] tracking-[0.24em] uppercase font-bold" style={{ color: 'rgba(255,255,255,0.45)' }}>
+          Fan capture · {isVideo ? (isHorizontal ? 'Video' : 'Video') : 'Photo'}
+        </div>
+        <button onClick={onClose} aria-label="Close"
+          className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-[1.04] active:scale-[0.95]"
+          style={{
+            background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.10)',
+            color: 'rgba(255,255,255,0.95)',
+          }}>
+          <Icon name="close" size={11} stroke={2} />
+        </button>
+      </div>
+      {/* Main stage — capture viewport. Vertical kinds get a phone-shape
+          9:16 frame centered; horizontal gets a 16:9 letterbox. Photo
+          uses the same shape as its video sibling (vertical default). */}
+      <div className="flex-1 min-h-0 overflow-y-auto onb-scroll px-5 lg:px-8 pb-6">
+        <div className="w-full lg:max-w-[820px] mx-auto pt-2">
+          <div className="relative w-full overflow-hidden squircle-md mx-auto"
+            style={{
+              aspectRatio: isHorizontal ? '16 / 9' : '9 / 16',
+              maxWidth: isHorizontal ? '100%' : 'min(420px, 100%)',
+              background: `radial-gradient(ellipse 70% 50% at 30% 30%, ${capture.hue.a} 0%, transparent 60%), radial-gradient(ellipse 70% 50% at 75% 75%, ${capture.hue.b} 0%, transparent 60%), linear-gradient(180deg, #0a0e1a 0%, #050810 100%)`,
+              boxShadow:
+                '0 28px 80px -20px rgba(0,0,0,0.75),' +
+                '0 0 80px -16px rgba(0,214,254,0.18),' +
+                'inset 0 1px 0 rgba(255,255,255,0.06)',
+            }}>
+            <div className="absolute inset-0 hatch-dark opacity-30 pointer-events-none" />
+            {/* HALO monogram poster placeholder. Same pattern as the
+                other video frames in the prototype. */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <span className="sf-display font-extrabold tracking-[-0.04em] select-none"
+                style={{
+                  fontSize: 'clamp(80px, 18vw, 200px)',
+                  color: 'rgba(255,255,255,0.05)',
+                  letterSpacing: '-0.06em', lineHeight: 1,
+                }}>HALO</span>
+            </div>
+            {/* Captured-by attribution top-start + kind chip top-end.
+                Both sit ON the poster so they read as overlays. */}
+            <div className="absolute top-3 start-3 lg-glass-strong squircle-sm px-2 py-0.5 z-10">
+              <span className="sf text-[9.5px] tracking-[0.16em] uppercase font-bold leading-none text-white">
+                {capture.capturedBy}
+              </span>
+            </div>
+            {isVideo && (
+              <div className="absolute top-3 end-3 lg-glass squircle-sm px-2 py-0.5 z-10">
+                <span className="sf text-[10px] tabular-nums font-semibold leading-none" style={{ color: 'rgba(255,255,255,0.85)' }}>
+                  {capture.duration ? `0:${String(capture.duration).padStart(2, '0')}` : '0:00'}
+                </span>
+              </div>
+            )}
+            {/* Big mock play button for video — visible centered when the
+                capture is a video. Photos skip this. Tapping is a no-op
+                in the prototype (no real video URLs); in production it
+                would start playback. */}
+            {isVideo && (
+              <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+                <div className="w-20 h-20 lg:w-24 lg:h-24 rounded-full flex items-center justify-center"
+                  style={{
+                    background:
+                      'radial-gradient(ellipse 80% 80% at 30% 20%, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.04) 60%),' +
+                      'rgba(8,12,20,0.62)',
+                    backdropFilter: 'blur(20px) saturate(180%)',
+                    WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    boxShadow:
+                      '0 0 48px rgba(0,214,254,0.35),' +
+                      '0 12px 32px -10px rgba(0,0,0,0.65),' +
+                      'inset 0 1px 0 rgba(255,255,255,0.32)',
+                  }}>
+                  <svg width={26} height={30} viewBox="0 0 14 16" fill="white"
+                    style={{ marginInlineStart: 3, filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.45))' }}>
+                    <path d="M0 1.5v13c0 1 1.1 1.55 1.9 1.05l11-6.5c.8-.5.8-1.7 0-2.2l-11-6.5C1.1 -.05 0 .5 0 1.5z" />
+                  </svg>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Editorial caption block below the frame */}
+          <div className="px-1 lg:px-0 pt-6">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              {capture.taggedPlayerId && capture.tagApprovalStatus === 'approved' && player && (
+                <div className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-full"
+                  style={{ background: 'rgba(0,214,254,0.12)', border: '1px solid var(--brand-cyan-border)' }}>
+                  <div className="w-5 h-5 squircle-sm flex items-center justify-center sf-display text-[10px] font-bold tabular-nums leading-none"
+                    style={{ background: 'rgba(0,214,254,0.25)', color: 'var(--brand-cyan-text)' }}>
+                    {player.number}
+                  </div>
+                  <span className="sf text-[11px] font-semibold leading-none" style={{ color: 'var(--brand-cyan-text)' }}>
+                    {player.name}
+                  </span>
+                </div>
+              )}
+              {capture.taggedPlayerId && capture.tagApprovalStatus === 'pending' && (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+                  style={{ background: 'rgba(255,170,90,0.18)', border: '1px solid rgba(255,170,90,0.55)' }}>
+                  <span className="w-1.5 h-1.5 rounded-full anim-pulse-dot" style={{ background: 'rgba(255,170,90,0.95)' }} />
+                  <span className="sf text-[9.5px] tracking-[0.14em] uppercase font-bold leading-none" style={{ color: 'rgba(255,200,140,0.95)' }}>
+                    Pending approval
+                  </span>
+                </div>
+              )}
+              {capture.privacy === 'private' && (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.14)' }}>
+                  <Icon name="eye-off" size={11} stroke={1.8} />
+                  <span className="sf text-[9.5px] tracking-[0.14em] uppercase font-bold leading-none" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                    Private
+                  </span>
+                </div>
+              )}
+            </div>
+            <h1 className="sf-display font-bold leading-[1.05] tracking-[-0.02em] mb-2"
+              style={{ fontSize: 'clamp(22px, 3vw, 32px)', color: 'rgba(255,255,255,0.98)' }}>
+              {capture.caption || 'Untitled capture'}
+            </h1>
+            <p className="sf text-[12.5px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.55)' }}>
+              {capture.capturedBy} · {fmtCapturedAt(capture.capturedAt)}
+              {game ? ` · ${game.home} vs ${game.away}` : ''}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* CaptureRail — horizontal-scroll rail with section header. Used on
+   PostGameScreen (From the stands), AthleteProfile (Fan captures +
+   My captures), with different captures arrays + labels. */
+const CaptureRail = ({ title, subtitle, captures, emptyLabel = null, onPickCapture, accent = 'brand' }) => {
+  if ((!captures || captures.length === 0) && !emptyLabel) return null;
+  return (
+    <div className="mb-7">
+      <div className="px-5 lg:px-8 xl:px-12 mb-3 flex items-end justify-between">
+        <div className="min-w-0">
+          <h2 className="sf-display text-[17px] font-bold tracking-[-0.015em] leading-tight" style={{ color: 'var(--text-primary)' }}>
+            {accent === 'brand' && <span className="lg-brand-dot" />}
+            {title}
+          </h2>
+          {subtitle && <p className="sf text-[12px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{subtitle}</p>}
+        </div>
+        <span className="sf text-[10.5px] font-semibold tabular-nums" style={{ color: 'var(--text-tertiary)' }}>
+          {(captures || []).length}
+        </span>
+      </div>
+      {captures && captures.length > 0 ? (
+        <div className="flex gap-3 overflow-x-auto no-scrollbar px-5 lg:px-8 xl:px-12 pb-2">
+          {captures.map(c => <CaptureThumb key={c.id} capture={c} onClick={() => onPickCapture && onPickCapture(c)} />)}
+        </div>
+      ) : (
+        <div className="px-5 lg:px-8 xl:px-12">
+          <div className="lg-glass-card squircle-md p-5 text-center">
+            <p className="sf text-[12.5px]" style={{ color: 'var(--text-tertiary)' }}>{emptyLabel}</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const AthleteProfileScreen = ({ onPickMoment, onBack, onOpenGame, asTab = true, captures = [] }) => {
   const [tab, setTab] = useState('profile');
   return (
     <div className="anim-fade pb-28 sf relative" style={{ color: 'var(--text-primary)' }}>
@@ -6323,32 +6774,86 @@ const AthleteProfileScreen = ({ onPickMoment, onBack, onOpenGame, asTab = true }
         </div>
       </div>
 
-      {/* Tab segmented control — Profile / Highlights / Bio. v3.2 line 12415 */}
+      {/* My captures — kept ABOVE the tab control (lifetime grid of
+          captures the user has uploaded themselves; distinct in purpose
+          from Fan captures which is content OTHERS tagged you in).
+          Conditionally rendered — empty rail just doesn't show. */}
+      {asTab && (captures || []).some(c => c.capturedBy === 'You') && (
+        <CaptureRail
+          title="My captures"
+          subtitle="Your view from the stands."
+          accent="plain"
+          captures={(captures || []).filter(c => c.capturedBy === 'You')}
+          onPickCapture={(c) => { window.location.hash = '#/capture-view/' + c.id; }} />
+      )}
+
+      {/* Tab segmented control — Profile / Highlights / Bio / Fan captures.
+          Fan captures is a dedicated tab (per user spec) carrying a
+          NEW badge whenever there are pending tag-approvals for THIS
+          player. The badge clears once the user approves/declines via
+          the Bell sheet. */}
       <div className="px-5 lg:px-8 xl:px-12 mb-5">
-        <div className="lg-glass squircle-md p-1 flex gap-1">
-          {[
-            { key: 'profile',    label: 'Profile' },
-            { key: 'highlights', label: 'Highlights' },
-            { key: 'bio',        label: 'Bio' },
-          ].map(t => {
-            const active = tab === t.key;
-            return (
-              <button key={t.key} onClick={() => setTab(t.key)}
-                className="flex-1 py-2 sf text-[12px] font-semibold tracking-tight squircle-sm transition-colors"
-                style={active
-                  ? { background: 'var(--hairline-strong)', color: 'var(--brand-cyan-text)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.20), 0 4px 12px -6px rgba(0,214,254,0.35)' }
-                  : { color: 'var(--text-muted)' }}>
-                {t.label}
-              </button>
-            );
-          })}
-        </div>
+        {(() => {
+          /* Count of fan captures that need attention. Pending captures
+             (someone tagged you, waiting for your approval) drive the
+             NEW badge. Once approved/declined, badge clears. */
+          const newFanTags = (captures || []).filter(c =>
+            c.taggedPlayerId === 'r1' && c.tagApprovalStatus === 'pending' && c.capturedBy !== 'You'
+          ).length;
+          return (
+            <div className="lg-glass squircle-md p-1 flex gap-1">
+              {[
+                { key: 'profile',     label: 'Profile' },
+                { key: 'highlights',  label: 'Highlights' },
+                { key: 'bio',         label: 'Bio' },
+                { key: 'fan-captures', label: 'Fan captures', badge: newFanTags },
+              ].map(t => {
+                const active = tab === t.key;
+                return (
+                  <button key={t.key} onClick={() => setTab(t.key)}
+                    className="flex-1 py-2 sf text-[12px] font-semibold tracking-tight squircle-sm transition-colors relative"
+                    style={active
+                      ? { background: 'var(--hairline-strong)', color: 'var(--brand-cyan-text)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.20), 0 4px 12px -6px rgba(0,214,254,0.35)' }
+                      : { color: 'var(--text-muted)' }}>
+                    <span className="inline-flex items-center gap-1.5">
+                      {t.label}
+                      {t.badge > 0 && (
+                        <span className="sf text-[8.5px] tracking-[0.14em] uppercase font-extrabold leading-none px-1.5 py-0.5 rounded-full"
+                          style={{
+                            background: 'rgba(255,170,90,0.95)',
+                            color: '#1a0d00',
+                            boxShadow: '0 0 8px rgba(255,170,90,0.55)',
+                          }}>
+                          New
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Tab bodies */}
       {tab === 'profile'    && <ProfileTabBody onPickMoment={onPickMoment} />}
       {tab === 'highlights' && <HighlightsTabBody onPickMoment={onPickMoment} />}
       {tab === 'bio'        && <BioTabBody />}
+      {tab === 'fan-captures' && (
+        <CaptureRail
+          title="Fan captures"
+          subtitle="Public clips tagged with you."
+          captures={(captures || []).filter(c =>
+            c.taggedPlayerId === 'r1' && c.privacy === 'public' && (
+              c.tagApprovalStatus === 'approved' ||
+              (c.tagApprovalStatus === 'pending' && c.capturedBy === 'You')
+            )
+          )}
+          onPickCapture={(c) => { window.location.hash = '#/capture-view/' + c.id; }}
+          emptyLabel="No fan captures yet. When fans tag you in their clips, they'll show up here." />
+      )}
+
     </div>
   );
 };
@@ -6685,7 +7190,7 @@ const ScoreHero = ({ game }) => {
   );
 };
 
-const PostGameScreen = ({ gameId, onBack, onPickMoment }) => {
+const PostGameScreen = ({ gameId, onBack, onPickMoment, captures = [] }) => {
   const g = SEED_GAMES.find(x => x.id === gameId) || SEED_GAMES.find(x => x.status === 'just-ended');
   const myMoments = SEED_MOMENTS;
   const recap = TEAM_MOMENTS.find(t => t.kind === 'full-recap');
@@ -6745,6 +7250,26 @@ const PostGameScreen = ({ gameId, onBack, onPickMoment }) => {
 
       {/* Player stats — tabbed table */}
       <PlayerStatsSection game={g} />
+
+      {/* From the stands — fan-recorded public captures scoped to this
+          game. Only public + approved (or untagged) show. Mixed-source
+          rail that visually rhymes with Team moments but carries
+          "captured by [fan name]" attribution instead of broadcast
+          metadata. */}
+      <div className="mt-10">
+        <CaptureRail
+          title="From the stands"
+          subtitle="Captured by fans at the venue."
+          captures={(captures || []).filter(c =>
+            c.gameId === gameId && c.privacy === 'public' && (
+              c.taggedPlayerId == null ||                          // untagged + public — always visible
+              c.tagApprovalStatus === 'approved' ||                // tagged + approved — visible to all
+              (c.tagApprovalStatus === 'pending' && c.capturedBy === 'You')  // your own pending — visible to you only
+            )
+          )}
+          onPickCapture={(c) => { window.location.hash = '#/capture-view/' + c.id; }}
+          emptyLabel="No fan captures yet for this game." />
+      </div>
     </div>
   );
 };
@@ -7159,13 +7684,15 @@ const HighlightViewer = ({ momentIndex = 0, onClose, onWatchFullGame }) => {
           The arrows are gone — clicking a neighbor jumps to it. Keyboard
           arrow keys still navigate (wired via useEffect at the top). */}
       <div className="hidden lg:flex flex-1 items-center justify-center relative overflow-hidden">
-        {/* Ghost prev — left of focal, dimmed, scaled down. Tap = jump. */}
+        {/* Ghost prev — left of focal. Simple percentage-based offset
+            (start:6%) avoids fragile calc() math that could be parsed
+            differently across browsers. Tap = jump. */}
         <button onClick={goPrev} aria-label="Previous highlight"
           className="absolute z-10 overflow-hidden squircle-md transition-all hover:opacity-80 active:scale-[0.97]"
           style={{
             height: 'min(60vh, 520px)',
             aspectRatio: '9 / 16',
-            insetInlineStart: 'calc(50% - min(60vh, 520px) * (9/16) * 0.55 - min(88vh, 760px) * (9/16) * 0.5 - 32px)',
+            insetInlineStart: '6%',
             top: '50%',
             transform: 'translateY(-50%) scale(0.94)',
             transformOrigin: 'center',
@@ -7183,13 +7710,13 @@ const HighlightViewer = ({ momentIndex = 0, onClose, onWatchFullGame }) => {
           </div>
         </button>
 
-        {/* Ghost next — right of focal, same treatment as prev. */}
+        {/* Ghost next — right of focal, same simple offset. */}
         <button onClick={goNext} aria-label="Next highlight"
           className="absolute z-10 overflow-hidden squircle-md transition-all hover:opacity-80 active:scale-[0.97]"
           style={{
             height: 'min(60vh, 520px)',
             aspectRatio: '9 / 16',
-            insetInlineEnd: 'calc(50% - min(60vh, 520px) * (9/16) * 0.55 - min(88vh, 760px) * (9/16) * 0.5 - 32px)',
+            insetInlineEnd: '6%',
             top: '50%',
             transform: 'translateY(-50%) scale(0.94)',
             transformOrigin: 'center',
@@ -7375,7 +7902,7 @@ const SD_QUARTERS = [
 ];
 const SD_SEASON_TOP_THREE = [
   { name: 'Lincoln',   date: 'Mar 25', pts: 22, fg: '8/16', tpt: '2/5', venue: 'Lincoln High',     rank: 'Was #1',     headline: 'Twenty-two and a near-miss.',                img: SD_CLIP_IMGS[1], clipTs: 'Q3 · 4:22', clipCaption: 'Step-back jumper · top of arc' },
-  { name: 'Northside', date: 'Apr 3',  pts: 24, fg: '9/16', tpt: '3/7', venue: 'Eastside Prep',    rank: '#1 — tonight', headline: 'Career-best. +6 in the closing stretch.',  isThis: true, img: SD_CLIP_IMGS[2], clipTs: 'Q4 · 0:08', clipCaption: 'Game-winning 3 · ice it' },
+  { name: 'Northside', date: 'Apr 3',  pts: 24, fg: '9/16', tpt: '3/7', venue: 'Eastside Prep',    rank: '#1 — tonight', headline: 'Career-best. +6 in the closing stretch.',  isThis: true, img: SD_CLIP_IMGS[2], clipTs: 'Q4 · 0:08', clipCaption: 'Game-winning 3 · ice it', clipVideo: '/clip2.mp4' },
   { name: 'Westfield', date: 'Feb 12', pts: 20, fg: '7/14', tpt: '2/6', venue: 'Westfield Catholic', rank: '#3 of the season', headline: 'Twenty on the road. Cold gym, hot start.', img: SD_CLIP_IMGS[3], clipTs: 'Q1 · 9:14', clipCaption: 'Opening drive · and-one' },
 ];
 
@@ -7404,26 +7931,176 @@ const SD_JerseyPlaque = ({ size = 120 }) => (
   </div>
 );
 
-const SD_VideoFrame = ({ tsLabel, captionLabel, captionAlign = 'top', ratio = '9/16', maxWidth = 360, imgSrc = SD_CLIP_IMGS[0] }) => (
-  <div className="relative mx-auto w-full" style={{ maxWidth }}>
-    <div className="sd-video-frame" style={{ aspectRatio: ratio }}>
-      <img src={imgSrc} alt="Game clip" className="absolute inset-0 w-full h-full object-cover opacity-95" />
-      {tsLabel && (
-        <div className={'absolute sd-mono text-[8.5px] tracking-[0.22em] uppercase sd-tx85 px-2 py-1 z-10 ' + (captionAlign === 'top' ? 'top-3 left-3' : 'bottom-3 left-3')}
-          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(8px)', border: '1px solid rgba(240,235,225,0.18)' }}>
-          {tsLabel}
+const SD_VideoFrame = ({ tsLabel, captionLabel, captionAlign = 'top', ratio = '9/16', maxWidth = 360, imgSrc = SD_CLIP_IMGS[0], videoSrc = null }) => {
+  const [playing, setPlaying] = React.useState(false);
+  const [progress, setProgress] = React.useState(0);
+  const [duration, setDuration] = React.useState(0);
+  const [muted, setMuted] = React.useState(true);
+  const videoRef = React.useRef(null);
+  const containerRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (!videoSrc) return;
+    const video = videoRef.current;
+    if (!video) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+          video.play().then(() => setPlaying(true)).catch(() => {});
+        } else if (!entry.isIntersecting) {
+          video.pause();
+          setPlaying(false);
+        }
+      });
+    }, { threshold: 0.5 });
+
+    if (containerRef.current) observer.observe(containerRef.current);
+
+    const onTimeUpdate = () => {
+      if (video.duration) setProgress(video.currentTime / video.duration);
+    };
+    const onMeta = () => setDuration(video.duration);
+    const onEnded = () => { setPlaying(false); setProgress(0); };
+
+    video.addEventListener('timeupdate', onTimeUpdate);
+    video.addEventListener('loadedmetadata', onMeta);
+    video.addEventListener('ended', onEnded);
+
+    return () => {
+      observer.disconnect();
+      video.removeEventListener('timeupdate', onTimeUpdate);
+      video.removeEventListener('loadedmetadata', onMeta);
+      video.removeEventListener('ended', onEnded);
+    };
+  }, [videoSrc]);
+
+  const togglePlay = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (playing) { video.pause(); setPlaying(false); }
+    else { video.play().then(() => setPlaying(true)).catch(() => {}); }
+  };
+
+  const toggleMute = (e) => {
+    e.stopPropagation();
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !video.muted;
+    setMuted(video.muted);
+  };
+
+  const fmtTime = (s) => {
+    if (!s || isNaN(s)) return '0:00';
+    return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+  };
+
+  const currentSecs = videoRef.current ? videoRef.current.currentTime : 0;
+  const pct = `${(progress * 100).toFixed(1)}%`;
+
+  return (
+    <div ref={containerRef} className="relative mx-auto w-full" style={{ maxWidth }}>
+      <div className="sd-video-frame"
+        onClick={videoSrc ? togglePlay : undefined}
+        style={{ aspectRatio: ratio, borderRadius: '6px', overflow: 'hidden', border: '1px solid rgba(240,235,225,0.12)', boxShadow: '0 24px 64px rgba(0,0,0,0.70)', cursor: videoSrc ? 'pointer' : 'default' }}>
+
+        {/* Always render the still image as a poster layer so the frame
+            has visible content even when the video 404s (which it does
+            in Cowork's preview iframe, where /clip2.mp4 etc. aren't
+            served). When the video loads, it covers the image; when it
+            fails, the still shows through. onError defensively hides
+            the video element if its src fails to resolve. */}
+        <img src={imgSrc} alt="Game clip"
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ opacity: videoSrc ? 0.88 : 0.88 }} />
+        {videoSrc && (
+          <video ref={videoRef} src={videoSrc} muted playsInline loop poster={imgSrc}
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ opacity: 0.92 }} />
+        )}
+
+        {/* vignette */}
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.18) 0%, transparent 35%, transparent 55%, rgba(0,0,0,0.72) 100%)', pointerEvents: 'none' }} />
+
+        {/* top-left: timestamp badge */}
+        {tsLabel && (
+          <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5"
+            style={{ background: 'rgba(0,0,0,0.62)', backdropFilter: 'blur(8px)', borderRadius: '3px', padding: '3px 7px', border: '1px solid rgba(240,235,225,0.14)', pointerEvents: 'none' }}>
+            <div style={{ width: 5, height: 5, borderRadius: '50%', background: playing ? '#FF3B3B' : 'rgba(255,59,59,0.4)', flexShrink: 0, transition: 'background 0.3s' }} />
+            <span className="sd-mono text-[8px] tracking-[0.20em] uppercase sd-tx85">{tsLabel}</span>
+          </div>
+        )}
+
+        {/* top-right: HD badge */}
+        <div className="absolute top-3 right-3 z-10 sd-mono text-[7.5px] tracking-[0.18em] sd-tx55"
+          style={{ background: 'rgba(0,0,0,0.50)', backdropFilter: 'blur(6px)', borderRadius: '2px', padding: '2px 5px', border: '1px solid rgba(240,235,225,0.10)', pointerEvents: 'none' }}>
+          HD
+        </div>
+
+        {/* center play/pause button — hidden while playing */}
+        <div className="absolute inset-0 flex items-center justify-center z-10"
+          style={{ opacity: playing ? 0 : 1, transition: 'opacity 0.25s ease', pointerEvents: 'none' }}>
+          <div style={{
+            width: 52, height: 52, borderRadius: '50%',
+            background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(12px)',
+            border: '1.5px solid rgba(240,235,225,0.30)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <svg width="18" height="20" viewBox="0 0 18 20" fill="none">
+              <path d="M2 1.5L16 10L2 18.5V1.5Z" fill="rgba(240,235,225,0.92)" />
+            </svg>
+          </div>
+        </div>
+
+        {/* bottom controls bar */}
+        <div className="absolute bottom-0 left-0 right-0 z-10 px-3 pb-3 pt-5" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)', pointerEvents: 'none' }}>
+          {/* progress bar */}
+          <div className="relative w-full mb-2.5" style={{ height: 3, background: 'rgba(240,235,225,0.18)', borderRadius: 2 }}>
+            <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: videoSrc ? pct : '38%', background: 'rgba(240,235,225,0.85)', borderRadius: 2, transition: 'width 0.25s linear' }} />
+            <div style={{ position: 'absolute', left: videoSrc ? pct : '38%', top: '50%', transform: 'translate(-50%,-50%)', width: 7, height: 7, borderRadius: '50%', background: '#F0EBE1', boxShadow: '0 0 4px rgba(0,0,0,0.5)', transition: 'left 0.25s linear' }} />
+          </div>
+          {/* controls row */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              {/* play/pause icon */}
+              {playing ? (
+                <svg width="11" height="12" viewBox="0 0 11 12" fill="none">
+                  <rect x="1" y="1" width="3" height="10" rx="1" fill="rgba(240,235,225,0.75)" />
+                  <rect x="7" y="1" width="3" height="10" rx="1" fill="rgba(240,235,225,0.75)" />
+                </svg>
+              ) : (
+                <svg width="11" height="12" viewBox="0 0 11 12" fill="none">
+                  <path d="M1 0.8L10 6L1 11.2V0.8Z" fill="rgba(240,235,225,0.75)" />
+                </svg>
+              )}
+              {/* volume icon — clickable */}
+              <svg width="13" height="12" viewBox="0 0 13 12" fill="none" onClick={videoSrc ? toggleMute : undefined}
+                style={{ cursor: videoSrc ? 'pointer' : 'default', pointerEvents: 'auto' }}>
+                <path d="M2 4H0V8H2L5.5 11V1L2 4Z" fill={muted ? 'rgba(240,235,225,0.25)' : 'rgba(240,235,225,0.55)'} />
+                {!muted && <path d="M8 2.5C9.38 3.38 10.3 4.89 10.3 6.5C10.3 8.11 9.38 9.62 8 10.5" stroke="rgba(240,235,225,0.55)" strokeWidth="1.2" strokeLinecap="round" fill="none"/>}
+                {muted && <path d="M8 4.5L11 7.5M11 4.5L8 7.5" stroke="rgba(240,235,225,0.35)" strokeWidth="1.2" strokeLinecap="round"/>}
+              </svg>
+              <span className="sd-mono text-[8px] sd-tx45">
+                {videoSrc ? `${fmtTime(currentSecs)} / ${fmtTime(duration)}` : '0:38 / 1:42'}
+              </span>
+            </div>
+            {/* fullscreen icon */}
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M1 4V1H4M8 1H11V4M11 8V11H8M4 11H1V8" stroke="rgba(240,235,225,0.55)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      {captionLabel && (
+        <div className="sd-mono text-[9px] tracking-[0.25em] uppercase sd-tx25 mt-3 text-center">
+          {captionLabel}
         </div>
       )}
-      <span className="sd-corner-tl" /><span className="sd-corner-tr" />
-      <span className="sd-corner-bl" /><span className="sd-corner-br" />
     </div>
-    {captionLabel && (
-      <div className="sd-mono text-[9px] tracking-[0.25em] uppercase sd-tx25 mt-3 text-center">
-        {captionLabel}
-      </div>
-    )}
-  </div>
-);
+  );
+};
 
 const SD_TeamLogo = ({ team, size = 56, accent = false }) => {
   const initial = (team || 'X').charAt(0).toUpperCase();
@@ -7549,7 +8226,7 @@ const SD_Hero = () => {
         </div>
         <div className="relative" style={{ height: 48, width: 1 }}>
           <div style={{
-            position: 'absolute', insetInlineStart: 0, top: 0, width: 1,
+            position: 'absolute', insetInlineStart: 0, top: 0, width: 1, height: '100%',
             background: 'linear-gradient(180deg, transparent 0%, rgba(0,214,254,0.85) 100%)',
             animation: 'sdScrollLine 2.4s ease-in-out infinite',
             transformOrigin: 'top',
@@ -7578,50 +8255,68 @@ const SD_Marquee = () => {
   );
 };
 
+const SD_HoopBackboard = () => (
+  <svg viewBox="16 157 563 527" width="155" height="145" style={{ display: 'block', overflow: 'visible' }}>
+    <rect x="35.05" y="174.9" width="525.03" height="309.96" fill="none"/>
+    <path fill="rgba(255,255,255,0.22)" d="M16.08,157.5v344.75h562.99V157.5H16.08ZM560.09,484.86H35.05V174.9h525.03v309.96Z"/>
+    <path fill="rgba(255,255,255,0.11)" d="M178.17,292.52v157.35h238.8v-157.35h-238.8ZM394.83,430.11h-194.52v-117.82h194.52v117.82Z"/>
+  </svg>
+);
+
+const SD_HoopRimNet = () => (
+  <svg viewBox="16 157 563 527" width="155" height="145" style={{ display: 'block', overflow: 'visible' }}>
+    <path fill="#C8441E" d="M165.52,464.06h264.1c11.93,0,11.93-18.5,0-18.5H165.52c-11.93,0-11.93,18.5,0,18.5h0Z"/>
+    <path fill="rgba(255,255,255,0.22)" d="M405.84,464.06c-6.58,11.12-15.18,23.79-23.17,33.67l-27.53,29.26,19.25-62.92h-9.01l-18.32,59.89-18.58-20.53.1-.1-.4-1.46,4.43-37.8h-9.88l-4.23,37.27-16.61,17.21v-54.47h-8.62v54.47l-16.61-17.21-4.23-37.27h-9.88l4.43,37.8-.39,1.46.1.1-18.59,20.53-18.32-59.89h-9.01l19.25,62.92-27.53-29.26c-8.9-11.97-17.88-23.94-23.17-33.67h-14.94c10.06,10.32,26.53,29.57,30.24,48.14,5.68,28.39,11.2,169.78,11.21,171.2h8.1l23.87-26.79,18.57,25.6h9.41s21.81-20.82,21.81-20.82l21.81,20.82h9.42s18.57-25.6,18.57-25.6l23.86,26.79h8.1c.01-1.43,5.53-142.81,11.21-171.2,3.71-18.57,20.19-37.82,30.24-48.14h-14.94ZM352.29,542.58l16.24,17.94-20.05,23.62-17.4-19.01,21.21-22.54ZM342.85,590.77l-20.92,24.65-18.64-20.75,21.87-23.24,17.7,19.34ZM322.46,509.62l24.04,26.56-21.25,22.58-24.48-26.75,21.69-22.38ZM319.32,565.04l-21.75,23.11-21.75-23.11,21.75-23.77,21.75,23.77ZM291.86,594.66l-18.64,20.75-20.92-24.65,17.7-19.34,21.87,23.24ZM272.69,509.62l21.69,22.38-24.48,26.75-21.25-22.58,24.04-26.56ZM242.85,542.58l21.21,22.54-17.4,19.01-20.05-23.62,16.23-17.94ZM216.92,515.04l20,21.25-16.94,18.71c-.8-16.5-1.81-30.81-3.06-39.96ZM220.53,567.24l.25-.28,20.02,23.58-18.9,20.65c-.35-14.55-.8-29.74-1.38-43.96ZM223.07,669.59c-.11-10.81-.48-26.38-.89-45.92l.61-.67,19.74,26.56-19.46,20.02ZM228.72,616.52l17.71-19.35,20.97,24.71-18.99,21.14-19.69-26.49ZM271.56,674.18l-17.91-24.1,19.38-21.56,20.76,24.45-22.22,21.21ZM278.84,622.04l18.73-20.85,18.73,20.85-18.73,22.07-18.73-22.07ZM323.58,674.18l-22.22-21.21,20.75-24.45,19.38,21.56-17.91,24.1ZM346.73,643.02l-18.99-21.14,20.97-24.71,17.71,19.35-19.69,26.49ZM372.07,669.59l-19.46-20.02,19.74-26.56.6.67c-.4,19.54-.77,35.11-.89,45.92ZM373.24,611.2l-18.9-20.65,20.02-23.58.25.28c-.58,14.21-1.03,29.4-1.37,43.96ZM375.16,555l-16.94-18.71,20-21.25c-1.26,9.16-2.26,23.46-3.06,39.96Z"/>
+  </svg>
+);
+
+const SD_Basketball = () => (
+  <svg viewBox="218 341 160 160" width="62" height="62" style={{ display: 'block', overflow: 'visible' }}>
+    <defs>
+      <clipPath id="sd-ball-clip">
+        <path d="M220.22,420.7c-.49,42.88,33.89,78.03,76.77,78.52,42.88.48,78.03-33.89,78.51-76.78.49-42.88-33.88-78.04-76.77-78.52-42.88-.49-78.04,33.88-78.52,76.77Z"/>
+      </clipPath>
+    </defs>
+    <path fill="#f47536" d="M220.22,420.7c-.49,42.88,33.89,78.03,76.77,78.52,42.88.48,78.03-33.89,78.51-76.78.49-42.88-33.88-78.04-76.77-78.52-42.88-.49-78.04,33.88-78.52,76.77Z"/>
+    <g clipPath="url(#sd-ball-clip)">
+      <path fill="#d25227" d="M316.31,499.82c37.97-30.76,24.13-93.05,16.42-118.41-11.66-38.33-32.97-40.26-33.87-40.33l-.2,2.86.11-1.43-.11,1.43c.19.01,20.3,2.03,31.33,38.3,7.55,24.8,21.13,85.69-15.48,115.35l1.8,2.22Z"/>
+      <path fill="#d25227" d="M255.42,489.15c5.55-2.96,20.18-21.02,43.47-53.67,13.09-18.33,17.66-34.05,13.99-48.04-1.94-7.37-4.88-12.84-9.26-17.2-5.35-5.34-12.74-8.83-22.58-10.66-20.68-3.85-39.03,4.56-39.8,4.92l1.21,2.59c.17-.08,18.31-8.38,38.07-4.7,21.27,3.96,26.98,15.86,29.59,25.78,3.44,13.11-.99,28.05-13.55,45.65-22.38,31.38-37.47,50.13-42.48,52.81l1.34,2.53Z"/>
+      <path fill="#d25227" d="M374.68,445.6c.53-18.37-12.81-41.99-20-54.67-1.12-1.99-2.1-3.72-2.79-5.02-7.03-13.3-9.26-30.49-9.28-30.66l-2.84.36c.1.73,2.31,17.89,9.59,31.64.71,1.34,1.69,3.08,2.83,5.09,7.04,12.44,20.14,35.6,19.63,53.19l2.86.08Z"/>
+      <path fill="#d25227" d="M221.68,438.24c10.86-20.37,33.29-33.49,50.18-40.9,18.46-8.1,40.57-13.93,59.16-15.6,30.02-2.69,37.42,7.41,37.49,7.52l2.37-1.6c-.31-.48-8.12-11.64-40.12-8.77-18.87,1.7-41.32,7.61-60.04,15.83-24.83,10.9-42.66,25.48-51.56,42.18l2.53,1.35Z"/>
+    </g>
+  </svg>
+);
+
 const SD_AnchoredOpen = ({ scrollEl }) => {
-  const sectionRef = useRef(null);
-  const jerseyRef  = useRef(null);
-  const [landed, setLanded] = useState(false);
-  const [flashKey, setFlashKey] = useState(0);
-  /* Refs (not state) for per-frame values — flipping these via direct
-     DOM mutation avoids the React re-render that used to fire on every
-     scroll event (60+/sec). Only the binary `landed` toggle still uses
-     setState, since that one DOES need to flip child visibility. */
+  const sectionRef  = useRef(null);
+  const ballRef     = useRef(null);
   const lastLandedRef = useRef(false);
-  const rafRef = useRef(null);
+  const rafRef      = useRef(null);
+  const [landed, setLanded] = useState(false);
 
   useEffect(() => {
     if (!scrollEl) return;
     const apply = () => {
       rafRef.current = null;
       const sec = sectionRef.current;
-      const jersey = jerseyRef.current;
+      const ball = ballRef.current;
       if (!sec) return;
       const rect = sec.getBoundingClientRect();
       const scrollable = sec.offsetHeight - window.innerHeight;
       if (scrollable <= 0) return;
       const p = Math.max(0, Math.min(1, -rect.top / scrollable));
-      /* Fall completes at p=0.5 (was 0.65) — jersey hits its landing
-         spot halfway through the section so the user sees the "landed"
-         editorial reveal for the remaining 90vh of scroll instead of
-         only the last 60vh. Feels less rushed. */
-      const fall = Math.min(1, p / 0.5);
-      const eased = fall * fall;
-      const ballTopVh = -30 + 100 * eased;
-      const rotation = fall * 380;
-      /* Drive the jersey transform via DOM — no React render, no
-         transition CSS competing with our requestAnimationFrame loop.
-         No translateZ here either — it can interfere with the sticky
-         parent's positioning. */
-      if (jersey) {
-        jersey.style.top = ballTopVh + 'vh';
-        jersey.style.transform = `translateX(-50%) rotate(${rotation}deg)`;
+      /* Ball drops in over first 55% of scroll travel.
+         Gravity ease-in: starts slow, accelerates. */
+      const fall  = Math.min(1, p / 0.55);
+      const eased = fall * fall * fall;
+      const ballY = -12 + 80 * eased;
+      if (ball) {
+        ball.style.transform = `translate(-50%, ${ballY}vh)`;
       }
-      const isLanded = p > 0.5;
+      const isLanded = p > 0.55;
       if (isLanded !== lastLandedRef.current) {
         lastLandedRef.current = isLanded;
         setLanded(isLanded);
-        if (isLanded) setFlashKey(k => k + 1);
       }
     };
     const onScroll = () => {
@@ -7637,56 +8332,68 @@ const SD_AnchoredOpen = ({ scrollEl }) => {
   }, [scrollEl]);
 
   return (
-    /* 180vh (was 240vh): 100vh sticky phase + 80vh of "play through"
-       runway is enough for the jersey-fall animation; the extra 60vh
-       was just empty unsticking. The `landed` flag flips at p > 0.5
-       (was 0.65) so the cyan-flash + text reveal happens earlier in the
-       scroll. */
-    <section ref={sectionRef} className="relative" style={{ height: '180vh' }}>
-      <div className="sticky top-0 h-screen overflow-hidden flex items-end justify-center">
-        <div className="absolute top-14 inset-x-0 text-center px-6 z-10 transition-opacity duration-500"
-          style={{ opacity: landed ? 0 : 1 }}>
-          <div className="sd-mono text-[10.5px] tracking-[0.30em] uppercase sd-tx30 mb-3">How it started</div>
-          <div className="sd-serif sd-tx" style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)', letterSpacing: '-0.02em', lineHeight: 1.05, fontWeight: 400 }}>
-            One pass. Then it was on.
+    <section ref={sectionRef} className="relative" style={{ height: '190vh' }}>
+      <div className="sticky top-0 h-screen" style={{ clipPath: 'inset(0)' }}>
+
+        {/* ── pre-land: eyebrow + headline — staggered clip-path reveal on mount ── */}
+        <div className="absolute inset-x-0 text-center px-6"
+          style={{ top: '8%', zIndex: 10, opacity: landed ? 0 : 1, transition: 'opacity 0.35s ease-in' }}>
+          <div className="sd-rh1 sd-mono text-[10px] tracking-[0.35em] uppercase sd-tx25 mb-4">How it started</div>
+          <div className="sd-serif sd-tx" style={{ fontSize: 'clamp(2.8rem, 6.5vw, 5.5rem)', letterSpacing: '-0.02em', lineHeight: 1.0, fontWeight: 400 }}>
+            <span className="sd-rh2 block">One shot.</span>
+            <span className="sd-rh3 block">Everything changed.</span>
           </div>
         </div>
-        <div ref={jerseyRef} className="absolute left-1/2 z-20" style={{
-          top: '-30vh',
-          transform: 'translateX(-50%)',
-          filter: 'drop-shadow(0 18px 32px rgba(0,0,0,0.55))',
-          opacity: landed ? 0 : 1,
-          transition: 'opacity 300ms ease',
-          transitionDelay: landed ? '120ms' : '0ms',
-          /* will-change alone hints the compositor without forcing a
-             new containing block (which would interfere with the sticky
-             parent's positioning context). */
-          willChange: 'transform, top',
-        }}>
-          <SD_JerseyPlaque size={130} />
+
+        {/* ── backboard — fades last in chain ── */}
+        <div className="absolute left-1/2"
+          style={{ top: '57%', transform: 'translateX(-50%)', zIndex: 5, opacity: landed ? 0 : 1, transition: 'opacity 0.35s ease-in 0.35s' }}>
+          <SD_HoopBackboard />
         </div>
-        {landed && (
-          <div key={flashKey} className="absolute inset-0 z-30 pointer-events-none sd-flash-in"
-            style={{ background: 'rgba(0,214,254,0.30)' }} />
-        )}
-        <div className="absolute inset-0 z-40 px-6 lg:px-16 transition-opacity duration-700 flex items-center"
-          style={{ opacity: landed ? 1 : 0, pointerEvents: landed ? 'auto' : 'none' }}>
+
+        {/* ── rim + net — fades second ── */}
+        <div className="absolute left-1/2"
+          style={{ top: '57%', transform: 'translateX(-50%)', zIndex: 20, opacity: landed ? 0 : 1, transition: 'opacity 0.3s ease-in 0.18s' }}>
+          <SD_HoopRimNet />
+        </div>
+
+        {/* ── basketball — fades first, ball "enters" the net ── */}
+        <div ref={ballRef} className="absolute left-1/2"
+          style={{ top: 0, transform: 'translate(-50%, -12vh)', zIndex: 30, willChange: 'transform',
+            filter: 'drop-shadow(0 16px 32px rgba(0,0,0,0.70))',
+            opacity: landed ? 0 : 1, transition: 'opacity 0.2s ease-in' }}>
+          <SD_Basketball />
+        </div>
+
+        {/* ── post-land: editorial reveal — translateY stagger ── */}
+        <div className="absolute inset-0 z-40 px-6 lg:px-16 flex items-center"
+          style={{ pointerEvents: landed ? 'auto' : 'none' }}>
           <div className="w-full max-w-[1280px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
             <div className="lg:col-span-7 flex flex-col">
-              <div className="sd-mono text-[10.5px] tracking-[0.30em] uppercase sd-tx30 mb-5">
+              <div style={{ opacity: landed ? 1 : 0, transform: landed ? 'translateY(0)' : 'translateY(12px)', transition: 'opacity 0.45s cubic-bezier(0.16,1,0.3,1) 0.05s, transform 0.5s cubic-bezier(0.16,1,0.3,1) 0.05s' }}
+                className="sd-mono text-[10.5px] tracking-[0.30em] uppercase sd-tx30 mb-5">
                 {SD_OPENING.q} · {SD_OPENING.ts} · First basket
               </div>
-              <div className="sd-serif italic sd-tx" style={{ fontSize: 'clamp(4rem, 11vw, 8.5rem)', fontWeight: 300, lineHeight: 0.85, letterSpacing: '-0.01em' }}>
+              <div className="sd-serif italic sd-tx" style={{ fontSize: 'clamp(3.8rem, 10vw, 8rem)', fontWeight: 300, lineHeight: 0.85, letterSpacing: '-0.01em',
+                opacity: landed ? 1 : 0, transform: landed ? 'translateY(0)' : 'translateY(20px)', transition: 'opacity 0.55s cubic-bezier(0.16,1,0.3,1) 0.12s, transform 0.6s cubic-bezier(0.16,1,0.3,1) 0.12s' }}>
                 {SD_OPENING.title}
               </div>
-              <p className="sd-mono text-[13px] leading-[1.85] sd-tx55 max-w-[44ch] mt-6">{SD_OPENING.body}</p>
-              <div className="sd-mono text-[9.5px] tracking-[0.30em] uppercase sd-tx25 mt-6">Halo clip · auto-detected</div>
+              <p className="sd-mono text-[13px] leading-[1.85] sd-tx55 max-w-[44ch] mt-6"
+                style={{ opacity: landed ? 1 : 0, transform: landed ? 'translateY(0)' : 'translateY(16px)', transition: 'opacity 0.5s cubic-bezier(0.16,1,0.3,1) 0.22s, transform 0.55s cubic-bezier(0.16,1,0.3,1) 0.22s' }}>
+                {SD_OPENING.body}
+              </p>
+              <div className="sd-mono text-[9.5px] tracking-[0.30em] uppercase sd-tx25 mt-6"
+                style={{ opacity: landed ? 1 : 0, transition: 'opacity 0.4s cubic-bezier(0.16,1,0.3,1) 0.32s' }}>
+                Halo clip · auto-detected
+              </div>
             </div>
-            <div className="lg:col-span-5">
-              <SD_VideoFrame tsLabel={`${SD_OPENING.q} · ${SD_OPENING.ts}`} captionLabel="No-look pass · Q1 7:33" maxWidth={420} imgSrc={SD_CLIP_IMGS[1]} />
+            <div className="lg:col-span-5"
+              style={{ opacity: landed ? 1 : 0, transform: landed ? 'translateY(0)' : 'translateY(24px)', transition: 'opacity 0.6s cubic-bezier(0.16,1,0.3,1) 0.28s, transform 0.65s cubic-bezier(0.16,1,0.3,1) 0.28s' }}>
+              <SD_VideoFrame tsLabel={`${SD_OPENING.q} · ${SD_OPENING.ts}`} captionLabel="No-look pass · Q1 7:33" maxWidth={420} imgSrc={SD_CLIP_IMGS[1]} videoSrc="/clip.mp4" />
             </div>
           </div>
         </div>
+
       </div>
     </section>
   );
@@ -7703,7 +8410,7 @@ const SD_CourtSVG = ({ shots, animate }) => (
     <line x1="132" y1="242" x2="168" y2="242" stroke="rgba(240,235,225,0.35)" strokeWidth="1.5" />
     <path d="M 134,230 A 16,16 0 0 1 166,230" fill="none" stroke="rgba(240,235,225,0.10)" strokeWidth="1" />
     <path d="M 30,262 L 30,192 A 126,126 0 0 1 270,192 L 270,262" fill="none" stroke="rgba(240,235,225,0.15)" strokeWidth="1" />
-    {animate && shots.map((s, i) => {
+    {shots.map((s, i) => {
       const delay = `${i * 60}ms`;
       if (s.type === 'ft' || s.type === 'ft-miss') {
         const c = s.type === 'ft' ? '#F0EBE1' : 'rgba(240,235,225,0.25)';
@@ -7754,7 +8461,7 @@ const SD_QuarterPanel = ({ q, isActive }) => (
       {q.q.charAt(1)}
     </div>
     <div className="flex flex-col min-w-0">
-      <SD_CourtSVG shots={q.shots} animate={isActive} />
+      <SD_CourtSVG key={isActive ? q.q + '-active' : q.q} shots={q.shots} animate={true} />
       <SD_CourtLegend />
     </div>
     <div className="flex flex-col relative z-10 min-w-0">
@@ -7849,7 +8556,7 @@ const SD_QuarterScroll = ({ scrollEl }) => {
           <div className="sd-serif italic sd-tx85" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.25rem)' }}>how all 24 happened</div>
         </div>
         <div ref={trackRef} className="sd-q-track flex h-full"
-          style={{ width: '400vw', transition: 'transform 80ms linear' }}>
+          style={{ width: '400vw', transition: 'transform 55ms cubic-bezier(0,0,0.2,1)' }}>
           {SD_QUARTERS.map((q, i) => (
             <SD_QuarterPanel key={i} q={q} isActive={active === i} />
           ))}
@@ -7890,20 +8597,20 @@ const SD_ScoreBoard = ({ scrollEl }) => {
   }, [scrollEl]);
   return (
     <section ref={ref} className="relative flex flex-col items-center justify-center overflow-hidden"
-      style={{ minHeight: '100vh', background: '#050810' }}>
+      style={{ minHeight: '55vh', background: '#050810' }}>
       <div className="absolute inset-0 pointer-events-none" style={{
         background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(0,214,254,0.09) 0%, transparent 65%)',
-        opacity: vis ? 1 : 0, transition: 'opacity 1.5s ease 0.6s',
+        opacity: vis ? 1 : 0, transition: 'opacity 0.8s cubic-bezier(0.16,1,0.3,1) 0.15s',
       }} />
       <div className="sd-mono text-[9.5px] tracking-[0.45em] uppercase sd-tx25 mb-10"
-        style={{ opacity: vis ? 1 : 0, transition: 'opacity 0.8s ease 0.3s' }}>
+        style={{ opacity: vis ? 1 : 0, transition: 'opacity 0.5s cubic-bezier(0.16,1,0.3,1) 0.10s' }}>
         Final Score · {SD_GAME.date} · {SD_GAME.venue}
       </div>
       <div style={{
         overflow: 'hidden', padding: '0.08em 0.20em 0.04em',
         clipPath: vis ? 'inset(0 0 0% 0)' : 'inset(0 0 100% 0)',
         transform: vis ? 'translateY(0)' : 'translateY(36px)',
-        transition: 'clip-path 1.4s cubic-bezier(0.16,1,0.3,1) 0.5s, transform 1.4s cubic-bezier(0.16,1,0.3,1) 0.5s',
+        transition: 'clip-path 0.85s cubic-bezier(0.16,1,0.3,1) 0.20s, transform 0.85s cubic-bezier(0.16,1,0.3,1) 0.20s',
       }}>
         <div className="sd-serif text-center" style={{
           fontSize: 'clamp(5.5rem, 18vw, 16rem)',
@@ -7915,7 +8622,7 @@ const SD_ScoreBoard = ({ scrollEl }) => {
         </div>
       </div>
       <div className="mt-12 flex items-center justify-center gap-6 sm:gap-10"
-        style={{ opacity: vis ? 1 : 0, transition: 'opacity 0.8s ease 1.1s' }}>
+        style={{ opacity: vis ? 1 : 0, transition: 'opacity 0.55s cubic-bezier(0.16,1,0.3,1) 0.45s' }}>
         <div className="flex items-center gap-3">
           <SD_TeamLogo team={SD_GAME.home} size={52} accent />
           <div className="sd-mono text-[10px] tracking-[0.30em] uppercase sd-tx85">{SD_GAME.home}</div>
@@ -7949,7 +8656,7 @@ const SD_Closing = ({ scrollEl, onPickMoment }) => {
   }, [scrollEl]);
   const active = SD_SEASON_TOP_THREE[activeIdx];
   return (
-    <section ref={wrapRef} className="relative min-h-screen flex flex-col items-center justify-center px-6 py-24">
+    <section ref={wrapRef} className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-4 pb-20">
       <div className="sd-mono text-[10.5px] tracking-[0.35em] uppercase sd-tx30 mb-4">Where this night ranks</div>
       <div className="sd-serif text-center sd-tx mb-12"
         style={{ fontSize: 'clamp(2rem, 4.5vw, 3.6rem)', fontWeight: 400, lineHeight: 1.05, letterSpacing: '-0.02em', maxWidth: '20ch' }}>
@@ -8045,7 +8752,7 @@ const SD_Closing = ({ scrollEl, onPickMoment }) => {
             </button>
           </div>
           <div className="lg:col-span-5">
-            <SD_VideoFrame key={activeIdx} tsLabel={active.clipTs} captionLabel={active.clipCaption} maxWidth={300} imgSrc={active.img} />
+            <SD_VideoFrame key={activeIdx} tsLabel={active.clipTs} captionLabel={active.clipCaption} maxWidth={300} imgSrc={active.img} videoSrc={active.clipVideo || null} />
           </div>
         </div>
       </div>
@@ -8262,6 +8969,7 @@ const GameVideoViewer = ({ gameId, momentId, onClose }) => {
             </div>
             <video key={`gv-${game.id}-${playing}`} src={HALO_VIDEO_URL}
               autoPlay={playing} muted loop playsInline preload="auto"
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
               className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
             {/* Edge scrim — fades video into surrounding atmosphere. */}
             <div className="absolute inset-0 pointer-events-none"
@@ -10845,6 +11553,27 @@ const App = () => {
      verify-email banner is visible the first time the user opens the
      SideMenu. Tapping "Resend link" flips it to true (banner hides). */
   const [emailVerified, setEmailVerified] = useState(false);
+  /* Capture Mode state — fan-recorded media flow.
+     - atVenue: demo toggle in SideMenu. When true, the home morph card
+       morphs to its capture variant (red glowing). Replaces the rest of
+       the morph cycle.
+     - captures: session capture pool, seeded with sample fan captures
+       so the rails on player profiles + game pages have content on
+       first load.
+     - captureFlow: which step of the capture overlay flow is open
+       (null = no flow, else 'permissions' | 'pick-game' | 'camera' |
+       'review'). Driven by #/capture/{step} hash routes.
+     - captureSession: scratch state during a capture flow — which
+       game the user picked + the array of just-captured clips not
+       yet published. Reset on flow close.
+     - On approve/decline tag, mutate the relevant capture's
+       tagApprovalStatus + privacy via updateCapture. */
+  const [atVenue, setAtVenue] = useState(false);
+  const [captures, setCaptures] = useState(SEED_CAPTURES);
+  const [captureFlow, setCaptureFlow] = useState(null);
+  const [captureSession, setCaptureSession] = useState({ gameId: null, pending: [] });
+  const updateCapture = (id, patch) => setCaptures(cs => cs.map(c => c.id === id ? { ...c, ...patch } : c));
+  const addCaptures = (newCaps) => setCaptures(cs => [...newCaps, ...cs]);
   /* SideNav collapse — persists across reloads via localStorage. */
   const [sideNavCollapsed, setSideNavCollapsed] = useState(() => {
     try { return localStorage.getItem('halo.sidenav.collapsed') === '1'; }
@@ -10884,6 +11613,17 @@ const App = () => {
       setAuth(true);
       setOnboardFlow(null);
       setAuthStep(null);
+      /* Capture Mode flow — overlay route. `#/capture` = enter at
+         permissions; `#/capture/{step}` = jump directly to that step.
+         Steps: permissions | pick-game | camera | review. The flow
+         overlays the current tab so closing the flow returns the
+         user to where they were. */
+      if (route === 'capture') {
+        const step = sub || 'permissions';
+        setCaptureFlow(['permissions','pick-game','camera','review'].includes(step) ? step : 'permissions');
+        return;
+      }
+      setCaptureFlow(null);
       if (['home','games','watch','profile'].includes(route)) {
         setTab(route);
         setPushed(null);
@@ -10897,6 +11637,8 @@ const App = () => {
         setPushed({ kind: 'pack-reveal', id: sub || 'gE' });
       } else if (route === 'game-video') {
         setPushed({ kind: 'game-video', id: sub || 'gE' });
+      } else if (route === 'capture-view') {
+        setPushed({ kind: 'capture-view', id: sub });
       }
     };
     apply();
@@ -10957,10 +11699,10 @@ const App = () => {
 
   const renderTabContent = (showHeader = true) => {
     const header = showHeader ? phoneHeader : null;
-    if (tab === 'home') return <HomeScreen header={header} gameState={gameState} onPickMoment={onPickMoment} onOpenGame={onOpenGame} onOpenGameVideo={onOpenGameVideo} onOpenStory={onOpenStory} onOpenAthlete={onOpenAthlete} onOpenDrop={onOpenDrop} />;
+    if (tab === 'home') return <HomeScreen header={header} gameState={gameState} onPickMoment={onPickMoment} onOpenGame={onOpenGame} onOpenGameVideo={onOpenGameVideo} onOpenStory={onOpenStory} onOpenAthlete={onOpenAthlete} onOpenDrop={onOpenDrop} atVenue={atVenue} onStartCapture={() => navigate('capture')} />;
     if (tab === 'games') return <GamesScreen onOpenGame={onOpenGame} />;
     if (tab === 'watch') return <WatchScreen onOpenGame={onOpenGame} onOpenGameVideo={onOpenGameVideo} onPickMoment={onPickMoment} />;
-    if (tab === 'profile') return <AthleteProfileScreen onPickMoment={onPickMoment} onOpenGame={onOpenGame} onBack={() => navigate('home')} asTab />;
+    if (tab === 'profile') return <AthleteProfileScreen onPickMoment={onPickMoment} onOpenGame={onOpenGame} onBack={() => navigate('home')} asTab captures={captures} />;
     return null;
   };
 
@@ -11082,7 +11824,7 @@ const App = () => {
 
   // Phone-mode pushed screens cover the tab — desktop pushes inline.
   const phonePush = pushed && (
-    pushed.kind === 'post-game' ? <PostGameScreen gameId={pushed.id} onBack={() => navigate(tab)} onPickMoment={onPickMoment} />
+    pushed.kind === 'post-game' ? <PostGameScreen gameId={pushed.id} onBack={() => navigate(tab)} onPickMoment={onPickMoment} captures={captures} />
     : null
   );
   /* Overlay layer — sits above the tab tree. Routed by `pushed.kind`.
@@ -11105,11 +11847,18 @@ const App = () => {
     : pushed?.kind === 'pack-reveal'
       ? <PackReveal gameId={pushed.id} onClose={() => navigate(tab)}
           onPickMoment={(idx) => navigate('highlight/' + idx)} />
+    : pushed?.kind === 'capture-view'
+      ? <CaptureViewer captureId={pushed.id} captures={captures} onClose={() => navigate(tab)} />
     : null
   );
 
   return (
     <div className={`glass-app app-stage`} data-theme={theme} dir={locale === 'he' ? 'rtl' : 'ltr'}>
+      {/* Overlay rendered once here — fixed inset-0 so it covers the viewport
+          regardless of stage. Previously duplicated in phone-screen AND
+          stage-desktop, causing two StorytellingDropViewer instances to mount
+          simultaneously (competing RAFs, scroll listeners, body-scroll locks). */}
+      {overlay}
       {/* === PHONE STAGE (< lg) === */}
       <div className="stage-phone">
         <div className="phone" data-theme={theme}>
@@ -11123,9 +11872,13 @@ const App = () => {
               onSignOut={onSignOut}
               locale={locale} setLocale={setLocale}
               emailVerified={emailVerified} onVerifyEmail={() => setEmailVerified(true)}
-              onDemoPlayerInvite={onDemoPlayerInvite} />}
-            {bellOpen && <NotificationsSheet onClose={() => setBellOpen(false)} onOpenGame={onOpenGame} />}
-            {overlay}
+              onDemoPlayerInvite={onDemoPlayerInvite}
+              atVenue={atVenue} onToggleAtVenue={() => setAtVenue(v => !v)} />}
+            {bellOpen && <NotificationsSheet onClose={() => setBellOpen(false)} onOpenGame={onOpenGame}
+              captures={captures}
+              onApproveTag={(id) => updateCapture(id, { tagApprovalStatus: 'approved' })}
+              onDeclineTag={(id) => updateCapture(id, { tagApprovalStatus: 'declined' })} />}
+            {captureFlow && <CaptureFlow step={captureFlow} captureSession={captureSession} setCaptureSession={setCaptureSession} addCaptures={addCaptures} navigate={navigate} onClose={() => { setCaptureSession({ gameId: null, pending: [] }); navigate('home'); }} />}
           </div>
         </div>
       </div>
@@ -11195,6 +11948,22 @@ const App = () => {
                   style={{ color: 'var(--brand-cyan-text)' }}>demo</span>
               </span>
             </button>
+            {/* Desktop mirror of the SideMenu's "I'm at the venue" toggle.
+                When ON the row glows red (mirrors the Capture Mode red
+                accent) so the demo state is visible at a glance from the
+                persistent sidebar. */}
+            <button onClick={() => setAtVenue(v => !v)} className="ds-sidenav-item"
+              title={sideNavCollapsed ? 'Demo: At venue toggle' : ''}
+              style={atVenue ? { background: 'rgba(220,38,38,0.15)', color: '#ff9090' } : undefined}>
+              <Icon name="map-pin" size={18} />
+              <span className="ds-sidenav-label">
+                At venue
+                <span className="ms-1.5 sf text-[9.5px] tracking-[0.16em] uppercase font-bold"
+                  style={{ color: atVenue ? '#ff9090' : 'var(--brand-cyan-text)' }}>
+                  {atVenue ? 'ON' : 'DEMO'}
+                </span>
+              </span>
+            </button>
             <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} className="ds-sidenav-item" title={sideNavCollapsed ? (theme === 'dark' ? 'Light mode' : 'Dark mode') : ''}>
               <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
               <span className="ds-sidenav-label">{theme === 'dark' ? 'Light' : 'Dark'} mode</span>
@@ -11230,7 +11999,16 @@ const App = () => {
             </main>
           )}
         </div>
-        {bellOpen && <NotificationsSheet onClose={() => setBellOpen(false)} onOpenGame={onOpenGame} />}
+        {bellOpen && <NotificationsSheet onClose={() => setBellOpen(false)} onOpenGame={onOpenGame}
+          captures={captures}
+          onApproveTag={(id) => updateCapture(id, { tagApprovalStatus: 'approved' })}
+          onDeclineTag={(id) => updateCapture(id, { tagApprovalStatus: 'declined' })} />}
+        {/* CaptureFlow — desktop mount. Same overlay as phone (fixed
+            inset-0 z-110), so it covers the SideNav + content area. */}
+        {captureFlow && <CaptureFlow step={captureFlow} captureSession={captureSession}
+          setCaptureSession={setCaptureSession} addCaptures={addCaptures}
+          navigate={navigate}
+          onClose={() => { setCaptureSession({ gameId: null, pending: [] }); navigate('home'); }} />}
         {/* SettingsModal — desktop render. Replaces the phone-style
             right-side drawer with a centered 2-column glass modal that
             fits a desktop canvas. Reuses every Menu*Page component the
@@ -11241,13 +12019,659 @@ const App = () => {
           onSignOut={onSignOut}
           locale={locale} setLocale={setLocale}
           emailVerified={emailVerified} onVerifyEmail={() => setEmailVerified(true)} />}
-        {overlay}
       </div>
     </div>
   );
 };
 
-const NotificationsSheet = ({ onClose, onOpenGame }) => {
+/* ============================================================
+   CAPTURE MODE — fan-recorded media flow
+   Triggered by the "I'm at the venue" toggle. 4 sequential screens
+   in one overlay orchestrator. Glass-dark canvas, red live-style
+   accents (matches MorphCaptureCard's tone). Closes back to the
+   home tab on done OR abandon.
+   ============================================================ */
+
+/* CaptureSheet — shared shell for all 4 capture screens. Fixed-position
+   overlay, dark-glass canvas, top chrome (back + step label + close),
+   flex-1 scrollable content, optional shrink-0 dock CTA. */
+const CaptureSheet = ({ stepLabel, stepCount, currentStep, onBack, onClose, children, dock }) => (
+  <div className="fixed inset-0 z-[110] anim-fade flex flex-col"
+    style={{
+      background:
+        'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(220,38,38,0.18) 0%, transparent 55%),' +
+        'radial-gradient(ellipse 70% 50% at 50% 100%, rgba(8,12,20,0.85) 0%, transparent 60%),' +
+        '#06080e',
+      color: '#fff',
+    }}>
+    {/* Top chrome — back (if available) + step indicator + close */}
+    <div className="shrink-0 relative z-30 flex items-center justify-between px-5 lg:px-8 pt-4 pb-3">
+      {onBack ? (
+        <button onClick={onBack} aria-label="Back"
+          className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:bg-white/8 active:scale-[0.96]"
+          style={{
+            background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.10)',
+            color: 'rgba(255,255,255,0.85)',
+          }}>
+          <Icon name="chevL" size={12} stroke={2} />
+        </button>
+      ) : <div className="w-9 h-9" />}
+      <div className="flex items-center gap-2">
+        <span className="sf text-[9.5px] tracking-[0.24em] uppercase font-bold" style={{ color: 'rgba(255,255,255,0.45)' }}>
+          {stepLabel}
+        </span>
+        {stepCount && (
+          <span className="sf text-[9.5px] tracking-[0.18em] uppercase font-semibold tabular-nums" style={{ color: 'rgba(255,255,255,0.30)' }}>
+            · {currentStep}/{stepCount}
+          </span>
+        )}
+      </div>
+      <button onClick={onClose} aria-label="Close"
+        className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-[1.04] active:scale-[0.95]"
+        style={{
+          background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.10)',
+          color: 'rgba(255,255,255,0.95)',
+        }}>
+        <Icon name="close" size={11} stroke={2} />
+      </button>
+    </div>
+    {/* Content */}
+    <div className="flex-1 min-h-0 overflow-y-auto onb-scroll px-5 lg:px-8 pb-6">
+      <div className="w-full lg:max-w-[560px] mx-auto pt-4">
+        {children}
+      </div>
+    </div>
+    {/* Optional dock */}
+    {dock && (
+      <div className="shrink-0 px-5 lg:px-8 pb-6 pt-3"
+        style={{ background: 'linear-gradient(180deg, transparent 0%, rgba(6,8,14,0.72) 60%, rgba(6,8,14,0.92) 100%)' }}>
+        <div className="w-full lg:max-w-[560px] mx-auto">{dock}</div>
+      </div>
+    )}
+  </div>
+);
+
+/* CapturePermissionsStep — mock permission sheet with 3 toggles.
+   None of the toggles request real browser permissions; they just flip
+   visual state. Continue is enabled when all three are flipped on
+   (mimicking the "you need to allow these to proceed" flow). */
+const CapturePermissionsStep = ({ onContinue, onClose }) => {
+  const [perms, setPerms] = useState({ location: false, camera: false, media: false });
+  const allOn = perms.location && perms.camera && perms.media;
+  const ROWS = [
+    { key: 'location', icon: 'map-pin', title: 'Location', sub: 'Confirm you\'re at the venue' },
+    { key: 'camera',   icon: 'camera',  title: 'Camera',   sub: 'For photos + video' },
+    { key: 'media',    icon: 'download',title: 'Photo library', sub: 'To save what you capture' },
+  ];
+  return (
+    <CaptureSheet stepLabel="Capture · Permissions" stepCount={4} currentStep={1} onClose={onClose}
+      dock={
+        <button onClick={allOn ? onContinue : undefined} disabled={!allOn}
+          className="w-full squircle-md py-3.5 sf text-[14px] font-bold transition-all"
+          style={{
+            color: allOn ? '#fff' : 'rgba(255,255,255,0.40)',
+            background: allOn ? 'linear-gradient(180deg, rgba(255,54,54,1) 0%, rgba(200,30,30,1) 100%)' : 'rgba(255,255,255,0.06)',
+            border: allOn ? 'none' : '1px solid rgba(255,255,255,0.10)',
+            boxShadow: allOn ? '0 8px 24px -8px rgba(255,54,54,0.55), inset 0 1px 0 rgba(255,255,255,0.30)' : 'none',
+            cursor: allOn ? 'pointer' : 'not-allowed',
+          }}>
+          {allOn ? 'Continue' : 'Allow all three to continue'}
+        </button>
+      }>
+      <h1 className="sf-display text-[26px] lg:text-[32px] font-bold leading-[1.05] tracking-[-0.02em] mb-2 text-white">
+        Quick permissions
+      </h1>
+      <p className="sf text-[13px] lg:text-[14px] leading-relaxed mb-7" style={{ color: 'rgba(255,255,255,0.55)' }}>
+        We only ask once — these stay on while you're at the venue tonight.
+      </p>
+      <div className="space-y-3">
+        {ROWS.map(row => {
+          const on = perms[row.key];
+          return (
+            <button key={row.key} onClick={() => setPerms(p => ({ ...p, [row.key]: !p[row.key] }))}
+              className="w-full squircle-md p-4 flex items-center gap-3.5 text-start transition-all hover:scale-[1.005] active:scale-[0.995]"
+              style={{
+                background: on ? 'rgba(0,214,254,0.10)' : 'rgba(255,255,255,0.04)',
+                border: '1px solid ' + (on ? 'rgba(0,214,254,0.45)' : 'rgba(255,255,255,0.10)'),
+                boxShadow: on ? '0 0 16px -4px rgba(0,214,254,0.30), inset 0 1px 0 rgba(255,255,255,0.08)' : 'inset 0 1px 0 rgba(255,255,255,0.05)',
+              }}>
+              <div className="w-11 h-11 squircle-sm flex items-center justify-center shrink-0"
+                style={{
+                  background: on ? 'rgba(0,214,254,0.20)' : 'rgba(255,255,255,0.05)',
+                  border: '1px solid ' + (on ? 'rgba(0,214,254,0.45)' : 'rgba(255,255,255,0.10)'),
+                  color: on ? '#7ce8ff' : 'rgba(255,255,255,0.55)',
+                }}>
+                <Icon name={row.icon} size={18} stroke={1.7} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="sf-display text-[14.5px] font-bold leading-tight text-white">{row.title}</div>
+                <div className="sf text-[11.5px] mt-0.5" style={{ color: 'rgba(255,255,255,0.50)' }}>{row.sub}</div>
+              </div>
+              <div className="w-11 h-7 rounded-full relative transition-colors"
+                style={{
+                  background: on ? 'var(--brand-cyan)' : 'rgba(255,255,255,0.16)',
+                }}>
+                <div className="absolute top-1 w-5 h-5 rounded-full bg-white transition-all"
+                  style={{ insetInlineStart: on ? 'calc(100% - 24px)' : '4px', boxShadow: '0 1px 3px rgba(0,0,0,0.30)' }} />
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </CaptureSheet>
+  );
+};
+
+/* CapturePickGameStep — pick the game to attach captures to. Lists
+   all "live" + "just-ended" games as nearby (tournament-aware demo).
+   Each row: cyan team initials + matchup + status pill. */
+const CapturePickGameStep = ({ onPick, onBack, onClose }) => {
+  /* Live + upcoming games only — capture mode only makes sense for games
+     that are happening or about to happen. Finished games are intentionally
+     excluded (fan captures are for in-the-moment recording, not retroactive
+     uploads to old games). Live games sort first, then upcoming by
+     kickoff proximity. */
+  const nearbyGames = SEED_GAMES
+    .filter(g => g.status === 'live' || g.status === 'upcoming')
+    .sort((a, b) => {
+      if (a.status === 'live' && b.status !== 'live') return -1;
+      if (b.status === 'live' && a.status !== 'live') return 1;
+      return (a.kickoffInSec || 0) - (b.kickoffInSec || 0);
+    })
+    .slice(0, 3);
+  return (
+    <CaptureSheet stepLabel="Capture · Pick game" stepCount={4} currentStep={2} onBack={onBack} onClose={onClose}>
+      <h1 className="sf-display text-[26px] lg:text-[32px] font-bold leading-[1.05] tracking-[-0.02em] mb-2 text-white">
+        Which game?
+      </h1>
+      <p className="sf text-[13px] lg:text-[14px] leading-relaxed mb-7" style={{ color: 'rgba(255,255,255,0.55)' }}>
+        Multiple games detected at this venue. Pick the one you're watching.
+      </p>
+      <div className="space-y-3">
+        {nearbyGames.map(g => {
+          const isLive = g.status === 'live';
+          /* Tipoff label for upcoming games — uses the existing fmt.until
+             helper to render "in 32h", "in 4d", etc. Imminent threshold
+             (< 2h) flips the pill to "STARTING SOON" with a cyan glow
+             instead of the calmer "upcoming" treatment, mirroring the
+             pre-game state on the morph card. */
+          const imminent = !isLive && g.kickoffInSec && g.kickoffInSec < 7200;
+          return (
+            <button key={g.id} onClick={() => onPick(g.id)}
+              className="w-full squircle-md p-4 flex items-center gap-3.5 text-start transition-all hover:scale-[1.005] active:scale-[0.99]"
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.10)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+              }}>
+              <div className="w-12 h-12 squircle-sm flex items-center justify-center shrink-0 sf-display text-[13px] font-bold text-white"
+                style={{ background: 'rgba(0,214,254,0.18)', border: '1px solid rgba(0,214,254,0.45)' }}>
+                {g.home.charAt(0)}{g.away.charAt(0)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="sf-display text-[15px] font-bold leading-tight text-white">{g.home} <span style={{ color: 'rgba(255,255,255,0.45)', fontWeight: 600 }}>vs</span> {g.away}</div>
+                <div className="sf text-[11.5px] mt-0.5" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                  {isLive
+                    ? `LIVE · ${g.period} · ${g.scoreHome}–${g.scoreAway}`
+                    : `Tip-off ${fmt.until(g.kickoffInSec)}${g.venue ? ' · ' + g.venue : ''}`}
+                </div>
+              </div>
+              {isLive ? (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full shrink-0"
+                  style={{ background: 'rgba(220,38,38,0.95)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.25), 0 0 12px rgba(220,38,38,0.45)' }}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-white anim-pulse-dot" />
+                  <span className="sf text-[9.5px] tracking-[0.14em] font-bold uppercase text-white">Live</span>
+                </div>
+              ) : imminent ? (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full shrink-0"
+                  style={{ background: 'rgba(0,214,254,0.18)', border: '1px solid rgba(0,214,254,0.50)', boxShadow: '0 0 12px rgba(0,214,254,0.30)' }}>
+                  <span className="w-1.5 h-1.5 rounded-full anim-pulse-dot" style={{ background: 'var(--brand-cyan)' }} />
+                  <span className="sf text-[9.5px] tracking-[0.14em] font-bold uppercase" style={{ color: 'var(--brand-cyan-text)' }}>Starting soon</span>
+                </div>
+              ) : (
+                <div className="inline-flex items-center px-2.5 py-1 rounded-full shrink-0"
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.14)' }}>
+                  <span className="sf text-[9.5px] tracking-[0.14em] font-bold uppercase" style={{ color: 'rgba(255,255,255,0.55)' }}>Upcoming</span>
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </CaptureSheet>
+  );
+};
+
+/* CaptureCameraStep — full-bleed mock camera. Mode toggle at top
+   (Photo / Video-V / Video-H), preview area in the middle (gradient
+   placeholder since we don't have real camera), big record button at
+   bottom, captured count + Done CTA. */
+const CaptureCameraStep = ({ pending, onCapture, onDone, onBack, onClose }) => {
+  const [mode, setMode] = useState('video');
+  /* Recording state — only meaningful in video mode. Photo mode captures
+     instantly on tap. Video mode is a record/stop toggle: first tap
+     starts recording (red disc morphs to a square + timer ticks), second
+     tap stops and adds the capture to the pending list. */
+  const [recording, setRecording] = useState(false);
+  const [recSeconds, setRecSeconds] = useState(0);
+  useEffect(() => {
+    if (!recording) return;
+    const t = setInterval(() => setRecSeconds(s => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [recording]);
+  /* Two modes only — Photo + Video. Vertical-vs-horizontal video used
+     to be two separate pills, but the distinction was confusing to
+     demo viewers (real camera apps let the phone orientation decide).
+     Captures still flag video kind as 'video-v' so downstream consumers
+     can change layout if needed; horizontal-video is collapsed into
+     plain "Video" and would be detected from sensor orientation in
+     production. */
+  const MODES = [
+    { key: 'photo', label: 'Photo' },
+    { key: 'video', label: 'Video' },
+  ];
+  const HUES = [
+    { a: 'rgba(0,214,254,0.40)',  b: 'rgba(132,88,255,0.32)' },
+    { a: 'rgba(255,90,158,0.40)', b: 'rgba(255,140,40,0.30)' },
+    { a: 'rgba(74,222,128,0.36)', b: 'rgba(0,170,220,0.30)' },
+    { a: 'rgba(255,210,80,0.36)', b: 'rgba(255,90,50,0.30)' },
+  ];
+  const fmtRecTime = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  const addCapture = (kindFinal) => {
+    const hue = HUES[pending.length % HUES.length];
+    onCapture({
+      id: 'cap_local_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+      kind: kindFinal,
+      hue,
+      caption: '',
+    });
+  };
+  const handleCapture = () => {
+    if (mode === 'photo') {
+      addCapture('photo');
+    } else {
+      if (recording) {
+        // Stop recording → finalize as 'video-v' capture
+        addCapture('video-v');
+        setRecording(false);
+        setRecSeconds(0);
+      } else {
+        setRecording(true);
+        setRecSeconds(0);
+      }
+    }
+  };
+  return (
+    <div className="fixed inset-0 z-[110] anim-fade flex flex-col" style={{ background: '#000', color: '#fff' }}>
+      {/* Top chrome — back + mode label + close + counter */}
+      <div className="shrink-0 relative z-30 flex items-center justify-between px-5 pt-4 pb-3"
+        style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.65) 0%, transparent 100%)' }}>
+        <button onClick={onBack} aria-label="Back"
+          className="w-9 h-9 rounded-full flex items-center justify-center"
+          style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.85)' }}>
+          <Icon name="chevL" size={12} stroke={2} />
+        </button>
+        <div className="sf text-[9.5px] tracking-[0.24em] uppercase font-bold" style={{ color: 'rgba(255,255,255,0.55)' }}>
+          Camera
+        </div>
+        <button onClick={onClose} aria-label="Close"
+          className="w-9 h-9 rounded-full flex items-center justify-center"
+          style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.95)' }}>
+          <Icon name="close" size={11} stroke={2} />
+        </button>
+      </div>
+      {/* Camera viewfinder — gradient placeholder. Live "REC" pill if video. */}
+      <div className="flex-1 relative overflow-hidden">
+        <div className="absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(ellipse 70% 50% at 30% 30%, rgba(0,214,254,0.18) 0%, transparent 60%),' +
+              'radial-gradient(ellipse 70% 50% at 75% 75%, rgba(132,88,255,0.14) 0%, transparent 60%),' +
+              'linear-gradient(180deg, #0a0e1a 0%, #050810 100%)',
+          }} />
+        <div className="absolute inset-0 hatch-dark opacity-30 pointer-events-none" />
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="sf-display font-extrabold tracking-[-0.04em] select-none"
+            style={{
+              fontSize: 'clamp(80px, 16vw, 200px)',
+              color: 'rgba(255,255,255,0.06)',
+              letterSpacing: '-0.06em', lineHeight: 1,
+            }}>HALO</div>
+        </div>
+        {/* Recording timer — center-top of viewfinder when recording.
+            Tabular-num so digits don't jiggle as the seconds tick. */}
+        {recording && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 inline-flex items-center gap-2 px-3 py-1.5 rounded-full"
+            style={{ background: 'rgba(220,38,38,0.95)', boxShadow: '0 0 20px rgba(220,38,38,0.55)' }}>
+            <span className="w-2 h-2 rounded-full bg-white anim-pulse-dot" />
+            <span className="sf-display text-[13px] tabular-nums font-bold text-white">REC {fmtRecTime(recSeconds)}</span>
+          </div>
+        )}
+        {/* Captured count badge — top-right (suppressed while recording so
+            it doesn't compete with the REC timer). */}
+        {!recording && pending.length > 0 && (
+          <div className="absolute top-4 end-5 z-20 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full"
+            style={{ background: 'rgba(0,214,254,0.18)', border: '1px solid rgba(0,214,254,0.50)' }}>
+            <span className="w-1.5 h-1.5 rounded-full anim-pulse-dot" style={{ background: 'var(--brand-cyan)' }} />
+            <span className="sf text-[11px] tabular-nums font-bold" style={{ color: 'var(--brand-cyan-text)' }}>{pending.length} captured</span>
+          </div>
+        )}
+      </div>
+      {/* Bottom dock — mode toggle + record button + done.
+          While recording: hide mode toggle (can't switch mid-record) and
+          hide Done (must stop the recording first). Stopping flushes the
+          capture to pending and re-enables everything. */}
+      <div className="shrink-0 relative z-30 px-5 pt-3 pb-6"
+        style={{ background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.75) 60%, #000 100%)' }}>
+        {/* Mode toggle pills — only when NOT recording */}
+        {!recording && (
+          <div className="flex justify-center gap-2 mb-5">
+            {MODES.map(m => (
+              <button key={m.key} onClick={() => setMode(m.key)}
+                className="sf text-[11px] tracking-[0.12em] uppercase font-bold px-3.5 py-2 rounded-full transition-all"
+                style={{
+                  color: mode === m.key ? '#0a0d18' : 'rgba(255,255,255,0.75)',
+                  background: mode === m.key ? '#fff' : 'rgba(255,255,255,0.08)',
+                  border: '1px solid ' + (mode === m.key ? '#fff' : 'rgba(255,255,255,0.14)'),
+                }}>
+                {m.label}
+              </button>
+            ))}
+          </div>
+        )}
+        {/* Record row: spacer | record/stop | done. When recording, the
+            inner red disc morphs to a small rounded square (iOS-Camera
+            style "stop" affordance). Tap = stop + add capture. */}
+        <div className="flex items-center justify-between max-w-[400px] mx-auto">
+          <div className="w-14" />
+          <button onClick={handleCapture} aria-label={recording ? 'Stop recording' : (mode === 'photo' ? 'Take photo' : 'Start recording')}
+            className="w-[72px] h-[72px] rounded-full flex items-center justify-center transition-all active:scale-[0.92]"
+            style={{
+              background: '#fff',
+              boxShadow: recording
+                ? '0 0 0 4px rgba(255,54,54,0.35), 0 0 32px rgba(255,54,54,0.55)'
+                : '0 0 0 4px rgba(255,255,255,0.12), 0 0 24px rgba(255,54,54,0.20)',
+            }}>
+            {/* Inner shape morphs based on mode + recording state */}
+            {mode === 'photo' ? (
+              /* Photo: solid white inner disc with thin dark ring */
+              <div className="w-[54px] h-[54px] rounded-full"
+                style={{ background: '#fff', border: '2px solid rgba(0,0,0,0.12)' }} />
+            ) : recording ? (
+              /* Video + recording: small red rounded square (iOS-Camera stop) */
+              <div className="transition-all"
+                style={{
+                  width: 26, height: 26, borderRadius: 6,
+                  background: 'linear-gradient(180deg, #ff3636 0%, #c81e1e 100%)',
+                  boxShadow: '0 0 12px rgba(255,54,54,0.55)',
+                }} />
+            ) : (
+              /* Video + idle: full red disc */
+              <div className="w-[54px] h-[54px] rounded-full"
+                style={{ background: 'linear-gradient(180deg, #ff3636 0%, #c81e1e 100%)' }} />
+            )}
+          </button>
+          {!recording && pending.length > 0 ? (
+            <button onClick={onDone} className="sf text-[13px] font-bold px-4 py-2.5 squircle-sm"
+              style={{ background: 'rgba(255,255,255,0.14)', color: '#fff', border: '1px solid rgba(255,255,255,0.20)' }}>
+              Done
+            </button>
+          ) : <div className="w-14" />}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* CaptureReviewStep — vertical list of captured clips. Each row has:
+   thumb (gradient hue), kind label, tag-player chip → opens picker,
+   privacy toggle (Private/Public), delete. Bottom CTA "Publish N". */
+const CaptureReviewStep = ({ pending, gameId, onPublish, onBack, onClose, onUpdatePending, onDeleteLocal }) => {
+  const [pickerForId, setPickerForId] = useState(null);
+  const game = SEED_GAMES.find(g => g.id === gameId);
+  // Roster — derive from PLAYER + a few teammates. In production this
+  // would come from the game's team roster API.
+  const ROSTER = [
+    { id: 'r1', name: 'Tal Weiss',    number: 7,  team: 'Varsity' },
+    { id: 'r2', name: 'Sarah Kim',    number: 12, team: 'Varsity' },
+    { id: 'r3', name: 'Dylan Torres', number: 23, team: 'Varsity' },
+    { id: 'r4', name: 'Marcus Lee',   number: 9,  team: 'Varsity' },
+  ];
+  const pickedFor = pickerForId ? pending.find(p => p.id === pickerForId) : null;
+  return (
+    <>
+    <CaptureSheet stepLabel="Capture · Review" stepCount={4} currentStep={4} onBack={onBack} onClose={onClose}
+      dock={
+        <button onClick={onPublish} disabled={pending.length === 0}
+          className="w-full squircle-md py-3.5 sf text-[14px] font-bold transition-all"
+          style={{
+            color: pending.length === 0 ? 'rgba(255,255,255,0.40)' : '#fff',
+            background: pending.length === 0 ? 'rgba(255,255,255,0.06)' : 'linear-gradient(180deg, rgba(0,235,255,1) 0%, rgba(0,200,250,1) 100%)',
+            border: pending.length === 0 ? '1px solid rgba(255,255,255,0.10)' : 'none',
+            boxShadow: pending.length === 0 ? 'none' : '0 8px 24px -8px rgba(0,214,254,0.55), inset 0 1px 0 rgba(255,255,255,0.40)',
+            color: pending.length === 0 ? 'rgba(255,255,255,0.40)' : '#0a0d18',
+          }}>
+          {pending.length === 0 ? 'No captures' : `Publish ${pending.length} ${pending.length === 1 ? 'capture' : 'captures'}`}
+        </button>
+      }>
+      <h1 className="sf-display text-[26px] lg:text-[32px] font-bold leading-[1.05] tracking-[-0.02em] mb-2 text-white">
+        Review &amp; share
+      </h1>
+      <p className="sf text-[13px] lg:text-[14px] leading-relaxed mb-7" style={{ color: 'rgba(255,255,255,0.55)' }}>
+        Tag a player, set privacy. {game ? `Captures attach to ${game.home} vs ${game.away}.` : ''}
+      </p>
+      <div className="space-y-3">
+        {pending.map(cap => {
+          const player = cap.taggedPlayerId ? ROSTER.find(p => p.id === cap.taggedPlayerId) : null;
+          const isPublic = cap.privacy === 'public';
+          return (
+            <div key={cap.id} className="squircle-md p-3 flex gap-3"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)' }}>
+              {/* Thumb */}
+              <div className="w-20 h-28 squircle-sm shrink-0 relative overflow-hidden"
+                style={{
+                  background: `radial-gradient(ellipse 70% 50% at 30% 30%, ${cap.hue.a} 0%, transparent 60%), radial-gradient(ellipse 70% 50% at 75% 75%, ${cap.hue.b} 0%, transparent 60%), #0a0e1a`,
+                }}>
+                <div className="absolute inset-0 hatch-dark opacity-30" />
+                <div className="absolute top-1.5 start-1.5 lg-glass-strong squircle-sm px-1.5 py-0.5">
+                  <span className="sf text-[8.5px] tracking-[0.14em] uppercase font-bold text-white leading-none">
+                    {cap.kind === 'photo' ? 'Photo' : cap.kind === 'video-v' ? 'Vid' : 'Vid H'}
+                  </span>
+                </div>
+              </div>
+              {/* Controls */}
+              <div className="flex-1 min-w-0 flex flex-col gap-2">
+                {/* Tag player chip */}
+                <button onClick={() => setPickerForId(cap.id)}
+                  className="squircle-sm px-3 py-2 flex items-center gap-2 text-start"
+                  style={{
+                    background: player ? 'rgba(0,214,254,0.10)' : 'rgba(255,255,255,0.04)',
+                    border: '1px solid ' + (player ? 'rgba(0,214,254,0.45)' : 'rgba(255,255,255,0.10)'),
+                  }}>
+                  {player ? (
+                    <>
+                      <div className="w-6 h-6 squircle-sm flex items-center justify-center shrink-0 sf-display text-[10px] font-bold text-white"
+                        style={{ background: 'rgba(0,214,254,0.25)', border: '1px solid rgba(0,214,254,0.50)' }}>
+                        {player.number}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="sf text-[11.5px] font-semibold leading-none truncate" style={{ color: '#7ce8ff' }}>
+                          {player.name}
+                        </div>
+                        <div className="sf text-[9.5px] leading-none mt-0.5" style={{ color: 'rgba(124,232,255,0.65)' }}>
+                          Pending approval
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="plus" size={12} stroke={1.8} />
+                      <span className="sf text-[11.5px] font-semibold" style={{ color: 'rgba(255,255,255,0.75)' }}>
+                        Tag player
+                      </span>
+                    </>
+                  )}
+                </button>
+                {/* Privacy + delete row */}
+                <div className="flex items-center gap-2">
+                  <button onClick={() => onUpdatePending(cap.id, { privacy: isPublic ? 'private' : 'public' })}
+                    className="flex-1 squircle-sm px-3 py-2 flex items-center gap-2 text-start"
+                    style={{
+                      background: isPublic ? 'rgba(74,222,128,0.10)' : 'rgba(255,255,255,0.04)',
+                      border: '1px solid ' + (isPublic ? 'rgba(74,222,128,0.45)' : 'rgba(255,255,255,0.10)'),
+                    }}>
+                    <Icon name={isPublic ? 'eye' : 'eye-off'} size={12} stroke={1.8} />
+                    <span className="sf text-[11.5px] font-semibold" style={{ color: isPublic ? '#86efac' : 'rgba(255,255,255,0.75)' }}>
+                      {isPublic ? 'Public' : 'Private'}
+                    </span>
+                  </button>
+                  <button onClick={() => onDeleteLocal(cap.id)} aria-label="Delete"
+                    className="w-9 h-9 squircle-sm flex items-center justify-center"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', color: 'rgba(255,150,150,0.85)' }}>
+                    <Icon name="close" size={11} stroke={2} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        {pending.length === 0 && (
+          <div className="squircle-md p-6 text-center" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)' }}>
+            <p className="sf text-[12.5px]" style={{ color: 'rgba(255,255,255,0.55)' }}>No captures yet — go back to record some.</p>
+          </div>
+        )}
+      </div>
+    </CaptureSheet>
+    {/* Player picker overlay — rendered on top of the review sheet
+        when a tag chip is tapped. Single-select, scoped to the
+        game's roster (mock here), plus a Skip-tag option. */}
+    {pickerForId && (
+      <div className="fixed inset-0 z-[120] anim-fade flex items-end lg:items-center justify-center"
+        onClick={() => setPickerForId(null)}
+        style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}>
+        <div onClick={(e) => e.stopPropagation()}
+          className="w-full lg:max-w-[420px] anim-slide-sheet"
+          style={{
+            background: 'linear-gradient(180deg, #0e1118 0%, #06080e 100%)',
+            border: '1px solid rgba(255,255,255,0.10)',
+            borderRadius: '20px 20px 0 0',
+            maxHeight: '80vh',
+            display: 'flex', flexDirection: 'column',
+          }}>
+          <div className="px-5 pt-5 pb-3 flex items-center justify-between">
+            <div className="sf-display text-[16px] font-bold text-white">Tag a player</div>
+            <button onClick={() => setPickerForId(null)} aria-label="Close"
+              className="w-8 h-8 rounded-full flex items-center justify-center"
+              style={{ background: 'rgba(255,255,255,0.08)', color: '#fff' }}>
+              <Icon name="close" size={10} stroke={2} />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto px-3 pb-4">
+            {/* Skip — set to null */}
+            <button onClick={() => { onUpdatePending(pickerForId, { taggedPlayerId: null }); setPickerForId(null); }}
+              className="w-full squircle-sm p-3 mb-2 flex items-center gap-3 text-start"
+              style={{
+                background: pickedFor && !pickedFor.taggedPlayerId ? 'rgba(255,255,255,0.10)' : 'transparent',
+                border: '1px solid rgba(255,255,255,0.10)',
+              }}>
+              <div className="w-9 h-9 squircle-sm flex items-center justify-center shrink-0"
+                style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)' }}>
+                <Icon name="close" size={12} stroke={1.8} />
+              </div>
+              <span className="sf text-[13px] font-semibold text-white">No tag — just the moment</span>
+            </button>
+            {ROSTER.map(p => {
+              const selected = pickedFor && pickedFor.taggedPlayerId === p.id;
+              return (
+                <button key={p.id} onClick={() => { onUpdatePending(pickerForId, { taggedPlayerId: p.id }); setPickerForId(null); }}
+                  className="w-full squircle-sm p-3 mb-2 flex items-center gap-3 text-start transition-all"
+                  style={{
+                    background: selected ? 'rgba(0,214,254,0.12)' : 'transparent',
+                    border: '1px solid ' + (selected ? 'rgba(0,214,254,0.45)' : 'rgba(255,255,255,0.08)'),
+                  }}>
+                  <div className="w-9 h-9 squircle-sm flex items-center justify-center shrink-0 sf-display text-[12px] font-bold text-white"
+                    style={{ background: 'rgba(0,214,254,0.18)', border: '1px solid rgba(0,214,254,0.40)' }}>
+                    {p.number}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="sf-display text-[13.5px] font-bold leading-tight text-white">{p.name}</div>
+                    <div className="sf text-[10.5px] mt-0.5" style={{ color: 'rgba(255,255,255,0.55)' }}>#{p.number} · {p.team}</div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    )}
+    </>
+  );
+};
+
+/* CaptureFlow — orchestrator. Reads `step` to decide which sub-screen
+   to render. Manages pending captures via captureSession. Routes step
+   transitions via hash + setCaptureSession side effects. */
+const CaptureFlow = ({ step, captureSession, setCaptureSession, addCaptures, onClose, navigate }) => {
+  if (!step) return null;
+  if (step === 'permissions') {
+    return <CapturePermissionsStep
+      onClose={onClose}
+      onContinue={() => navigate('capture/pick-game')} />;
+  }
+  if (step === 'pick-game') {
+    return <CapturePickGameStep
+      onClose={onClose}
+      onBack={() => navigate('capture')}
+      onPick={(id) => { setCaptureSession({ gameId: id, pending: [] }); navigate('capture/camera'); }} />;
+  }
+  if (step === 'camera') {
+    return <CaptureCameraStep
+      pending={captureSession.pending || []}
+      onCapture={(cap) => setCaptureSession(s => ({ ...s, pending: [...(s.pending || []), cap] }))}
+      onDone={() => navigate('capture/review')}
+      onBack={() => navigate('capture/pick-game')}
+      onClose={onClose} />;
+  }
+  if (step === 'review') {
+    return <CaptureReviewStep
+      pending={captureSession.pending || []}
+      gameId={captureSession.gameId}
+      onClose={onClose}
+      onBack={() => navigate('capture/camera')}
+      onUpdatePending={(id, patch) => setCaptureSession(s => ({
+        ...s, pending: s.pending.map(p => p.id === id ? { ...p, ...patch } : p),
+      }))}
+      onDeleteLocal={(id) => setCaptureSession(s => ({
+        ...s, pending: s.pending.filter(p => p.id !== id),
+      }))}
+      onPublish={() => {
+        const finalized = (captureSession.pending || []).map(p => ({
+          ...p,
+          gameId: captureSession.gameId,
+          privacy: p.privacy || 'private',
+          taggedPlayerId: p.taggedPlayerId || null,
+          tagApprovalStatus: p.taggedPlayerId ? 'pending' : null,
+          capturedBy: 'You',
+          capturedAt: Date.now(),
+        }));
+        addCaptures(finalized);
+        setCaptureSession({ gameId: null, pending: [] });
+        /* Land on Profile (not Home) so the user immediately sees their
+           new captures in the "My captures" rail. The Bell badge surfaces
+           any pending tag-approval cards for review. */
+        navigate('profile');
+      }} />;
+  }
+  return null;
+};
+
+const NotificationsSheet = ({ onClose, onOpenGame, captures = [], onApproveTag, onDeclineTag }) => {
+  /* Build dynamic tag-approval notif items from `captures` that are
+     tagged for the current user (r1 = self) and still pending consent.
+     Each rendered as an inline Approve/Decline card. */
+  const pendingTagApprovals = (captures || []).filter(c =>
+    c.taggedPlayerId === 'r1' && c.tagApprovalStatus === 'pending'
+  );
   const [items, setItems] = useState([
     { id: 'n1', kind: 'live',   title: 'Varsity is LIVE',          body: 'Q2 · vs Westfield Hawks',         when: 'now',    cta: () => onOpenGame('gL') },
     { id: 'n2', kind: 'drop',   title: 'New drop ready',           body: '8 of your moments from last night', when: '12m ago', cta: () => onOpenGame('gE') },
@@ -11259,6 +12683,7 @@ const NotificationsSheet = ({ onClose, onOpenGame }) => {
     drop:   { dot: 'var(--brand-cyan)',     icon: 'flame', label: 'DROP' },
     follow: { dot: '#8458ff',                icon: 'heart', label: 'FOLLOW' },
     system: { dot: 'var(--text-faint)',      icon: 'bell',  label: 'HALO' },
+    capture:{ dot: '#ff7575',                icon: 'camera',label: 'FAN TAG' },
   };
   return (
     <div className="absolute inset-0 z-50 anim-fade" onClick={onClose}>
@@ -11272,7 +12697,58 @@ const NotificationsSheet = ({ onClose, onOpenGame }) => {
           </div>
         </div>
         <div className="px-3 max-h-[60vh] overflow-y-auto no-scrollbar">
-          {items.length === 0 ? (
+          {/* Tag-approval cards — render ABOVE regular notifs since they
+              require user action. Approve flips tagApprovalStatus to
+              'approved' which surfaces the capture on rails. Decline
+              flips to 'declined' which keeps it hidden from the player's
+              fan-captures rail. */}
+          {pendingTagApprovals.map(cap => {
+            const k = KIND.capture;
+            return (
+              <div key={cap.id} className="flex items-start gap-3 px-3 py-3 squircle-sm anim-fade"
+                style={{
+                  background: 'rgba(255,117,117,0.08)',
+                  border: '1px solid rgba(255,117,117,0.25)',
+                  marginBottom: 8,
+                }}>
+                <div className="w-12 h-16 squircle-sm shrink-0 relative overflow-hidden"
+                  style={{
+                    background: `radial-gradient(ellipse 70% 50% at 30% 30%, ${cap.hue.a} 0%, transparent 60%), radial-gradient(ellipse 70% 50% at 75% 75%, ${cap.hue.b} 0%, transparent 60%), #0a0e1a`,
+                  }}>
+                  <div className="absolute inset-0 hatch-dark opacity-30" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="sf text-[9px] font-bold tracking-[0.15em]" style={{ color: k.dot }}>{k.label}</span>
+                    <span className="sf text-[10px]" style={{ color: 'var(--text-faint)' }}>just now</span>
+                  </div>
+                  <div className="sf text-[13.5px] font-semibold leading-tight mb-0.5" style={{ color: 'var(--text-primary)' }}>
+                    {cap.capturedBy || 'A fan'} tagged you
+                  </div>
+                  <div className="sf text-[11.5px] mb-2" style={{ color: 'var(--text-tertiary)' }}>
+                    "{cap.caption || 'From the stands'}" · {cap.kind === 'photo' ? 'photo' : 'video'}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => onApproveTag && onApproveTag(cap.id)}
+                      className="squircle-sm px-3 py-1.5 sf text-[11px] font-bold"
+                      style={{
+                        background: 'var(--brand-cyan)',
+                        color: '#0a0d18',
+                        boxShadow: '0 2px 8px -2px rgba(0,214,254,0.55)',
+                      }}>
+                      Approve
+                    </button>
+                    <button onClick={() => onDeclineTag && onDeclineTag(cap.id)}
+                      className="squircle-sm px-3 py-1.5 sf text-[11px] font-bold lg-glass"
+                      style={{ color: 'var(--text-primary)' }}>
+                      Decline
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          {items.length === 0 && pendingTagApprovals.length === 0 ? (
             <div className="sf text-center py-12" style={{ color: 'var(--text-faint)' }}>You're all caught up.</div>
           ) : items.map(n => {
             const k = KIND[n.kind] || KIND.system;
