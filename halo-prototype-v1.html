@@ -641,12 +641,15 @@
     border-inline-end: 1px solid var(--hairline);
     background: var(--canvas-bg);
     color: var(--text-primary);
-    padding: 28px 14px;
+    /* Vertical padding MUST match between expanded and collapsed —
+       any difference yanks the nav items up/down when toggling. The
+       horizontal padding can still differ since the bar narrows. */
+    padding: 24px 14px;
     display: flex; flex-direction: column; gap: 4px;
     transition: width 220ms cubic-bezier(.2,.8,.2,1), padding 220ms cubic-bezier(.2,.8,.2,1);
     flex-shrink: 0;
   }
-  .ds-sidenav.collapsed { width: 72px; padding: 18px 16px; }
+  .ds-sidenav.collapsed { width: 72px; padding: 24px 16px; }
   .ds-sidenav-item {
     /* min-height locks the row at 40px so it matches the collapsed
        state exactly. Without this, expanded rows are ~38-42px
@@ -701,7 +704,9 @@
     pointer-events: none;
   }
   .ds-sidenav.collapsed .ds-sidenav-icon-wrap .ds-sidenav-dot { opacity: 1; }
-  /* Toggle button — sits inline at the top, integrated into the bar */
+  /* Toggle button — lives inside .ds-sidenav-header, which positions it
+     for us (right-aligned inline in expanded, centered below logo in
+     collapsed). No align-self needed — flex parent handles placement. */
   .ds-sidenav-toggle {
     width: 32px; height: 32px; border-radius: 10px;
     background: var(--hatch-grain);
@@ -709,9 +714,8 @@
     color: var(--text-tertiary);
     display: flex; align-items: center; justify-content: center;
     transition: color 220ms, background 220ms;
-    align-self: flex-end;
+    flex-shrink: 0;
   }
-  .ds-sidenav.collapsed .ds-sidenav-toggle { align-self: center; }
   .ds-sidenav-toggle:hover { color: var(--brand-cyan-text); background: var(--brand-cyan-soft); }
   .ds-sidenav.collapsed .ds-sidenav-toggle svg { transform: rotate(180deg); }
   /* Brand mark — 36×36 cyan-tinted rounded square with white H glyph */
@@ -727,11 +731,38 @@
   .ds-sidenav.collapsed .ds-sidenav-brand-wordmark { opacity: 0; max-width: 0; }
   .ds-sidenav-brand-row {
     display: flex; align-items: center; gap: 10px;
-    margin-bottom: 24px;
     padding-inline-start: 6px;
+    flex: 1; min-width: 0;
     transition: padding 220ms, justify-content 220ms;
   }
-  .ds-sidenav.collapsed .ds-sidenav-brand-row { padding-inline-start: 0; justify-content: center; gap: 0; }
+  .ds-sidenav.collapsed .ds-sidenav-brand-row {
+    /* In column-direction header, `flex: 1` from the base rule would
+       stretch brand-row vertically and push brand-mark + toggle apart.
+       Force back to natural content height. */
+    flex: 0 0 auto;
+    padding-inline-start: 0;
+    justify-content: center;
+    gap: 0;
+  }
+  /* Header wraps brand-row + toggle in one flex container with a fixed
+     min-height in BOTH modes — this is what keeps nav items from shifting
+     vertically when toggling.
+     Expanded: row layout. Logo + wordmark on the left, chevron flush-right.
+     Collapsed: column layout. Logo on top, chevron centered below it.
+     Both modes consume the same 78px of vertical space. */
+  .ds-sidenav-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    min-height: 78px;
+    transition: gap 220ms cubic-bezier(.2,.8,.2,1);
+  }
+  .ds-sidenav.collapsed .ds-sidenav-header {
+    flex-direction: column;
+    gap: 10px;
+    justify-content: center;
+  }
   /* User chip at the bottom — keep the avatar small + proportional */
   .ds-sidenav-user {
     display: flex; align-items: center; gap: 10px;
@@ -5202,190 +5233,251 @@ const GamesSectionLabel = ({ tone, label }) => {
   );
 };
 
-/* HorizontalGameCard — two variants gated by status */
+/* HorizontalGameCard — unified mental model across all three statuses.
+   LIVE  = bigger/bolder cinematic hero. Score is the focal point —
+           62px tabular nums centered. Live pulse pill top-leading.
+           No court SVG decoration. Team-color radial blobs come from
+           each team's accent palette so different matchups read distinct.
+   UPCOMING / ENDED = compact row. One layout, differentiated by:
+     - leading-edge accent color (cyan / neutral)
+     - editorial right column (countdown number / score with W/L dim)
+     - eyebrow chrome (Tipoff vs Final + moments pill) */
 const HorizontalGameCard = ({ game, onOpenGame }) => {
   const isLive     = game.status === 'live';
   const isUpcoming = game.status === 'upcoming';
   const isEnded    = game.status === 'just-ended' || game.status === 'final';
-  const liveHue     = { a: 'rgba(255,140,40,0.45)', b: 'rgba(0,170,220,0.40)' };
-  const upcomingHue = { a: 'rgba(0,214,254,0.32)',  b: 'rgba(132,88,255,0.22)' };
-  const endedHue    = { a: 'rgba(132,88,255,0.30)', b: 'rgba(0,170,220,0.20)' };
-  const hue = isLive ? liveHue : isUpcoming ? upcomingHue : endedHue;
+  const homeTeam   = teamByName(game.home);
+  const awayTeam   = teamByName(game.away);
 
-  /* LIVE — full-bleed cinematic 16:9 with court SVG */
+  /* ── LIVE HERO ──────────────────────────────────────────
+     220px+ min-height block. Score lives center-aligned at clamp(56,14vw,72)px
+     so it commands the card on phone and desktop alike. Team-color blobs
+     in opposite corners give matchup-specific identity without a court SVG. */
   if (isLive) {
     return (
       <button onClick={() => onOpenGame(game.id)}
-        className="w-full text-start squircle-md overflow-hidden lg-aura lg-shine lg-live-ember relative"
+        className="w-full text-start relative squircle-md overflow-hidden lg-aura lg-shine lg-live-ember flex flex-col"
         style={{
-          background: `radial-gradient(ellipse 70% 60% at 25% 30%, ${hue.a} 0%, transparent 60%), radial-gradient(ellipse 70% 70% at 80% 70%, ${hue.b} 0%, transparent 60%), linear-gradient(180deg, var(--card-base-soft-top) 0%, var(--card-base-soft-bot) 100%)`,
-          backdropFilter: 'blur(36px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(36px) saturate(180%)',
+          background: `
+            radial-gradient(ellipse 95% 85% at 0% 0%, ${homeTeam.accentA} 0%, transparent 55%),
+            radial-gradient(ellipse 95% 85% at 100% 100%, ${awayTeam.accentA} 0%, transparent 55%),
+            radial-gradient(ellipse 70% 60% at 50% 50%, rgba(0,170,220,0.18) 0%, transparent 65%),
+            linear-gradient(180deg, var(--card-base-soft-top) 0%, var(--card-base-soft-bot) 100%)`,
+          backdropFilter: 'blur(40px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(40px) saturate(180%)',
           border: '1px solid var(--glass-card-border)',
+          boxShadow: 'inset 0 1px 0 var(--glass-card-inset-top), 0 0 0 1px rgba(220,38,38,0.12), var(--glass-card-shadow)',
           color: 'var(--text-primary)',
+          minHeight: 220,
         }}>
         <div className="lg-live-amp" aria-hidden="true" />
-        {/* Top stage with hand-drawn court — 16:9 on phone, 21:9 on desktop */}
-        <div className="lg-live-stage relative w-full aspect-[16/9] overflow-hidden" style={{ zIndex: 2 }}>
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 320 180" fill="none"
-            stroke="var(--hairline-strong)" strokeWidth={1.2} preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-            <rect x={8} y={8} width={304} height={164} rx={2} />
-            <line x1={160} y1={8} x2={160} y2={172} />
-            <circle cx={160} cy={90} r={22} />
-            <circle cx={160} cy={90} r={4} fill="rgba(255,255,255,0.25)" stroke="none" />
-            <rect x={8} y={60} width={38} height={60} />
-            <circle cx={46} cy={90} r={18} />
-            <path d="M8 50 a40 40 0 0 1 0 80" />
-            <rect x={274} y={60} width={38} height={60} />
-            <circle cx={274} cy={90} r={18} />
-            <path d="M312 50 a40 40 0 0 0 0 80" />
-          </svg>
-          <div className="absolute inset-0 hatch-dark opacity-30" />
-          <div className="absolute top-3 start-3 lg-glass live-red squircle-sm px-2 py-0.5 flex items-center gap-1.5 z-10">
-            <div className="w-1.5 h-1.5 rounded-full bg-white anim-pulse-dot" />
-            <span className="sf text-[9.5px] font-bold tracking-[0.14em] uppercase leading-none" style={{ color: '#FFF' }}>LIVE · {game.period}</span>
-          </div>
-          <div className="absolute top-3 end-3 lg-glass-strong squircle-sm px-2.5 py-1 z-10">
-            <span className="sf-display text-[14px] font-bold tabular-nums leading-none" style={{ color: 'var(--text-primary)' }}>{game.scoreHome} – {game.scoreAway}</span>
-          </div>
-          <div className="absolute inset-0 flex items-center justify-center z-10">
-            <div className="w-14 h-14 rounded-full lg-glass-strong flex items-center justify-center" style={{ color: 'var(--text-primary)' }}>
-              <svg width={16} height={18} viewBox="0 0 12 14" fill="currentColor" className="ms-0.5" aria-hidden="true">
-                <path d="M0 1.2v11.6c0 .9 1 1.4 1.7 1l9.6-5.8c.7-.4.7-1.5 0-1.9L1.7.2C1 -.2 0 .3 0 1.2z" />
-              </svg>
-            </div>
-          </div>
-          {/* DESKTOP overlay (≥1024) — team meta + Watch live CTA sit inside the
-              court with a bottom-fade gradient. Saves ~120px vs the phone info
-              strip below. Hidden on phone where v3.2 info strip handles it. */}
-          <div className="hidden lg:flex absolute inset-x-0 bottom-0 items-end justify-between px-4 pt-12 pb-3 z-10"
-            style={{ background: 'linear-gradient(180deg, var(--bottom-fade-start) 0%, var(--bottom-fade-mid) 60%, var(--bottom-fade-end) 100%)' }}>
-            <div className="min-w-0">
-              <div className="sf-display text-[15px] font-bold leading-tight tracking-[-0.01em]" style={{ color: 'var(--text-primary)' }}>{game.home}</div>
-              <div className="sf text-[11px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>vs {game.away}</div>
-            </div>
-            <div className="flex items-center gap-3 shrink-0">
-              <span className="sf text-[10.5px]" style={{ color: 'var(--text-muted)' }}>{game.momentsCount} moments</span>
-              <span className="sf text-[11px] font-bold tracking-tight flex items-center gap-1" style={{ color: 'var(--brand-cyan-text)' }}>
-                Watch live
-                <svg width={10} height={10} viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="icon-flip-rtl">
-                  <path d="M5.5 2.5 L10 7 L5.5 11.5" />
-                </svg>
-              </span>
-            </div>
-          </div>
-        </div>
-        {/* PHONE info strip (<1024) — v3.2 canonical layout. Hidden on desktop. */}
-        <div className="lg:hidden relative p-3.5" style={{ borderTop: '1px solid var(--glass-card-border)', zIndex: 2 }}>
-          <div className="sf-display text-[15px] font-bold leading-tight tracking-[-0.01em]">{game.home}</div>
-          <div className="sf text-[11.5px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>vs {game.away}</div>
-          <div className="flex items-center justify-between mt-3">
-            <span className="sf text-[10.5px]" style={{ color: 'var(--text-muted)' }}>{game.momentsCount} moments</span>
-            <span className="sf text-[11px] font-bold tracking-tight flex items-center gap-1" style={{ color: 'var(--brand-cyan-text)' }}>
-              Watch live
-              <svg width={10} height={10} viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5.5 2.5 L10 7 L5.5 11.5" />
-              </svg>
+        <div className="absolute inset-0 hatch-dark opacity-[0.10] pointer-events-none" />
+
+        {/* Top row — LIVE pill + moments count.
+            The pill carries the period; moments count quietly anchors the
+            top-end as ambient context — never the loudest thing. */}
+        <div className="relative z-10 flex items-center justify-between p-5 lg:p-6">
+          <div className="lg-glass live-red squircle-sm px-2.5 py-1 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-white anim-pulse-dot" />
+            <span className="sf text-[10px] font-bold tracking-[0.18em] uppercase leading-none" style={{ color: '#FFF' }}>
+              LIVE · {game.period || 'Q1'}
             </span>
           </div>
+          {game.momentsCount != null && game.momentsCount > 0 && (
+            <span className="sf text-[10.5px] font-bold tracking-[0.14em] uppercase" style={{ color: 'var(--text-muted)' }}>
+              {game.momentsCount} moments
+            </span>
+          )}
+        </div>
+
+        {/* Editorial score block — THE hero.
+            tabular-nums + clamp() means both phone and 640px desktop see
+            the score as the most prominent thing on the card. */}
+        <div className="relative z-10 flex-1 flex items-center justify-center px-5 lg:px-6 py-2">
+          <div className="flex items-baseline gap-4 lg:gap-6">
+            <span className="sf-display tabular-nums font-bold leading-none"
+              style={{
+                fontSize: 'clamp(54px, 14vw, 72px)',
+                letterSpacing: '-0.045em',
+                color: 'var(--text-primary)',
+                textShadow: '0 0 18px rgba(0,214,254,0.28)',
+              }}>
+              {game.scoreHome}
+            </span>
+            <span className="sf-display font-bold leading-none"
+              style={{
+                fontSize: 'clamp(28px, 7vw, 40px)',
+                letterSpacing: '-0.02em',
+                color: 'var(--text-faint)',
+              }}>–</span>
+            <span className="sf-display tabular-nums font-bold leading-none"
+              style={{
+                fontSize: 'clamp(54px, 14vw, 72px)',
+                letterSpacing: '-0.045em',
+                color: 'var(--text-secondary)',
+              }}>
+              {game.scoreAway}
+            </span>
+          </div>
+        </div>
+
+        {/* Bottom row — teams (with crest pair) + Watch live CTA.
+            Two micro-crests reinforce identity without competing with the score.
+            CTA is cyan + a chevron — same affordance pattern as compact rows. */}
+        <div className="relative z-10 flex items-end justify-between gap-4 px-5 lg:px-6 pb-5 lg:pb-6 pt-2">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <div className="relative shrink-0" style={{ width: 44, height: 28 }}>
+              <div className="absolute" style={{ insetInlineStart: 0, top: 0 }}>
+                <TeamCrest team={homeTeam} size={22} />
+              </div>
+              <div className="absolute" style={{ insetInlineEnd: 0, bottom: 0 }}>
+                <TeamCrest team={awayTeam} size={22} />
+              </div>
+            </div>
+            <div className="min-w-0">
+              <div className="sf-display text-[14px] lg:text-[15px] font-bold leading-tight tracking-[-0.015em] truncate" style={{ color: 'var(--text-primary)' }}>
+                {homeTeam.name} <span className="font-normal" style={{ color: 'var(--text-tertiary)' }}>vs.</span> {awayTeam.name}
+              </div>
+            </div>
+          </div>
+          <span className="sf text-[12px] font-bold tracking-tight flex items-center gap-1 shrink-0" style={{ color: 'var(--brand-cyan-text)', textShadow: '0 0 8px rgba(0,214,254,0.4)' }}>
+            Watch live
+            <svg width={11} height={11} viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="icon-flip-rtl">
+              <path d="M5.5 2.5 L10 7 L5.5 11.5" />
+            </svg>
+          </span>
         </div>
       </button>
     );
   }
 
-  /* COMPACT (upcoming / ended) — scoreboard layout.
-     Two team rows stacked: [crest 32] · team name ........... score (or empty for upcoming)
-     Hairline divider
-     Meta footer: eyebrow + date/venue · moments count + chevron */
-  const homeTeam = teamByName(game.home);
-  const awayTeam = teamByName(game.away);
+  /* ── COMPACT ROW (upcoming + ended) ────────────────────
+     Single layout. State communicated by leading-edge accent, eyebrow,
+     and editorial right column. Stacked-crest cluster gives at-a-glance
+     identity; loser crest dims on ended games for instant W/L read. */
   const homeWon = isEnded && (game.scoreHome ?? 0) > (game.scoreAway ?? 0);
   const awayWon = isEnded && (game.scoreAway ?? 0) > (game.scoreHome ?? 0);
-  const TeamRow = ({ team, score, won, isUpcoming }) => (
-    <div className="flex items-center gap-3 min-w-0">
-      <TeamCrest team={team} size={32} />
-      <span className="sf-display flex-1 text-[15.5px] font-bold leading-tight tracking-[-0.012em] truncate"
-        style={{ color: isUpcoming ? 'var(--text-primary)' : won ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>
-        {team.name}
-      </span>
-      {isEnded && score != null && (
-        <span className="sf-display text-[24px] font-bold tabular-nums leading-none tracking-[-0.025em] shrink-0"
-          style={{ color: won ? 'var(--text-primary)' : 'var(--text-tertiary)', textShadow: won ? '0 0 14px rgba(0,214,254,0.25)' : 'none' }}>
-          {score}
-        </span>
-      )}
-    </div>
-  );
-  const c = countdownParts(game.kickoffInSec);
+  const c       = isUpcoming ? countdownParts(game.kickoffInSec) : null;
+  const edgeBg  = isUpcoming
+    ? 'linear-gradient(180deg, #00D6FE 0%, rgba(0,153,192,0.7) 100%)'
+    : 'linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.04) 100%)';
+  const edgeGlow = isUpcoming ? '0 0 12px rgba(0,214,254,0.55)' : 'none';
   return (
     <button onClick={() => onOpenGame(game.id)}
-      className="w-full text-start squircle-md overflow-hidden lg-aura lg-shine relative p-4"
+      className="w-full text-start relative squircle-md overflow-hidden lg-aura lg-shine"
       style={{
-        background: `radial-gradient(ellipse 55% 90% at 8% 50%, ${hue.a} 0%, transparent 65%), radial-gradient(ellipse 55% 90% at 92% 50%, ${hue.b} 0%, transparent 65%), linear-gradient(180deg, var(--card-base-soft-top) 0%, var(--card-base-soft-bot) 100%)`,
+        background: isUpcoming
+          ? `radial-gradient(ellipse 45% 100% at 0% 50%, rgba(0,214,254,0.10) 0%, transparent 60%), linear-gradient(180deg, var(--card-base-soft-top) 0%, var(--card-base-soft-bot) 100%)`
+          : `linear-gradient(180deg, var(--card-base-soft-top) 0%, var(--card-base-soft-bot) 100%)`,
         backdropFilter: 'blur(36px) saturate(180%)',
         WebkitBackdropFilter: 'blur(36px) saturate(180%)',
         border: '1px solid var(--glass-card-border)',
         boxShadow: 'inset 0 1px 0 var(--glass-card-inset-top), var(--glass-card-shadow)',
         color: 'var(--text-primary)',
       }}>
-      {/* Faint diagonal grain layer */}
-      <div className="absolute inset-0 hatch-dark opacity-20 pointer-events-none" />
-      <div className="relative flex items-center gap-4">
-        {/* LEFT — two-row team stack */}
-        <div className="flex-1 min-w-0 space-y-2.5">
-          <TeamRow team={homeTeam} score={game.scoreHome} won={homeWon} isUpcoming={isUpcoming} />
-          <TeamRow team={awayTeam} score={game.scoreAway} won={awayWon} isUpcoming={isUpcoming} />
-        </div>
-        {/* RIGHT — countdown for upcoming, W badge for ended */}
-        {isUpcoming && c.value !== null && (
-          <div className="shrink-0 flex items-baseline px-2 leading-none">
-            <span className="sf-display font-bold tabular-nums"
-              style={{ fontSize: 36, letterSpacing: '-0.035em', color: 'var(--brand-cyan-text)', textShadow: '0 0 14px rgba(0,214,254,0.45)' }}>
-              {c.value}
-            </span>
-            <span className="sf-display"
-              style={{ fontSize: 16, fontWeight: 500, marginInlineStart: 2, color: 'rgba(0,214,254,0.65)' }}>
-              {c.unit}
-            </span>
+      {/* Leading-edge accent bar */}
+      <span className="absolute top-0 bottom-0 pointer-events-none" aria-hidden="true"
+        style={{ insetInlineStart: 0, width: 4, background: edgeBg, boxShadow: edgeGlow }} />
+      <div className="absolute inset-0 hatch-dark opacity-[0.10] pointer-events-none" />
+
+      <div className="relative flex items-center gap-3.5 p-4 ps-5">
+        {/* Stacked-crest cluster — 76×52 box, two 40px crests offset.
+            Loser dims on ended games so W/L is readable without scanning score. */}
+        <div className="relative shrink-0" style={{ width: 76, height: 52 }}>
+          <div className="absolute" style={{ insetInlineStart: 0, top: 0, opacity: isEnded && awayWon ? 0.45 : 1 }}>
+            <TeamCrest team={homeTeam} size={40} />
           </div>
-        )}
-        {isUpcoming && c.value === null && (
-          <span className="shrink-0 sf-display font-bold px-2"
-            style={{ fontSize: 24, color: 'var(--brand-cyan-text)', textShadow: '0 0 14px rgba(0,214,254,0.45)' }}>
-            NOW
-          </span>
-        )}
-      </div>
-
-      {/* Hairline divider */}
-      <div className="relative h-px my-3" style={{ background: 'var(--hairline)' }} />
-
-      {/* Meta footer */}
-      <div className="relative flex items-center justify-between">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="sf text-[10px] font-bold tracking-[0.18em] uppercase"
-            style={{
-              color: isUpcoming ? 'var(--brand-cyan-text)' : 'var(--text-muted)',
-              textShadow: isUpcoming ? '0 0 8px rgba(0,214,254,0.30)' : 'none',
-            }}>
-            {isUpcoming ? 'Tipoff' : 'Final'}
-          </span>
-          <span className="sf text-[10.5px]" style={{ color: 'var(--text-faint)' }}>·</span>
-          <span className="sf text-[10.5px] truncate" style={{ color: 'var(--text-muted)' }}>
-            {isUpcoming
-              ? (game.venue || 'Home court')
-              : (game.when || 'Recent')}
-          </span>
+          <div className="absolute" style={{ insetInlineEnd: 0, bottom: 0, opacity: isEnded && homeWon ? 0.45 : 1 }}>
+            <TeamCrest team={awayTeam} size={40} />
+          </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {isEnded && game.momentsCount != null && (
-            <span className="sf text-[10.5px] font-semibold" style={{ color: 'var(--brand-cyan-text)' }}>
-              {game.momentsCount} moments
+
+        {/* Middle column — eyebrow + matchup + meta */}
+        <div className="flex-1 min-w-0">
+          {/* Eyebrow: status + (moments pill inline on ended games) */}
+          <div className="flex items-center gap-2 mb-1">
+            <span className="sf text-[10px] font-bold tracking-[0.18em] uppercase leading-none"
+              style={{
+                color: isUpcoming ? 'var(--brand-cyan-text)' : 'var(--text-muted)',
+                textShadow: isUpcoming ? '0 0 6px rgba(0,214,254,0.28)' : 'none',
+              }}>
+              {isUpcoming
+                ? 'Tipoff'
+                : (game.when ? `Final · ${game.when}` : 'Final')}
+            </span>
+            {isEnded && game.momentsCount != null && game.momentsCount > 0 && (
+              <span className="sf text-[9px] font-bold tracking-[0.10em] uppercase leading-none squircle-sm"
+                style={{
+                  color: 'var(--brand-cyan-text)',
+                  background: 'rgba(0,214,254,0.10)',
+                  border: '1px solid rgba(0,214,254,0.28)',
+                  padding: '3px 6px',
+                }}>
+                {game.momentsCount} moments
+              </span>
+            )}
+          </div>
+          {/* Matchup line — primary text */}
+          <div className="sf-display text-[15.5px] lg:text-[16px] font-bold leading-[1.18] tracking-[-0.015em] truncate" style={{ color: 'var(--text-primary)' }}>
+            {isEnded ? (
+              <>
+                {homeWon ? homeTeam.name : awayTeam.name}
+                <span className="font-normal" style={{ color: 'var(--text-tertiary)' }}> beat </span>
+                {homeWon ? awayTeam.name : homeTeam.name}
+              </>
+            ) : (
+              <>
+                {homeTeam.name}
+                <span className="font-normal" style={{ color: 'var(--text-tertiary)' }}> vs. </span>
+                {awayTeam.name}
+              </>
+            )}
+          </div>
+          {/* Meta line — venue (upcoming) or empty (ended; date is in eyebrow) */}
+          {isUpcoming && (
+            <div className="sf text-[11px] mt-1 truncate" style={{ color: 'var(--text-muted)' }}>
+              {game.venue || 'Home court'}
+            </div>
+          )}
+        </div>
+
+        {/* Right column — editorial number */}
+        <div className="shrink-0 text-end ps-1">
+          {isUpcoming && c && c.value !== null && (
+            <div className="flex items-baseline justify-end leading-none">
+              <span className="sf-display font-bold tabular-nums"
+                style={{ fontSize: 38, letterSpacing: '-0.04em', color: 'var(--brand-cyan-text)', textShadow: '0 0 14px rgba(0,214,254,0.45)' }}>
+                {c.value}
+              </span>
+              <span className="sf-display font-medium"
+                style={{ fontSize: 17, marginInlineStart: 3, color: 'rgba(0,214,254,0.65)' }}>
+                {c.unit}
+              </span>
+            </div>
+          )}
+          {isUpcoming && c && c.value === null && (
+            <span className="sf-display font-bold leading-none"
+              style={{ fontSize: 24, color: 'var(--brand-cyan-text)', textShadow: '0 0 12px rgba(0,214,254,0.45)' }}>
+              NOW
             </span>
           )}
-          <svg width={14} height={14} viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" className="icon-flip-rtl" style={{ color: 'var(--text-muted)' }}>
-            <path d="M5.5 2.5 L10 7 L5.5 11.5" />
-          </svg>
+          {isEnded && (
+            <div className="sf-display tabular-nums font-bold leading-none"
+              style={{ fontSize: 28, letterSpacing: '-0.03em' }}>
+              <span style={{ color: homeWon ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>{game.scoreHome ?? '—'}</span>
+              <span style={{ color: 'var(--text-faint)', padding: '0 5px' }}>–</span>
+              <span style={{ color: awayWon ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>{game.scoreAway ?? '—'}</span>
+            </div>
+          )}
+          {/* Action affordance label — cyan on ended (Recap), chevron-only on upcoming */}
+          {isEnded && (
+            <div className="sf text-[10px] font-bold tracking-[0.14em] uppercase mt-1.5 flex items-center justify-end gap-1" style={{ color: 'var(--brand-cyan-text)' }}>
+              Recap
+              <svg width={9} height={9} viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" className="icon-flip-rtl">
+                <path d="M5.5 2.5 L10 7 L5.5 11.5" />
+              </svg>
+            </div>
+          )}
         </div>
       </div>
     </button>
@@ -7260,8 +7352,175 @@ const ScoreHero = ({ game }) => {
   );
 };
 
+/* ── PRE-GAME HERO ────────────────────────────────────────
+   For upcoming games where there's no score yet. Same visual
+   shell as ScoreHero (so the page rhythm carries through state
+   transitions), but the score column is replaced with a big
+   cyan countdown and a Notify-me CTA. */
+const PreGameHero = ({ game }) => {
+  const homeTeam = teamByName(game.home);
+  const awayTeam = teamByName(game.away);
+  const c = countdownParts(game.kickoffInSec);
+  const tipoffWhen = c.value === null
+    ? 'Starting now'
+    : c.unit === 'd'
+      ? `In ${c.value} day${c.value > 1 ? 's' : ''}`
+      : c.unit === 'h'
+        ? `In about ${c.value} hour${c.value > 1 ? 's' : ''}`
+        : `In ${c.value} minute${c.value > 1 ? 's' : ''}`;
+  return (
+    <div className="px-5 lg:px-8 xl:px-12 lg:max-w-[720px] lg:mx-auto pt-2 pb-6">
+      <div className="relative overflow-hidden squircle-md p-5 lg:p-6" style={{
+        background: `radial-gradient(ellipse 60% 100% at 0% 50%, ${homeTeam.accentA} 0%, transparent 60%), radial-gradient(ellipse 60% 100% at 100% 50%, ${awayTeam.accentA} 0%, transparent 60%), radial-gradient(ellipse 50% 80% at 50% 50%, rgba(0,214,254,0.16) 0%, transparent 65%), linear-gradient(180deg, var(--card-base-strong-top) 0%, var(--card-base-strong-bot) 100%)`,
+        border: '1px solid var(--glass-card-border)',
+        backdropFilter: 'blur(36px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(36px) saturate(180%)',
+        boxShadow: 'inset 0 1px 0 var(--glass-card-inset-top), var(--glass-card-shadow)',
+      }}>
+        <div className="absolute inset-0 hatch opacity-25 pointer-events-none" />
+        {/* Eyebrow — UPCOMING + venue */}
+        <div className="relative z-10 flex items-center justify-between mb-4">
+          <div className="sf text-[10px] tracking-[0.20em] uppercase font-bold flex items-center gap-2" style={{ color: 'var(--brand-cyan-text)' }}>
+            <span className="lg-brand-dot" />Upcoming
+          </div>
+          <div className="sf text-[10px] tracking-[0.14em] uppercase font-semibold hidden sm:block" style={{ color: 'var(--text-muted)' }}>
+            {game.venue || 'Venue TBD'}
+          </div>
+        </div>
+        {/* Single horizontal row — home | countdown | away */}
+        <div className="relative z-10 flex items-center gap-3 lg:gap-5">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <TeamCrest team={homeTeam} size={48} />
+            <div className="min-w-0">
+              <div className="sf-display font-bold leading-tight tracking-[-0.018em] truncate"
+                style={{ fontSize: 18, color: 'var(--text-primary)' }}>
+                {homeTeam.name}
+              </div>
+              <div className="sf text-[9.5px] uppercase tracking-[0.18em] font-semibold mt-1 truncate" style={{ color: 'var(--text-muted)' }}>
+                {homeTeam.nickname}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-baseline gap-0.5 shrink-0 leading-none">
+            {c.value !== null ? (
+              <>
+                <span className="sf-display font-bold tabular-nums leading-none"
+                  style={{ fontSize: 56, letterSpacing: '-0.04em', color: 'var(--brand-cyan-text)', textShadow: '0 0 24px rgba(0,214,254,0.45), 0 0 48px rgba(0,214,254,0.16)' }}>
+                  {c.value}
+                </span>
+                <span className="sf-display leading-none"
+                  style={{ fontSize: 22, fontWeight: 500, color: 'rgba(0,214,254,0.65)', marginInlineStart: 2 }}>
+                  {c.unit}
+                </span>
+              </>
+            ) : (
+              <span className="sf-display font-bold leading-none"
+                style={{ fontSize: 32, color: 'var(--brand-cyan-text)', textShadow: '0 0 18px rgba(0,214,254,0.55)' }}>
+                NOW
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-3 flex-1 min-w-0 justify-end">
+            <div className="min-w-0 text-end">
+              <div className="sf-display font-bold leading-tight tracking-[-0.018em] truncate"
+                style={{ fontSize: 18, color: 'var(--text-primary)' }}>
+                {awayTeam.name}
+              </div>
+              <div className="sf text-[9.5px] uppercase tracking-[0.18em] font-semibold mt-1 truncate" style={{ color: 'var(--text-muted)' }}>
+                {awayTeam.nickname}
+              </div>
+            </div>
+            <TeamCrest team={awayTeam} size={48} />
+          </div>
+        </div>
+        {/* Tipoff line + Notify-me CTA */}
+        <div className="relative z-10 mt-5 pt-4 flex items-center justify-between gap-3" style={{ borderTop: '1px solid var(--hairline)' }}>
+          <div className="min-w-0">
+            <div className="sf text-[10px] tracking-[0.18em] uppercase font-bold" style={{ color: 'var(--text-muted)' }}>Tipoff</div>
+            <div className="sf-display text-[14px] font-bold mt-0.5 truncate" style={{ color: 'var(--text-primary)' }}>
+              {tipoffWhen}
+            </div>
+          </div>
+          <button className="lg-glass squircle-sm px-4 py-2 sf text-[12px] font-bold flex items-center gap-1.5 shrink-0" style={{ color: 'var(--brand-cyan-text)' }}>
+            <Icon name="bell" size={13} />
+            Notify me
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ── LINEUPS SECTION ──────────────────────────────────────
+   Probable starting fives for both teams. Uses HOME_ROSTER /
+   AWAY_ROSTER seed data (first 5 entries per the "starters first
+   then bench" convention). Two-column grid on phone and desktop. */
+const LineupsSection = ({ game }) => {
+  const homeTeam = teamByName(game.home);
+  const awayTeam = teamByName(game.away);
+  const homeStarters = HOME_ROSTER.slice(0, 5);
+  const awayStarters = AWAY_ROSTER.slice(0, 5);
+  const PlayerRow = ({ p }) => (
+    <div className="flex items-center gap-2.5 py-1.5">
+      <div className="w-7 h-7 rounded-full lg-glass-strong flex items-center justify-center sf text-[11px] font-bold tabular-nums shrink-0" style={{ color: 'var(--text-primary)' }}>
+        {p.number}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="sf text-[12.5px] font-semibold leading-tight truncate" style={{ color: 'var(--text-primary)' }}>{p.name}</div>
+        <div className="sf text-[10px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{p.position}</div>
+      </div>
+    </div>
+  );
+  const Column = ({ team, roster }) => (
+    <div className="lg-glass squircle-md p-3.5">
+      <div className="flex items-center gap-2 mb-2 pb-2" style={{ borderBottom: '1px solid var(--hairline)' }}>
+        <TeamCrest team={team} size={22} />
+        <span className="sf-display text-[12px] font-bold tracking-tight truncate" style={{ color: 'var(--text-primary)' }}>{team.name}</span>
+        <span className="sf text-[9px] tracking-[0.14em] uppercase font-bold ms-auto" style={{ color: 'var(--text-muted)' }}>Starters</span>
+      </div>
+      {roster.map(p => <PlayerRow key={p.id} p={p} />)}
+    </div>
+  );
+  return (
+    <PgSection title="Probable lineups">
+      <div className="grid grid-cols-2 gap-3">
+        <Column team={homeTeam} roster={homeStarters} />
+        <Column team={awayTeam} roster={awayStarters} />
+      </div>
+    </PgSection>
+  );
+};
+
+/* ── AFTER TIPOFF placeholders ────────────────────────────
+   Shows what'll populate the page once the game starts. Helps
+   set expectations + makes the screen feel intentionally empty
+   rather than half-built. */
+const ComingAfterTipoff = () => {
+  const Row = ({ iconName, label, sub }) => (
+    <div className="flex items-start gap-3 py-2">
+      <div className="w-9 h-9 rounded-xl lg-glass-strong flex items-center justify-center shrink-0" style={{ color: 'var(--text-muted)' }}>
+        <Icon name={iconName} size={15} />
+      </div>
+      <div className="min-w-0">
+        <div className="sf-display text-[13px] font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>{label}</div>
+        <div className="sf text-[11px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{sub}</div>
+      </div>
+    </div>
+  );
+  return (
+    <PgSection title="After tipoff">
+      <div className="lg-glass squircle-md p-4">
+        <Row iconName="play"  label="Game video & moments"   sub="Auto-clipped by play type as the game unfolds" />
+        <Row iconName="flame" label="Live stats & box score" sub="Updates in real time once the clock starts" />
+        <Row iconName="star"  label="Your highlight pack"    sub="Drops into your feed after the final whistle" />
+      </div>
+    </PgSection>
+  );
+};
+
 const PostGameScreen = ({ gameId, onBack, onPickMoment, captures = [] }) => {
   const g = SEED_GAMES.find(x => x.id === gameId) || SEED_GAMES.find(x => x.status === 'just-ended');
+  const isUpcoming = g.status === 'upcoming';
   const myMoments = SEED_MOMENTS;
   const recap = TEAM_MOMENTS.find(t => t.kind === 'full-recap');
   const homeTeam = teamByName(g.home);
@@ -7282,6 +7541,17 @@ const PostGameScreen = ({ gameId, onBack, onPickMoment, captures = [] }) => {
         </div>
       </div>
 
+      {/* ── UPCOMING branch ─────────────────────────────────
+          Stats and highlights don't exist yet — show countdown,
+          lineups, and a preview of what populates after tipoff. */}
+      {isUpcoming ? (
+        <>
+          <PreGameHero game={g} />
+          <LineupsSection game={g} />
+          <ComingAfterTipoff />
+        </>
+      ) : (
+      <>
       {/* Score hero */}
       <ScoreHero game={g} />
 
@@ -7341,6 +7611,8 @@ const PostGameScreen = ({ gameId, onBack, onPickMoment, captures = [] }) => {
 
       {/* Player stats — tabbed table */}
       <PlayerStatsSection game={g} />
+      </>
+      )}
     </div>
   );
 };
@@ -11960,21 +12232,28 @@ const App = () => {
         <div className="relative z-10 flex w-full" style={{ minHeight: '100vh' }}>
           {/* Side nav — collapsible. Toggle persists in localStorage. */}
           <aside className={`ds-sidenav ${sideNavCollapsed ? 'collapsed' : ''}`}>
-            {/* Brand row — favicon-style cyan mark + HALO wordmark + cyan PLAYER eyebrow.
-                When collapsed, only the mark remains. */}
-            <div className="ds-sidenav-brand-row">
-              <div className="ds-sidenav-brand-mark">H</div>
-              <div className="ds-sidenav-brand-wordmark flex items-baseline gap-1.5">
-                <span className="sf-display font-bold text-[18px] leading-none" style={{ color: 'var(--text-primary)' }}>HALO</span>
-                <span className="sf text-[9px] tracking-[0.18em] uppercase font-bold" style={{ color: 'var(--brand-cyan-text)' }}>player</span>
+            {/* Header — brand-row + toggle wrapped together so their total
+                height stays fixed at 78px in both modes. That's what locks
+                the nav items below to a consistent Y-position when the
+                bar collapses/expands.
+                Expanded: chevron sits flush-right on the same row as the
+                wordmark. Collapsed: chevron stacks centered below the H
+                mark. The transition between the two looks like the chevron
+                rotates and drops into place rather than jumping. */}
+            <div className="ds-sidenav-header">
+              <div className="ds-sidenav-brand-row">
+                <div className="ds-sidenav-brand-mark">H</div>
+                <div className="ds-sidenav-brand-wordmark flex items-baseline gap-1.5">
+                  <span className="sf-display font-bold text-[18px] leading-none" style={{ color: 'var(--text-primary)' }}>HALO</span>
+                  <span className="sf text-[9px] tracking-[0.18em] uppercase font-bold" style={{ color: 'var(--brand-cyan-text)' }}>player</span>
+                </div>
               </div>
+              <button onClick={toggleSideNav} className="ds-sidenav-toggle" aria-label={sideNavCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+                <svg width={11} height={11} viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M8.5 2.5 L4 7 L8.5 11.5" />
+                </svg>
+              </button>
             </div>
-            {/* Toggle button — small chevron, lives at the top of the bar */}
-            <button onClick={toggleSideNav} className="ds-sidenav-toggle mb-5" aria-label={sideNavCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
-              <svg width={11} height={11} viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M8.5 2.5 L4 7 L8.5 11.5" />
-              </svg>
-            </button>
             {[
               { key: 'home',    label: 'Home', icon: 'home' },
               { key: 'games',   label: 'Games', icon: 'games' },
