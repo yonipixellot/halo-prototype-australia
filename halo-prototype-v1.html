@@ -6779,19 +6779,6 @@ const AthleteProfileScreen = ({ onPickMoment, onBack, onOpenGame, asTab = true, 
         </div>
       </div>
 
-      {/* My captures — kept ABOVE the tab control (lifetime grid of
-          captures the user has uploaded themselves; distinct in purpose
-          from Fan captures which is content OTHERS tagged you in).
-          Conditionally rendered — empty rail just doesn't show. */}
-      {asTab && (captures || []).some(c => c.capturedBy === 'You') && (
-        <CaptureRail
-          title="My captures"
-          subtitle="Your view from the stands."
-          accent="plain"
-          captures={(captures || []).filter(c => c.capturedBy === 'You')}
-          onPickCapture={(c) => { window.location.hash = '#/capture-view/' + c.id; }} />
-      )}
-
       {/* Tab segmented control — Profile / Highlights / Bio / Fan captures.
           Fan captures is a dedicated tab (per user spec) carrying a
           NEW badge whenever there are pending tag-approvals for THIS
@@ -6846,17 +6833,34 @@ const AthleteProfileScreen = ({ onPickMoment, onBack, onOpenGame, asTab = true, 
       {tab === 'highlights' && <HighlightsTabBody onPickMoment={onPickMoment} />}
       {tab === 'bio'        && <BioTabBody />}
       {tab === 'fan-captures' && (
-        <CaptureRail
-          title="Fan captures"
-          subtitle="Public clips tagged with you."
-          captures={(captures || []).filter(c =>
-            c.taggedPlayerId === 'r1' && c.privacy === 'public' && (
-              c.tagApprovalStatus === 'approved' ||
-              (c.tagApprovalStatus === 'pending' && c.capturedBy === 'You')
-            )
+        <>
+          {/* "Fan captures" — content OTHERS tagged you in, plus your
+              own pending tags (so you can see your upload status). */}
+          <CaptureRail
+            title="Fan captures"
+            subtitle="Public clips tagged with you."
+            captures={(captures || []).filter(c =>
+              c.taggedPlayerId === 'r1' && c.privacy === 'public' && (
+                c.tagApprovalStatus === 'approved' ||
+                (c.tagApprovalStatus === 'pending' && c.capturedBy === 'You')
+              )
+            )}
+            onPickCapture={(c) => { window.location.hash = '#/capture-view/' + c.id; }}
+            emptyLabel="No fan captures yet. When fans tag you in their clips, they'll show up here." />
+          {/* "My captures" — your lifetime gallery (everything you've
+              uploaded). Lives inside this same tab as a second section
+              so all capture content is reachable from one place. Only
+              renders on the user's own profile. */}
+          {asTab && (
+            <CaptureRail
+              title="My captures"
+              subtitle="Your view from the stands."
+              accent="plain"
+              captures={(captures || []).filter(c => c.capturedBy === 'You')}
+              onPickCapture={(c) => { window.location.hash = '#/capture-view/' + c.id; }}
+              emptyLabel="When you record from the venue, your captures live here." />
           )}
-          onPickCapture={(c) => { window.location.hash = '#/capture-view/' + c.id; }}
-          emptyLabel="No fan captures yet. When fans tag you in their clips, they'll show up here." />
+        </>
       )}
 
     </div>
@@ -12123,7 +12127,11 @@ const CaptureSheet = ({ stepLabel, stepCount, currentStep, onBack, onClose, chil
    visual state. Continue is enabled when all three are flipped on
    (mimicking the "you need to allow these to proceed" flow). */
 const CapturePermissionsStep = ({ onContinue, onClose }) => {
-  const [perms, setPerms] = useState({ location: false, camera: false, media: false });
+  /* All three permissions default to ON so demo viewers can tap
+     Continue immediately. The toggles are still tappable in case
+     someone wants to demo the "denied" state, but the happy-path
+     friction is gone. */
+  const [perms, setPerms] = useState({ location: true, camera: true, media: true });
   const allOn = perms.location && perms.camera && perms.media;
   const ROWS = [
     { key: 'location', icon: 'map-pin', title: 'Location', sub: 'Confirm you\'re at the venue' },
