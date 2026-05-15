@@ -648,7 +648,12 @@
   }
   .ds-sidenav.collapsed { width: 72px; padding: 18px 16px; }
   .ds-sidenav-item {
-    display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+    /* min-height locks the row at 40px so it matches the collapsed
+       state exactly. Without this, expanded rows are ~38-42px
+       depending on content, which shifts icon Y-positions slightly
+       every time the bar toggles. */
+    display: flex; align-items: center; gap: 12px; padding: 0 14px;
+    min-height: 40px;
     border-radius: 14px; color: var(--text-tertiary); font-size: 14px; font-weight: 500;
     transition: background 220ms, color 220ms, padding 220ms, width 220ms;
     white-space: nowrap; overflow: hidden;
@@ -11976,8 +11981,12 @@ const App = () => {
               <Icon name="logout" size={18} />
               <span className="ds-sidenav-label">Sign out</span>
             </button>
-            {!sideNavCollapsed && <div className="border-t mx-2 my-3" style={{ borderColor: 'var(--hairline)' }} />}
-            {sideNavCollapsed && <div className="my-2" />}
+            {/* Divider before user card. SAME my-3 spacing in both modes
+                so the user card's Y-position doesn't shift when toggling
+                the sidebar. In collapsed mode we hide the border line but
+                preserve the spacing. */}
+            <div className={`mx-2 my-3 ${sideNavCollapsed ? '' : 'border-t'}`}
+              style={{ borderColor: 'var(--hairline)', height: sideNavCollapsed ? 0 : undefined }} />
             <button onClick={() => onSetTab('profile')} className="ds-sidenav-user" title={sideNavCollapsed ? `${PLAYER.name} · #${PLAYER.number}` : ''}>
               <div className="ds-sidenav-avatar">{PLAYER.initials}</div>
               <div className="ds-sidenav-meta flex-1 min-w-0">
@@ -12031,6 +12040,24 @@ const App = () => {
    accents (matches MorphCaptureCard's tone). Closes back to the
    home tab on done OR abandon.
    ============================================================ */
+
+/* SummaryChip — small count + label pill used at the top of the
+   capture review screen. Cyan brand accent for the primary count,
+   neutral for kind breakdowns, green for public. */
+const SummaryChip = ({ count, label, accent = 'plain' }) => {
+  const styles = accent === 'brand'
+    ? { background: 'rgba(0,214,254,0.12)', border: '1px solid var(--brand-cyan-border)', color: 'var(--brand-cyan-text)', numColor: '#fff' }
+    : accent === 'success'
+    ? { background: 'rgba(74,222,128,0.10)', border: '1px solid rgba(74,222,128,0.40)', color: '#86efac', numColor: '#86efac' }
+    : { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.65)', numColor: '#fff' };
+  return (
+    <div className="inline-flex items-baseline gap-1.5 px-2.5 py-1 rounded-full"
+      style={{ background: styles.background, border: styles.border }}>
+      <span className="sf-display text-[13px] tabular-nums font-bold leading-none" style={{ color: styles.numColor }}>{count}</span>
+      <span className="sf text-[10px] tracking-[0.10em] uppercase font-semibold leading-none" style={{ color: styles.color }}>{label}</span>
+    </div>
+  );
+};
 
 /* CaptureSheet — shared shell for all 4 capture screens. Fixed-position
    overlay, dark-glass canvas, top chrome (back + step label + close),
@@ -12438,6 +12465,12 @@ const CaptureReviewStep = ({ pending, gameId, onPublish, onBack, onClose, onUpda
     { id: 'r4', name: 'Marcus Lee',   number: 9,  team: 'Varsity' },
   ];
   const pickedFor = pickerForId ? pending.find(p => p.id === pickerForId) : null;
+  /* Summary chips at the top of the review — give the user a sense of
+     scale before they scan the list. Counts derived once from pending. */
+  const photoCount = pending.filter(c => c.kind === 'photo').length;
+  const videoCount = pending.filter(c => c.kind !== 'photo').length;
+  const taggedCount = pending.filter(c => c.taggedPlayerId).length;
+  const publicCount = pending.filter(c => c.privacy === 'public').length;
   return (
     <>
     <CaptureSheet stepLabel="Capture · Review" stepCount={4} currentStep={4} onBack={onBack} onClose={onClose}
@@ -12445,90 +12478,220 @@ const CaptureReviewStep = ({ pending, gameId, onPublish, onBack, onClose, onUpda
         <button onClick={onPublish} disabled={pending.length === 0}
           className="w-full squircle-md py-3.5 sf text-[14px] font-bold transition-all"
           style={{
-            color: pending.length === 0 ? 'rgba(255,255,255,0.40)' : '#fff',
+            color: pending.length === 0 ? 'rgba(255,255,255,0.40)' : '#0a0d18',
             background: pending.length === 0 ? 'rgba(255,255,255,0.06)' : 'linear-gradient(180deg, rgba(0,235,255,1) 0%, rgba(0,200,250,1) 100%)',
             border: pending.length === 0 ? '1px solid rgba(255,255,255,0.10)' : 'none',
             boxShadow: pending.length === 0 ? 'none' : '0 8px 24px -8px rgba(0,214,254,0.55), inset 0 1px 0 rgba(255,255,255,0.40)',
-            color: pending.length === 0 ? 'rgba(255,255,255,0.40)' : '#0a0d18',
           }}>
           {pending.length === 0 ? 'No captures' : `Publish ${pending.length} ${pending.length === 1 ? 'capture' : 'captures'}`}
         </button>
       }>
-      <h1 className="sf-display text-[26px] lg:text-[32px] font-bold leading-[1.05] tracking-[-0.02em] mb-2 text-white">
-        Review &amp; share
-      </h1>
-      <p className="sf text-[13px] lg:text-[14px] leading-relaxed mb-7" style={{ color: 'rgba(255,255,255,0.55)' }}>
-        Tag a player, set privacy. {game ? `Captures attach to ${game.home} vs ${game.away}.` : ''}
-      </p>
-      <div className="space-y-3">
-        {pending.map(cap => {
+      {/* Editorial header — eyebrow + hero headline + summary chips.
+          The summary chips replace the prior "Tag a player, set privacy"
+          subtitle with concrete counts so the user knows what they're
+          reviewing at a glance. */}
+      <div className="mb-6">
+        <div className="sf text-[10px] tracking-[0.24em] uppercase font-bold mb-2" style={{ color: 'var(--brand-cyan-text)' }}>
+          Final step
+        </div>
+        <h1 className="sf-display text-[28px] lg:text-[36px] font-bold leading-[1.02] tracking-[-0.025em] mb-2 text-white">
+          Review &amp; share
+        </h1>
+        <p className="sf text-[13px] lg:text-[14px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.55)' }}>
+          {game ? `${game.home} vs ${game.away}` : 'This game'} — tag a player and set privacy. Captures stay yours forever.
+        </p>
+        <div className="flex flex-wrap items-center gap-2 mt-4">
+          <SummaryChip count={pending.length} label={pending.length === 1 ? 'capture' : 'captures'} accent="brand" />
+          {videoCount > 0 && <SummaryChip count={videoCount} label={videoCount === 1 ? 'video' : 'videos'} />}
+          {photoCount > 0 && <SummaryChip count={photoCount} label={photoCount === 1 ? 'photo' : 'photos'} />}
+          {taggedCount > 0 && <SummaryChip count={taggedCount} label={taggedCount === 1 ? 'tagged' : 'tagged'} />}
+          {publicCount > 0 && <SummaryChip count={publicCount} label="public" accent="success" />}
+        </div>
+      </div>
+
+      <div className="space-y-5">
+        {pending.map((cap, idx) => {
           const player = cap.taggedPlayerId ? ROSTER.find(p => p.id === cap.taggedPlayerId) : null;
           const isPublic = cap.privacy === 'public';
+          const isVideo = cap.kind !== 'photo';
+          const isHoriz = cap.kind === 'video-h';
+          /* Each capture renders as an editorial card:
+              · Big preview (full width, aspect-ratio matches kind)
+              · Index pill top-left "01 / 03"
+              · Kind chip top-right with duration for video
+              · Caption input — editable, defaults to placeholder
+              · Tag player CTA — primary action, full width
+              · Privacy segmented toggle + delete (secondary)
+             Stacks vertically with proper breathing room (space-y-5). */
           return (
-            <div key={cap.id} className="squircle-md p-3 flex gap-3"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)' }}>
-              {/* Thumb */}
-              <div className="w-20 h-28 squircle-sm shrink-0 relative overflow-hidden"
+            <div key={cap.id} className="squircle-md overflow-hidden anim-fade"
+              style={{
+                background: 'linear-gradient(180deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.02) 100%)',
+                border: '1px solid rgba(255,255,255,0.10)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 24px -12px rgba(0,0,0,0.45)',
+              }}>
+              {/* Big preview */}
+              <div className="relative w-full overflow-hidden"
                 style={{
-                  background: `radial-gradient(ellipse 70% 50% at 30% 30%, ${cap.hue.a} 0%, transparent 60%), radial-gradient(ellipse 70% 50% at 75% 75%, ${cap.hue.b} 0%, transparent 60%), #0a0e1a`,
+                  aspectRatio: isHoriz ? '16 / 9' : (cap.kind === 'photo' ? '4 / 3' : '9 / 12'),
+                  background: `radial-gradient(ellipse 70% 50% at 30% 30%, ${cap.hue.a} 0%, transparent 60%), radial-gradient(ellipse 70% 50% at 75% 75%, ${cap.hue.b} 0%, transparent 60%), linear-gradient(180deg, #0a0e1a 0%, #050810 100%)`,
                 }}>
-                <div className="absolute inset-0 hatch-dark opacity-30" />
-                <div className="absolute top-1.5 start-1.5 lg-glass-strong squircle-sm px-1.5 py-0.5">
-                  <span className="sf text-[8.5px] tracking-[0.14em] uppercase font-bold text-white leading-none">
-                    {cap.kind === 'photo' ? 'Photo' : cap.kind === 'video-v' ? 'Vid' : 'Vid H'}
+                <div className="absolute inset-0 hatch-dark opacity-30 pointer-events-none" />
+                {/* HALO monogram poster — same pattern as other capture
+                    surfaces so previews don't look like dead gradients. */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <span className="sf-display font-extrabold tracking-[-0.04em] select-none"
+                    style={{
+                      fontSize: 'clamp(60px, 14vw, 160px)',
+                      color: 'rgba(255,255,255,0.05)',
+                      letterSpacing: '-0.06em', lineHeight: 1,
+                    }}>HALO</span>
+                </div>
+                {/* Index pill — "01 / 03" — top-left */}
+                <div className="absolute top-3 start-3 lg-glass-strong squircle-sm px-2 py-1 z-10">
+                  <span className="sf text-[10px] tabular-nums tracking-tight font-bold leading-none text-white">
+                    {String(idx + 1).padStart(2, '0')}<span style={{ color: 'rgba(255,255,255,0.45)' }}>/{String(pending.length).padStart(2, '0')}</span>
                   </span>
                 </div>
-              </div>
-              {/* Controls */}
-              <div className="flex-1 min-w-0 flex flex-col gap-2">
-                {/* Tag player chip */}
-                <button onClick={() => setPickerForId(cap.id)}
-                  className="squircle-sm px-3 py-2 flex items-center gap-2 text-start"
-                  style={{
-                    background: player ? 'rgba(0,214,254,0.10)' : 'rgba(255,255,255,0.04)',
-                    border: '1px solid ' + (player ? 'rgba(0,214,254,0.45)' : 'rgba(255,255,255,0.10)'),
-                  }}>
-                  {player ? (
+                {/* Kind chip + duration — top-right */}
+                <div className="absolute top-3 end-3 z-10 inline-flex items-center gap-1.5 lg-glass-strong squircle-sm px-2 py-1">
+                  {isVideo ? (
                     <>
-                      <div className="w-6 h-6 squircle-sm flex items-center justify-center shrink-0 sf-display text-[10px] font-bold text-white"
-                        style={{ background: 'rgba(0,214,254,0.25)', border: '1px solid rgba(0,214,254,0.50)' }}>
-                        {player.number}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="sf text-[11.5px] font-semibold leading-none truncate" style={{ color: '#7ce8ff' }}>
-                          {player.name}
-                        </div>
-                        <div className="sf text-[9.5px] leading-none mt-0.5" style={{ color: 'rgba(124,232,255,0.65)' }}>
-                          Pending approval
-                        </div>
-                      </div>
+                      <svg width={10} height={10} viewBox="0 0 14 14" fill="currentColor" style={{ color: '#fff' }}>
+                        <path d="M2 2 H10 V12 H2 Z M11 4 L13 3 V11 L11 10 Z" />
+                      </svg>
+                      <span className="sf text-[9.5px] tabular-nums font-bold leading-none text-white">
+                        0:{String(Math.floor(Math.random() * 20 + 6)).padStart(2, '0')}
+                      </span>
                     </>
                   ) : (
                     <>
-                      <Icon name="plus" size={12} stroke={1.8} />
-                      <span className="sf text-[11.5px] font-semibold" style={{ color: 'rgba(255,255,255,0.75)' }}>
-                        Tag player
+                      <svg width={10} height={10} viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth={1.6}>
+                        <rect x={2} y={3} width={10} height={8} rx={1} stroke="#fff" />
+                        <circle cx={7} cy={7} r={2} stroke="#fff" />
+                      </svg>
+                      <span className="sf text-[9.5px] tracking-[0.14em] uppercase font-bold leading-none text-white">
+                        Photo
                       </span>
                     </>
                   )}
+                </div>
+                {/* Center play affordance for video previews */}
+                {isVideo && (
+                  <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+                    <div className="w-14 h-14 rounded-full flex items-center justify-center"
+                      style={{
+                        background: 'rgba(8,12,20,0.62)',
+                        backdropFilter: 'blur(20px) saturate(180%)',
+                        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                        border: '1px solid rgba(255,255,255,0.20)',
+                        boxShadow: '0 0 24px rgba(0,214,254,0.30), 0 8px 20px -6px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.25)',
+                      }}>
+                      <svg width={16} height={20} viewBox="0 0 14 16" fill="white"
+                        style={{ marginInlineStart: 2 }}>
+                        <path d="M0 1.5v13c0 1 1.1 1.55 1.9 1.05l11-6.5c.8-.5.8-1.7 0-2.2l-11-6.5C1.1 -.05 0 .5 0 1.5z" />
+                      </svg>
+                    </div>
+                  </div>
+                )}
+                {/* Bottom-fade caption preview — readable on top of any
+                    capture hue. Picks up the user's caption (or a hint). */}
+                <div className="absolute inset-x-0 bottom-0 px-4 pt-12 pb-3 z-10"
+                  style={{ background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.78) 70%, rgba(0,0,0,0.92) 100%)' }}>
+                  <div className="sf-display text-white text-[15px] font-bold leading-tight tracking-[-0.01em] truncate">
+                    {cap.caption || 'Untitled capture'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Card body — controls */}
+              <div className="p-4 space-y-3">
+                {/* Caption input */}
+                <div>
+                  <label className="sf text-[9.5px] tracking-[0.16em] uppercase font-bold block mb-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                    Caption
+                  </label>
+                  <input type="text" value={cap.caption || ''}
+                    onChange={(e) => onUpdatePending(cap.id, { caption: e.target.value })}
+                    placeholder="Add a caption…"
+                    className="w-full bg-transparent border-0 outline-none sf text-[15px] font-semibold leading-tight"
+                    style={{ color: '#fff' }} />
+                  <div className="h-px mt-2" style={{ background: 'rgba(255,255,255,0.10)' }} />
+                </div>
+
+                {/* Tag player — primary action */}
+                <button onClick={() => setPickerForId(cap.id)}
+                  className="w-full squircle-sm px-3.5 py-3 flex items-center gap-3 text-start transition-all hover:scale-[1.005] active:scale-[0.99]"
+                  style={{
+                    background: player ? 'rgba(0,214,254,0.10)' : 'rgba(255,255,255,0.04)',
+                    border: '1px solid ' + (player ? 'rgba(0,214,254,0.50)' : 'rgba(255,255,255,0.10)'),
+                  }}>
+                  {player ? (
+                    <>
+                      <div className="w-9 h-9 squircle-sm flex items-center justify-center shrink-0 sf-display text-[13px] font-bold tabular-nums leading-none text-white"
+                        style={{ background: 'rgba(0,214,254,0.25)', border: '1px solid rgba(0,214,254,0.55)' }}>
+                        {player.number}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="sf text-[13px] font-bold leading-tight" style={{ color: '#7ce8ff' }}>
+                          {player.name}
+                        </div>
+                        <div className="sf text-[10.5px] leading-tight mt-0.5" style={{ color: 'rgba(124,232,255,0.55)' }}>
+                          Tagged · pending their approval
+                        </div>
+                      </div>
+                      <span className="sf text-[10px] tracking-[0.14em] uppercase font-bold shrink-0" style={{ color: 'rgba(124,232,255,0.85)' }}>
+                        Change
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-9 h-9 squircle-sm flex items-center justify-center shrink-0"
+                        style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.14)', color: 'rgba(255,255,255,0.65)' }}>
+                        <Icon name="plus" size={14} stroke={2} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="sf text-[13px] font-bold leading-tight text-white">
+                          Tag a player
+                        </div>
+                        <div className="sf text-[10.5px] leading-tight mt-0.5" style={{ color: 'rgba(255,255,255,0.50)' }}>
+                          Optional — surfaces this clip on their profile.
+                        </div>
+                      </div>
+                      <span className="sf text-[14px] icon-flip-rtl shrink-0" style={{ color: 'rgba(255,255,255,0.45)' }}>›</span>
+                    </>
+                  )}
                 </button>
-                {/* Privacy + delete row */}
+
+                {/* Privacy segmented toggle + delete */}
                 <div className="flex items-center gap-2">
-                  <button onClick={() => onUpdatePending(cap.id, { privacy: isPublic ? 'private' : 'public' })}
-                    className="flex-1 squircle-sm px-3 py-2 flex items-center gap-2 text-start"
-                    style={{
-                      background: isPublic ? 'rgba(74,222,128,0.10)' : 'rgba(255,255,255,0.04)',
-                      border: '1px solid ' + (isPublic ? 'rgba(74,222,128,0.45)' : 'rgba(255,255,255,0.10)'),
-                    }}>
-                    <Icon name={isPublic ? 'eye' : 'eye-off'} size={12} stroke={1.8} />
-                    <span className="sf text-[11.5px] font-semibold" style={{ color: isPublic ? '#86efac' : 'rgba(255,255,255,0.75)' }}>
-                      {isPublic ? 'Public' : 'Private'}
-                    </span>
-                  </button>
-                  <button onClick={() => onDeleteLocal(cap.id)} aria-label="Delete"
-                    className="w-9 h-9 squircle-sm flex items-center justify-center"
-                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', color: 'rgba(255,150,150,0.85)' }}>
-                    <Icon name="close" size={11} stroke={2} />
+                  <div className="flex-1 lg-glass squircle-sm p-1 flex gap-1"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)' }}>
+                    {[
+                      { key: 'private', label: 'Private', icon: 'eye-off' },
+                      { key: 'public',  label: 'Public',  icon: 'eye' },
+                    ].map(opt => {
+                      const active = (cap.privacy || 'private') === opt.key;
+                      return (
+                        <button key={opt.key} onClick={() => onUpdatePending(cap.id, { privacy: opt.key })}
+                          className="flex-1 py-2 sf text-[11.5px] font-semibold tracking-tight squircle-sm transition-all inline-flex items-center justify-center gap-1.5"
+                          style={active
+                            ? { background: opt.key === 'public' ? 'rgba(74,222,128,0.16)' : 'rgba(255,255,255,0.10)', color: opt.key === 'public' ? '#86efac' : '#fff', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.10)' }
+                            : { color: 'rgba(255,255,255,0.55)' }}>
+                          <Icon name={opt.icon} size={11} stroke={1.8} />
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button onClick={() => onDeleteLocal(cap.id)} aria-label="Delete capture"
+                    className="w-10 h-10 squircle-sm flex items-center justify-center transition-all hover:scale-[1.04] active:scale-[0.94]"
+                    style={{ background: 'rgba(255,90,90,0.10)', border: '1px solid rgba(255,90,90,0.30)', color: 'rgba(255,150,150,0.95)' }}>
+                    <svg width={13} height={13} viewBox="0 0 14 14" fill="none" stroke="currentColor"
+                      strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round"
+                      style={{ width: 13, height: 13, display: 'block' }}>
+                      <path d="M3 3 L11 11 M11 3 L3 11" />
+                    </svg>
                   </button>
                 </div>
               </div>
@@ -12536,8 +12699,14 @@ const CaptureReviewStep = ({ pending, gameId, onPublish, onBack, onClose, onUpda
           );
         })}
         {pending.length === 0 && (
-          <div className="squircle-md p-6 text-center" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)' }}>
-            <p className="sf text-[12.5px]" style={{ color: 'rgba(255,255,255,0.55)' }}>No captures yet — go back to record some.</p>
+          <div className="squircle-md p-8 text-center"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)' }}>
+            <div className="w-12 h-12 squircle-sm mx-auto mb-3 flex items-center justify-center"
+              style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)' }}>
+              <Icon name="camera" size={20} stroke={1.6} />
+            </div>
+            <div className="sf-display text-[15px] font-bold text-white mb-1">Nothing captured yet</div>
+            <p className="sf text-[12.5px]" style={{ color: 'rgba(255,255,255,0.55)' }}>Tap back to record some moments.</p>
           </div>
         )}
       </div>
