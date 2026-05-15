@@ -1240,7 +1240,7 @@ const SEED_GAMES = [
   { id: 'g2', home: 'Varsity', away: 'Northside',       status: 'upcoming', kickoffInSec: 4*86400 },
   { id: 'g3', home: 'Tigers',  away: 'Eastside',        status: 'upcoming', kickoffInSec: 2*86400 },
   { id: 'g4', home: 'Wolves',  away: 'Falcons',         status: 'upcoming', kickoffInSec: 30*60,   venue: 'Eastside Gym · Court 2' },
-  { id: 'gL', home: 'Varsity', away: 'Westfield Hawks', status: 'live',    scoreHome: 28, scoreAway: 24, period: 'Q2', momentsCount: 5 },
+  { id: 'gL', home: 'Varsity', away: 'Westfield',       status: 'live',    scoreHome: 28, scoreAway: 24, period: 'Q2', momentsCount: 5 },
   { id: 'gE', home: 'Varsity', away: 'Northside',       status: 'just-ended', scoreHome: 64, scoreAway: 58, momentsCount: 8, when: 'Yesterday · 7:30 PM' },
   { id: 'gP1', home: 'Varsity', away: 'Lincoln',        status: 'final',  scoreHome: 71, scoreAway: 63, when: '3 days ago' },
   { id: 'gP2', home: 'Varsity', away: 'Eastside',       status: 'final',  scoreHome: 55, scoreAway: 48, when: 'Last week' },
@@ -5484,13 +5484,19 @@ const HorizontalGameCard = ({ game, onOpenGame }) => {
   );
 };
 
-const GamesScreen = ({ onOpenGame }) => {
+const GamesScreen = ({ onOpenGame, onOpenGameVideo }) => {
   const [date, setDate] = useState('d0');
   const ids = GAMES_BY_DATE[date] || [];
   const games = ids.map(id => SEED_GAMES.find(g => g.id === id)).filter(Boolean);
   const live     = games.filter(g => g.status === 'live');
   const upcoming = games.filter(g => g.status === 'upcoming');
   const ended    = games.filter(g => g.status === 'just-ended' || g.status === 'final');
+  /* LIVE cards route to the full-game video player (cinematic stream),
+     upcoming + ended route to the standard game page (PostGameScreen
+     branches by status to render PreGame vs PostGame content). */
+  const onOpen = (g) => g.status === 'live'
+    ? onOpenGameVideo(g.id)
+    : onOpenGame(g.id);
 
   return (
     <div className="anim-fade pb-28 sf relative" style={{ color: 'var(--text-primary)' }}>
@@ -5526,19 +5532,19 @@ const GamesScreen = ({ onOpenGame }) => {
         {live.length > 0 && (
           <div>
             <GamesSectionLabel tone="live" label="Live now" />
-            <div className="space-y-3">{live.map(g => <HorizontalGameCard key={g.id} game={g} onOpenGame={onOpenGame} />)}</div>
+            <div className="space-y-3">{live.map(g => <HorizontalGameCard key={g.id} game={g} onOpenGame={() => onOpen(g)} />)}</div>
           </div>
         )}
         {upcoming.length > 0 && (
           <div>
             <GamesSectionLabel tone="upcoming" label="Upcoming" />
-            <div className="space-y-3">{upcoming.map(g => <HorizontalGameCard key={g.id} game={g} onOpenGame={onOpenGame} />)}</div>
+            <div className="space-y-3">{upcoming.map(g => <HorizontalGameCard key={g.id} game={g} onOpenGame={() => onOpen(g)} />)}</div>
           </div>
         )}
         {ended.length > 0 && (
           <div>
             <GamesSectionLabel tone="ended" label="Final" />
-            <div className="space-y-3">{ended.map(g => <HorizontalGameCard key={g.id} game={g} onOpenGame={onOpenGame} />)}</div>
+            <div className="space-y-3">{ended.map(g => <HorizontalGameCard key={g.id} game={g} onOpenGame={() => onOpen(g)} />)}</div>
           </div>
         )}
       </div>
@@ -12043,7 +12049,7 @@ const App = () => {
   const renderTabContent = (showHeader = true) => {
     const header = showHeader ? phoneHeader : null;
     if (tab === 'home') return <HomeScreen header={header} gameState={gameState} onPickMoment={onPickMoment} onOpenGame={onOpenGame} onOpenGameVideo={onOpenGameVideo} onOpenStory={onOpenStory} onOpenAthlete={onOpenAthlete} onOpenDrop={onOpenDrop} atVenue={atVenue} onStartCapture={() => navigate('capture')} />;
-    if (tab === 'games') return <GamesScreen onOpenGame={onOpenGame} />;
+    if (tab === 'games') return <GamesScreen onOpenGame={onOpenGame} onOpenGameVideo={onOpenGameVideo} />;
     if (tab === 'watch') return <WatchScreen onOpenGame={onOpenGame} onOpenGameVideo={onOpenGameVideo} onPickMoment={onPickMoment} />;
     if (tab === 'profile') return <AthleteProfileScreen onPickMoment={onPickMoment} onOpenGame={onOpenGame} onBack={() => navigate('home')} asTab captures={captures} />;
     return null;
@@ -13191,7 +13197,7 @@ const NotificationsSheet = ({ onClose, onOpenGame, captures = [], onApproveTag, 
     c.taggedPlayerId === 'r1' && c.tagApprovalStatus === 'pending'
   );
   const [items, setItems] = useState([
-    { id: 'n1', kind: 'live',   title: 'Varsity is LIVE',          body: 'Q2 · vs Westfield Hawks',         when: 'now',    cta: () => onOpenGame('gL') },
+    { id: 'n1', kind: 'live',   title: 'Varsity is LIVE',          body: 'Q2 · vs Westfield',               when: 'now',    cta: () => onOpenGame('gL') },
     { id: 'n2', kind: 'drop',   title: 'New drop ready',           body: '8 of your moments from last night', when: '12m ago', cta: () => onOpenGame('gE') },
     { id: 'n3', kind: 'follow', title: 'Sarah Kim followed you',   body: '#12 PG · Varsity',                 when: '1h ago' },
     { id: 'n4', kind: 'system', title: 'Your story dropped',       body: '"You\'re 14% sharper in 4Q"',       when: '3h ago' },
