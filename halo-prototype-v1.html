@@ -4621,7 +4621,7 @@ const MorphLiveCard = ({ cycle, goPrev, goNext, onOpenGame }) => {
             <span className="text-[28px]" style={{ color: 'var(--text-tertiary)' }}>{g.scoreAway}</span>
           </div>
         </div>
-      <div className="relative px-4 lg:px-5 pb-3 flex items-center justify-end" style={{ zIndex: 2 }}>
+      <div className="relative px-4 lg:px-5 pb-3 flex items-center justify-start" style={{ zIndex: 2 }}>
         <button onClick={(e) => { e.stopPropagation(); onOpenGame(g.id); }} className="lg-btn-primary squircle-sm sf text-[12px] font-bold px-4 py-2 flex items-center gap-1.5">
           <svg width={11} height={11} viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><path d="M3 2 L12 7 L3 12 Z" /></svg>
           Watch live
