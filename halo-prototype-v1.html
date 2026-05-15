@@ -1866,16 +1866,29 @@ const SilhouetteAvatar = () => (
   </svg>
 );
 
-const IdentityCircle = ({ kind = 'team', avatar, team, label, isClaimed, isNew, liveGame, onClick }) => {
+const IdentityCircle = ({ kind = 'team', avatar, team, label, isClaimed, isNew, liveGame, isViewed = false, onClick }) => {
   const isLive = kind === 'team' && !!liveGame;
   const isUnclaimed = kind === 'player' && isClaimed === false;
   const isClaimedPlayer = kind === 'player' && isClaimed === true;
+  /* "Viewed" applies the Instagram-style seen-story state — gray ring
+     replaces the cyan/dashed ring, and the cyan "new" dot is hidden.
+     LIVE circles ignore isViewed entirely; live is always live, never
+     watched-and-done. */
+  const viewedActive = isViewed && !isLive;
   /* ringColor: forced-cyan rgba was a bright-mode leak — tracked the
      theme's cyan token instead so unclaimed-player rings don't wash
-     out on cream in light mode. */
-  const ringColor = isLive ? 'var(--state-live)' : isUnclaimed ? 'var(--brand-cyan-border)' : 'var(--brand-cyan)';
-  const ringStyle = isUnclaimed ? 'dashed' : 'solid';
-  const ringWidth = isLive ? 3 : isUnclaimed ? 1.75 : 2.5;
+     out on cream in light mode. The viewed state overrides to a
+     mid-tone neutral that reads as "you've seen this already" in
+     both themes. */
+  const ringColor = isLive
+    ? 'var(--state-live)'
+    : viewedActive
+      ? 'var(--text-tertiary)'
+      : isUnclaimed
+        ? 'var(--brand-cyan-border)'
+        : 'var(--brand-cyan)';
+  const ringStyle = viewedActive ? 'solid' : (isUnclaimed ? 'dashed' : 'solid');
+  const ringWidth = isLive ? 3 : viewedActive ? 1.75 : isUnclaimed ? 1.75 : 2.5;
 
   /* Avatar resolution chain: src → silhouette (claimed) → jersey → initial → skeleton */
   let avatarBody;
@@ -1918,8 +1931,10 @@ const IdentityCircle = ({ kind = 'team', avatar, team, label, isClaimed, isNew, 
           style={{ color: 'var(--text-primary)' }}>
           {avatarBody}
         </div>
-        {/* New-content cyan dot — top-start with cyan glow + canvas-bg border */}
-        {isNew && !isLive && (
+        {/* New-content cyan dot — top-start with cyan glow + canvas-bg border.
+            Hidden when the circle is in the viewed/seen state so the
+            "new content" affordance reads as cleared. */}
+        {isNew && !isLive && !viewedActive && (
           <div className="absolute rounded-full" title="New highlights"
             style={{
               top: -2, insetInlineStart: -2, width: 14, height: 14,
@@ -4255,7 +4270,38 @@ const SignInScreen = ({ onSignIn, onSignUp, onOpenInvite, theme, onToggleTheme }
    Seed data caveat: SEED_MOMENTS are currently all "self" so the per-player
    start indices collapse to 0 in this prototype. The routing contract is
    correct; the data will get its own per-player slicing later. */
+/* VIEWED_STORAGE_KEY — localStorage key for the set of person/team IDs
+   the user has opened a story/video for. Persists across reloads so the
+   gray "seen" ring behaves like Instagram's seen-stories pattern. */
+const VIEWED_STORAGE_KEY = 'halo:viewed-circles';
+const loadViewedSet = () => {
+  try { return new Set(JSON.parse(localStorage.getItem(VIEWED_STORAGE_KEY) || '[]')); }
+  catch { return new Set(); }
+};
+const saveViewedSet = (s) => {
+  try { localStorage.setItem(VIEWED_STORAGE_KEY, JSON.stringify([...s])); } catch {}
+};
+
 const HighlightCircles = ({ onPickMoment, onOpenGame, onOpenGameVideo, onOpenAthlete }) => {
+  /* Viewed-set state — Instagram-style "seen story" tracking. A circle
+     ID gets added the moment its onClick fires (mark-on-open, not
+     mark-on-completion — matches the prototype's simple click→viewer
+     pattern). LIVE circles never get added since live is always live.
+     SELF is excluded too — your own content doesn't read as "watched". */
+  const [viewed, setViewed] = useState(loadViewedSet);
+  const markViewed = (id) => {
+    setViewed(prev => {
+      if (prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.add(id);
+      saveViewedSet(next);
+      return next;
+    });
+  };
+  /* Helper that wraps an existing onClick so the circle marks itself
+     viewed FIRST, then runs the original action. Keeps the routing
+     logic readable below — no inline state mutation in each handler. */
+  const onWatch = (id, handler) => () => { markViewed(id); handler(); };
   const liveGame = SEED_GAMES.find(g => g.status === 'live');
   /* Helper: pick a representative game id for a non-live team circle.
      Order of preference: most-recent finished/just-ended game whose home
@@ -4279,28 +4325,39 @@ const HighlightCircles = ({ onPickMoment, onOpenGame, onOpenGameVideo, onOpenAth
   return (
     <div className="px-5 lg:px-8 xl:px-12 pt-2 pb-5">
       <div className="flex gap-4 overflow-x-auto no-scrollbar">
-        {/* YOU — opens HighlightViewer starting at your latest moment. */}
+        {/* YOU — opens HighlightViewer starting at your latest moment.
+            Excluded from the viewed-set tracking: your own content
+            shouldn't read as "watched and done" the way someone else's
+            highlight reel does. */}
         <IdentityCircle kind="self" avatar={{ initial: 'T' }} label="You" isNew
           onClick={() => onPickMoment(indexForPerson('self'))} />
-        {/* Live team — opens GameVideoViewer of the live game. */}
+        {/* Live team — opens GameVideoViewer of the live game. Always
+            red, never gray — live is live. */}
         <IdentityCircle kind="team" avatar={{ initial: 'EP' }} label="Varsity"
           liveGame={{ gameId: liveGame.id }}
           onClick={() => onOpenGameVideo(liveGame.id)} />
         {/* Non-live team — opens GameVideoViewer of the team's last/next
             game so the circle leads to actual team video, not a profile. */}
         <IdentityCircle kind="team" avatar={{ initial: 'LH' }} label="Tigers"
-          onClick={() => onOpenGameVideo(gameIdForTeam('Tigers'))} />
+          isViewed={viewed.has('team-tigers')}
+          onClick={onWatch('team-tigers', () => onOpenGameVideo(gameIdForTeam('Tigers')))} />
         {/* Followed players — every circle opens HighlightViewer at that
             player's most recent moment (claimed silhouette + unclaimed
-            jersey both behave the same — tap = watch their reel). */}
+            jersey both behave the same — tap = watch their reel). Each
+            tracks its own viewed state so the cyan ring grays out once
+            you've opened their reel. */}
         <IdentityCircle kind="player" avatar={{ initial: 'S' }} team={{ initial: 'EP' }} label="Sarah" isClaimed isNew
-          onClick={() => onPickMoment(indexForPerson('sarah'))} />
+          isViewed={viewed.has('player-sarah')}
+          onClick={onWatch('player-sarah', () => onPickMoment(indexForPerson('sarah')))} />
         <IdentityCircle kind="player" avatar={{ initial: 'D' }} team={{ initial: 'EP' }} label="Dylan" isClaimed
-          onClick={() => onPickMoment(indexForPerson('dylan'))} />
+          isViewed={viewed.has('player-dylan')}
+          onClick={onWatch('player-dylan', () => onPickMoment(indexForPerson('dylan')))} />
         <IdentityCircle kind="player" avatar={{ jersey: 23 }} team={{ initial: 'EP' }} label="Player #23" isClaimed={false}
-          onClick={() => onPickMoment(indexForPerson('p-23'))} />
+          isViewed={viewed.has('player-23')}
+          onClick={onWatch('player-23', () => onPickMoment(indexForPerson('p-23')))} />
         <IdentityCircle kind="player" avatar={{ jersey: 11 }} team={{ initial: 'LH' }} label="Player #11" isClaimed={false}
-          onClick={() => onPickMoment(indexForPerson('p-11'))} />
+          isViewed={viewed.has('player-11')}
+          onClick={onWatch('player-11', () => onPickMoment(indexForPerson('p-11')))} />
       </div>
     </div>
   );
