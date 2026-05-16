@@ -1257,20 +1257,36 @@ const { useState, useEffect, useReducer, useRef, useMemo, useCallback, Fragment 
    Default player: Tal Weiss (#7) — never use Yoni's real name in
    Halo prototypes per project guidelines.
    ============================================================ */
-const PLAYER = { id: 'self', name: 'Tal Weiss', number: 7, position: 'SG', team: 'Varsity', initials: 'TW' };
+/* PLAYER — the prototype's persona. Anchored to Basketball Australia's
+   actual structure: Sesh Rigs is a confirmed team in Southern Districts
+   Senior Domestic, Winter 2026, Thursday Men D division. */
+const PLAYER = { id: 'self', name: 'Tal Weiss', number: 7, position: 'SG', team: 'Sesh Rigs', initials: 'TW',
+  association: 'Southern Districts Spartans', program: 'Senior Domestic', division: 'Thursday Men D', state: 'QLD' };
 
 const SEED_GAMES = [
   /* Kickoff times tuned for the Capture Mode tournament demo: g4 in
      30 min, g1 in 90 min so the venue picker reads as "one live +
      two starting soon" rather than "one live + finished games". */
-  { id: 'g1', home: 'Varsity', away: 'Lincoln',         status: 'upcoming', kickoffInSec: 90*60,   venue: 'Eastside Gym · Court 1' },
-  { id: 'g2', home: 'Varsity', away: 'Northside',       status: 'upcoming', kickoffInSec: 4*86400 },
-  { id: 'g3', home: 'Tigers',  away: 'Eastside',        status: 'upcoming', kickoffInSec: 2*86400 },
-  { id: 'g4', home: 'Wolves',  away: 'Falcons',         status: 'upcoming', kickoffInSec: 30*60,   venue: 'Eastside Gym · Court 2' },
-  { id: 'gL', home: 'Varsity', away: 'Westfield',       status: 'live',    scoreHome: 28, scoreAway: 24, period: 'Q2', momentsCount: 5 },
-  { id: 'gE', home: 'Varsity', away: 'Northside',       status: 'just-ended', scoreHome: 64, scoreAway: 58, momentsCount: 8, when: 'Yesterday · 7:30 PM' },
-  { id: 'gP1', home: 'Varsity', away: 'Lincoln',        status: 'final',  scoreHome: 71, scoreAway: 63, when: '3 days ago' },
-  { id: 'gP2', home: 'Varsity', away: 'Eastside',       status: 'final',  scoreHome: 55, scoreAway: 48, when: 'Last week' },
+  /* Sesh Rigs vs Medium Fundamentals is the focal rivalry across the
+     prototype — assigned to BOTH the live game (gL) and the most-
+     recent finished game (gE). The morph card's just-ended/ready/pre
+     states, PostGameScreen, the storydrop and AthleteProfile season
+     insights all key off these IDs, so promoting the rivalry here
+     promotes it everywhere in the demo. */
+  { id: 'g1', home: 'Sesh Rigs', away: 'Hustle HQ',              status: 'upcoming', kickoffInSec: 90*60, venue: 'Rowland Cowan Stadium · Court 1' },
+  { id: 'g2', home: 'Sesh Rigs', away: 'KingSlayers',            status: 'upcoming', kickoffInSec: 4*86400 },
+  { id: 'g3', home: 'Hoopin Huskies', away: 'Shaqtin A Fool',    status: 'upcoming', kickoffInSec: 2*86400 },
+  { id: 'g4', home: 'Sesh Rigs', away: 'Chump Central',          status: 'upcoming', kickoffInSec: 30*60, venue: 'Rowland Cowan Stadium · Court 2' },
+  /* THE focal matchup — White vs Teal, the rivalry the BA org doc
+     flags as the target. */
+  { id: 'gL', home: 'Sesh Rigs', away: 'Medium Fundamentals',    status: 'live',    scoreHome: 28, scoreAway: 24, period: 'Q2', momentsCount: 5 },
+  /* Most-recent finished game — also Sesh Rigs vs Medium Fundamentals
+     so the storydrop, post-game recap and "drop is ready" all key off
+     the rivalry. Score is a Sesh Rigs win to give the demo a positive
+     narrative arc. */
+  { id: 'gE',  home: 'Sesh Rigs', away: 'Medium Fundamentals',   status: 'just-ended', scoreHome: 64, scoreAway: 58, momentsCount: 8, when: 'Yesterday · 7:30 PM' },
+  { id: 'gP1', home: 'Sesh Rigs', away: 'Hustle HQ',             status: 'final',  scoreHome: 71, scoreAway: 63, when: '3 days ago' },
+  { id: 'gP2', home: 'Sesh Rigs', away: 'Nothing But All Stars', status: 'final',  scoreHome: 55, scoreAway: 48, when: 'Last week' },
 ];
 
 const SEED_MOMENTS = [
@@ -1387,15 +1403,15 @@ const SEED_CAPTURES = [
 
 const STORYTELLING_DROPS = [
   { id: 'sd1', title: "You're 14% sharper in 4Q this month", body: 'Last 5 games — 18/24 from the field after 8:00 in the 4th quarter. Coach is leaning on you late.' },
-  { id: 'sd2', title: 'Career-best assist week',           body: '5.4 assists / game — top of the league for shooting guards in your division.' },
-  { id: 'sd3', title: 'Your defense set the tone vs Lincoln', body: '3 stops in the first 4 minutes of OT — single-handedly killed their run.' },
+  { id: 'sd2', title: 'Career-best assist week',           body: '5.4 assists / game — top of Thursday Men D for shooting guards.' },
+  { id: 'sd3', title: 'Your defense set the tone vs Medium Fundamentals', body: '3 stops in the first 4 minutes of OT — single-handedly killed their run.' },
 ];
 
 const FOLLOWING = [
-  { id: 'p2', name: 'Sarah Kim', team: 'Varsity', initials: 'SK' },
-  { id: 'p3', name: 'Jay Park',  team: 'Varsity', initials: 'JP' },
-  { id: 'p4', name: 'Elena Ruiz',team: 'Tigers',  initials: 'ER' },
-  { id: 'p5', name: 'Marcus Lee',team: 'Wolves',  initials: 'ML' },
+  { id: 'p2', name: 'Sarah Kim',  team: 'Sesh Rigs',     initials: 'SK' },
+  { id: 'p3', name: 'Jay Park',   team: 'Sesh Rigs',     initials: 'JP' },
+  { id: 'p4', name: 'Elena Ruiz', team: 'Hustle HQ',     initials: 'ER' },
+  { id: 'p5', name: 'Marcus Lee', team: 'Hoopin Huskies',initials: 'ML' },
 ];
 
 /* GamesScreen date scrubber — 5 days centered on "today" (May 11, 2026).
@@ -1435,22 +1451,91 @@ const countdownParts = (sec) => {
   return { value: null, unit: null };
 };
 
-/* Teams DB — keyed by short id. Each carries identity tokens:
+/* Teams DB — keyed by short id, scoped to Basketball Australia's
+   actual hierarchy. Each carries identity tokens:
    - `initial` for the crest letter mark
    - `accentA / accentB` for the crest radial bleed
-   - `nickname` for the secondary line under the team name in the hero */
+   - `nickname` for the secondary line under the team name in the hero
+   - `state` for the Watch tab state switcher (one of: ACT/NSW/NT/QLD/SA/TAS/VIC/WA)
+   - `tier`  for the Watch tab rail grouping: 'senior' | 'nbl1' | 'juniorReps' | '3x3'
+
+   QLD scope (8 Thursday Men D peers + QLD NBL1 + QLD Junior Reps) is
+   the player's home state and provides the bulk of the seed data.
+   The other 7 states get representative NBL1 / Junior Reps entries so
+   the Watch state switcher has real content for each. */
 const TEAMS_DB = {
-  varsity:   { id: 'varsity',   name: 'Varsity',   nickname: 'Pioneers',  initial: 'EP', accentA: 'rgba(0,214,254,0.55)',  accentB: 'rgba(132,88,255,0.38)' },
-  northside: { id: 'northside', name: 'Northside', nickname: 'Hawks',     initial: 'NS', accentA: 'rgba(132,88,255,0.55)', accentB: 'rgba(255,90,158,0.38)' },
-  lincoln:   { id: 'lincoln',   name: 'Lincoln',   nickname: 'Lions',     initial: 'LN', accentA: 'rgba(255,140,40,0.55)', accentB: 'rgba(255,210,80,0.36)' },
-  tigers:    { id: 'tigers',    name: 'Tigers',    nickname: 'Tigers',    initial: 'TG', accentA: 'rgba(255,90,50,0.55)',  accentB: 'rgba(255,210,80,0.36)' },
-  wolves:    { id: 'wolves',    name: 'Wolves',    nickname: 'Wolves',    initial: 'WV', accentA: 'rgba(74,222,128,0.55)', accentB: 'rgba(0,170,220,0.30)' },
-  westfield: { id: 'westfield', name: 'Westfield', nickname: 'Hawks',     initial: 'WF', accentA: 'rgba(132,88,255,0.55)', accentB: 'rgba(0,214,254,0.36)' },
-  falcons:   { id: 'falcons',   name: 'Falcons',   nickname: 'Falcons',   initial: 'FC', accentA: 'rgba(255,210,80,0.55)', accentB: 'rgba(255,140,40,0.36)' },
-  eastside:  { id: 'eastside',  name: 'Eastside',  nickname: 'Bears',     initial: 'ES', accentA: 'rgba(0,170,220,0.55)',  accentB: 'rgba(132,88,255,0.36)' },
+  /* ── QLD · Senior Domestic · Thursday Men D peers ── */
+  /* Target team (player). White / cream jersey per the BA org doc. */
+  seshRigs:     { id: 'seshRigs',     name: 'Sesh Rigs',             nickname: 'Rigs',     initial: 'SR', state: 'QLD', tier: 'senior',     accentA: 'rgba(245,243,235,0.60)', accentB: 'rgba(190,190,180,0.40)' },
+  /* Target team (rival). Teal jersey per the BA org doc. */
+  mediumFund:   { id: 'mediumFund',   name: 'Medium Fundamentals',   nickname: 'Fundies',  initial: 'MF', state: 'QLD', tier: 'senior',     accentA: 'rgba(20,170,170,0.60)',  accentB: 'rgba(0,214,254,0.36)' },
+  hustleHQ:     { id: 'hustleHQ',     name: 'Hustle HQ',             nickname: 'Hustle',   initial: 'HQ', state: 'QLD', tier: 'senior',     accentA: 'rgba(255,140,40,0.55)',  accentB: 'rgba(255,90,40,0.30)' },
+  huskies:      { id: 'huskies',      name: 'Hoopin Huskies',        nickname: 'Huskies',  initial: 'HH', state: 'QLD', tier: 'senior',     accentA: 'rgba(132,88,255,0.55)',  accentB: 'rgba(0,170,220,0.32)' },
+  shaqtin:      { id: 'shaqtin',      name: 'Shaqtin A Fool',        nickname: 'Shaqtin',  initial: 'SF', state: 'QLD', tier: 'senior',     accentA: 'rgba(255,90,50,0.55)',   accentB: 'rgba(255,210,80,0.30)' },
+  kingSlayers:  { id: 'kingSlayers',  name: 'KingSlayers',           nickname: 'Slayers',  initial: 'KS', state: 'QLD', tier: 'senior',     accentA: 'rgba(255,210,80,0.55)',  accentB: 'rgba(255,140,40,0.36)' },
+  chumpCentral: { id: 'chumpCentral', name: 'Chump Central',         nickname: 'Chumps',   initial: 'CC', state: 'QLD', tier: 'senior',     accentA: 'rgba(132,88,255,0.55)',  accentB: 'rgba(255,90,158,0.36)' },
+  nbas:         { id: 'nbas',         name: 'Nothing But All Stars', nickname: 'NBAS',     initial: 'NB', state: 'QLD', tier: 'senior',     accentA: 'rgba(255,90,158,0.55)',  accentB: 'rgba(132,88,255,0.36)' },
+  /* ── QLD · NBL1 ── */
+  brisCapitals: { id: 'brisCapitals', name: 'Brisbane Capitals',     nickname: 'Capitals', initial: 'BC', state: 'QLD', tier: 'nbl1',       accentA: 'rgba(0,170,220,0.60)',   accentB: 'rgba(132,88,255,0.30)' },
+  sunshinePhx:  { id: 'sunshinePhx',  name: 'Sunshine Coast Phoenix',nickname: 'Phoenix',  initial: 'SP', state: 'QLD', tier: 'nbl1',       accentA: 'rgba(255,140,40,0.60)',  accentB: 'rgba(255,210,80,0.32)' },
+  cairnsM:      { id: 'cairnsM',      name: 'Cairns Marlins',        nickname: 'Marlins',  initial: 'CM', state: 'QLD', tier: 'nbl1',       accentA: 'rgba(0,214,254,0.55)',   accentB: 'rgba(74,222,128,0.32)' },
+  toowoombaMtn: { id: 'toowoombaMtn', name: 'Toowoomba Mountaineers',nickname: 'Mtnrs',    initial: 'TM', state: 'QLD', tier: 'nbl1',       accentA: 'rgba(132,88,255,0.55)',  accentB: 'rgba(0,170,220,0.32)' },
+  /* ── QLD · Junior Reps ── */
+  spartansU18:  { id: 'spartansU18',  name: 'Spartans U18',          nickname: 'U18',      initial: 'SU', state: 'QLD', tier: 'juniorReps', accentA: 'rgba(0,214,254,0.55)',   accentB: 'rgba(132,88,255,0.36)' },
+  wizardsU18:   { id: 'wizardsU18',   name: 'Northside Wizards U18', nickname: 'U18',      initial: 'WU', state: 'QLD', tier: 'juniorReps', accentA: 'rgba(132,88,255,0.55)',  accentB: 'rgba(255,90,158,0.36)' },
+  capitalsU18:  { id: 'capitalsU18',  name: 'Brisbane Capitals U18', nickname: 'U18',      initial: 'BU', state: 'QLD', tier: 'juniorReps', accentA: 'rgba(0,170,220,0.55)',   accentB: 'rgba(132,88,255,0.30)' },
+
+  /* ── VIC · NBL1 ── */
+  melbTigers:   { id: 'melbTigers',   name: 'Melbourne Tigers',      nickname: 'Tigers',   initial: 'MT', state: 'VIC', tier: 'nbl1',       accentA: 'rgba(255,210,80,0.55)',  accentB: 'rgba(20,30,40,0.40)' },
+  bendigoBrv:   { id: 'bendigoBrv',   name: 'Bendigo Braves',        nickname: 'Braves',   initial: 'BB', state: 'VIC', tier: 'nbl1',       accentA: 'rgba(255,90,50,0.55)',   accentB: 'rgba(20,30,40,0.40)' },
+  frankstonBl:  { id: 'frankstonBl',  name: 'Frankston Blues',       nickname: 'Blues',    initial: 'FB', state: 'VIC', tier: 'nbl1',       accentA: 'rgba(0,170,220,0.55)',   accentB: 'rgba(132,88,255,0.30)' },
+  knoxRaiders:  { id: 'knoxRaiders',  name: 'Knox Raiders',          nickname: 'Raiders',  initial: 'KR', state: 'VIC', tier: 'juniorReps', accentA: 'rgba(132,88,255,0.55)',  accentB: 'rgba(0,214,254,0.30)' },
+  /* ── NSW · NBL1 ── */
+  sydComets:    { id: 'sydComets',    name: 'Sydney Comets',         nickname: 'Comets',   initial: 'SC', state: 'NSW', tier: 'nbl1',       accentA: 'rgba(255,210,80,0.55)',  accentB: 'rgba(255,140,40,0.32)' },
+  manlyEagles:  { id: 'manlyEagles',  name: 'Manly Sea Eagles',      nickname: 'Eagles',   initial: 'ME', state: 'NSW', tier: 'nbl1',       accentA: 'rgba(255,90,50,0.55)',   accentB: 'rgba(255,210,80,0.32)' },
+  hillsHornets: { id: 'hillsHornets', name: 'Hills Hornets',         nickname: 'Hornets',  initial: 'HN', state: 'NSW', tier: 'nbl1',       accentA: 'rgba(255,210,80,0.55)',  accentB: 'rgba(20,30,40,0.40)' },
+  illHawks:     { id: 'illHawks',     name: 'Illawarra Hawks',       nickname: 'Hawks',    initial: 'IH', state: 'NSW', tier: 'juniorReps', accentA: 'rgba(255,90,50,0.55)',   accentB: 'rgba(132,88,255,0.30)' },
+  /* ── WA · NBL1 ── */
+  joonWolves:   { id: 'joonWolves',   name: 'Joondalup Wolves',      nickname: 'Wolves',   initial: 'JW', state: 'WA',  tier: 'nbl1',       accentA: 'rgba(74,222,128,0.55)',  accentB: 'rgba(0,170,220,0.30)' },
+  perthRdbacks: { id: 'perthRdbacks', name: 'Perth Redbacks',        nickname: 'Redbacks', initial: 'PR', state: 'WA',  tier: 'nbl1',       accentA: 'rgba(255,90,50,0.55)',   accentB: 'rgba(20,30,40,0.40)' },
+  cockburnCgr:  { id: 'cockburnCgr',  name: 'Cockburn Cougars',      nickname: 'Cougars',  initial: 'CG', state: 'WA',  tier: 'juniorReps', accentA: 'rgba(132,88,255,0.55)',  accentB: 'rgba(255,210,80,0.30)' },
+  /* ── SA · NBL1 ── */
+  forestEagles: { id: 'forestEagles', name: 'Forestville Eagles',    nickname: 'Eagles',   initial: 'FE', state: 'SA',  tier: 'nbl1',       accentA: 'rgba(0,214,254,0.55)',   accentB: 'rgba(255,210,80,0.30)' },
+  norwoodFl:    { id: 'norwoodFl',    name: 'Norwood Flames',        nickname: 'Flames',   initial: 'NF', state: 'SA',  tier: 'nbl1',       accentA: 'rgba(255,90,50,0.55)',   accentB: 'rgba(255,210,80,0.32)' },
+  southAdPnt:   { id: 'southAdPnt',   name: 'South Adelaide Panthers', nickname: 'Panthers', initial: 'SA', state: 'SA',  tier: 'juniorReps', accentA: 'rgba(132,88,255,0.55)', accentB: 'rgba(20,30,40,0.40)' },
+  /* ── TAS · NBL1 ── */
+  hobartChrg:   { id: 'hobartChrg',   name: 'Hobart Chargers',       nickname: 'Chargers', initial: 'HC', state: 'TAS', tier: 'nbl1',       accentA: 'rgba(0,170,220,0.55)',   accentB: 'rgba(132,88,255,0.30)' },
+  launceTorn:   { id: 'launceTorn',   name: 'Launceston Tornadoes',  nickname: 'Tornadoes',initial: 'LT', state: 'TAS', tier: 'nbl1',       accentA: 'rgba(74,222,128,0.55)',  accentB: 'rgba(0,214,254,0.30)' },
+  /* ── ACT · NBL1 ── */
+  canbGunners:  { id: 'canbGunners',  name: 'Canberra Gunners',      nickname: 'Gunners',  initial: 'CG', state: 'ACT', tier: 'nbl1',       accentA: 'rgba(255,210,80,0.55)',  accentB: 'rgba(20,30,40,0.40)' },
+  actAcademy:   { id: 'actAcademy',   name: 'ACT Academy',           nickname: 'Academy',  initial: 'AA', state: 'ACT', tier: 'juniorReps', accentA: 'rgba(0,214,254,0.55)',   accentB: 'rgba(132,88,255,0.36)' },
+  /* ── NT · NBL1 ── */
+  darwinSalt:   { id: 'darwinSalt',   name: 'Darwin Salties',        nickname: 'Salties',  initial: 'DS', state: 'NT',  tier: 'nbl1',       accentA: 'rgba(255,140,40,0.55)',  accentB: 'rgba(255,90,50,0.30)' },
 };
-/* Lookup by team display name — SEED_GAMES uses display strings like "Varsity" */
-const teamByName = (name) => Object.values(TEAMS_DB).find(t => t.name === name) || TEAMS_DB.varsity;
+/* Lookup by team display name — SEED_GAMES uses display strings like "Sesh Rigs" */
+const teamByName = (name) => Object.values(TEAMS_DB).find(t => t.name === name) || TEAMS_DB.seshRigs;
+
+/* ── STATES_DATA ─────────────────────────────────────────────────
+   The 8 Basketball Australia state/territory members, ordered for the
+   Watch tab's state switcher. QLD is Tal's home state. The state
+   switcher persists selection in localStorage so a demo reload keeps
+   the user in the state they were exploring. */
+const STATES_DATA = [
+  { code: 'ACT', name: 'Australian Capital Territory' },
+  { code: 'NSW', name: 'New South Wales' },
+  { code: 'NT',  name: 'Northern Territory' },
+  { code: 'QLD', name: 'Queensland' },
+  { code: 'SA',  name: 'South Australia' },
+  { code: 'TAS', name: 'Tasmania' },
+  { code: 'VIC', name: 'Victoria' },
+  { code: 'WA',  name: 'Western Australia' },
+];
+/* Per-state team lookup — used by the Watch tab to filter rails by
+   the currently-selected state code. Senior Domestic is QLD-only in
+   the prototype (it's Tal's specific competition); other states show
+   their NBL1 + Junior Reps only. */
+const teamsByStateTier = (stateCode, tier) =>
+  Object.values(TEAMS_DB).filter(t => t.state === stateCode && t.tier === tier);
 
 /* TeamCrest — squircle-md tinted shield with the team initial.
    Size variants: hero (64), sm (28). Used in score hero, tab headers, table rows. */
@@ -1557,10 +1642,10 @@ const teamStatsFor = (game) => {
 };
 
 const TEAM_MOMENTS = [
-  { id: 'tm1', kind: 'full-recap', title: 'Full Game Recap',  sub: 'Varsity 64 · Northside 58', dur: 185, when: 'just now' },
-  { id: 'tm2', kind: 'top-plays',  title: 'Top 10 Plays',     sub: 'vs Lincoln · OT thriller',  dur: 127, when: '2d ago' },
+  { id: 'tm1', kind: 'full-recap', title: 'Full Game Recap',  sub: 'Sesh Rigs 64 · Medium Fundamentals 58', dur: 185, when: 'just now' },
+  { id: 'tm2', kind: 'top-plays',  title: 'Top 10 Plays',     sub: 'vs Hustle HQ · OT thriller',  dur: 127, when: '2d ago' },
   { id: 'tm3', kind: 'comeback',   title: 'Q4 Comeback',      sub: '14-2 run to force OT',      dur: 94,  when: '3d ago' },
-  { id: 'tm4', kind: 'full-recap', title: 'Full Game Recap',  sub: 'Varsity 71 · Lincoln 63',   dur: 195, when: '5d ago' },
+  { id: 'tm4', kind: 'full-recap', title: 'Full Game Recap',  sub: 'Sesh Rigs 71 · Hustle HQ 63', dur: 195, when: '5d ago' },
 ];
 
 const fmt = {
@@ -1608,107 +1693,124 @@ const _t = (id, name, org, division, initial) => ({
   claimCode: (name + '-' + org + '-2026').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, ''),
 });
 
+/* OB_TEAMS_DB — onboarding team catalogue, scoped to Basketball Australia's
+   actual hierarchy. IDs (t1..t71) are stable so ROSTER mappings, claim
+   codes, and other ID-keyed references continue to work; only names,
+   orgs, divisions, and initials change.
+   t1 is the player's invited team (Sesh Rigs · Southern Districts
+   Spartans · Thursday Men D), confirmed in the BA org doc. The first
+   8 entries are the actual Thursday Men D peer group; subsequent IDs
+   populate other SDBAL competitions, QLD NBL1 clubs, and Junior Reps. */
 const OB_TEAMS_DB = [
-  /* Original 18 — kept verbatim so existing references (t1 invite,
-     Varsity hero, etc.) stay intact. */
-  { id: 't1',  name: 'Varsity',       org: 'Eastside Prep',      division: 'U18', initial: 'EP', claimCode: 'varsity-eastside-2026' },
-  { id: 't2',  name: 'Girls JV',      org: 'Eastside Prep',      division: 'U16', initial: 'EP', claimCode: 'girls-jv-eastside-2026' },
-  { id: 't3',  name: 'Tigers',        org: 'Lincoln High',       division: 'U18', initial: 'LH', claimCode: 'tigers-lincoln-2026' },
-  { id: 't4',  name: 'Wolves',        org: 'Northside Academy',  division: 'U16', initial: 'NA', claimCode: 'wolves-northside-2026' },
-  { id: 't5',  name: 'Hawks',         org: 'Westfield Catholic', division: 'U14', initial: 'WC', claimCode: 'hawks-westfield-2026' },
-  { id: 't6',  name: 'Bears',         org: 'Madison Heights',    division: 'U14', initial: 'MH', claimCode: 'bears-madison-2026' },
-  { id: 't7',  name: 'Falcons',       org: 'Riverside Academy',  division: 'U14', initial: 'RA', claimCode: 'falcons-riverside-2026' },
-  { id: 't8',  name: 'Spartans',      org: 'Oakwood Prep',       division: 'U18', initial: 'OP', claimCode: 'spartans-oakwood-2026' },
-  { id: 't9',  name: 'Knights',       org: 'Saint Marks',        division: 'U14', initial: 'SM', claimCode: 'knights-saintmarks-2026' },
-  { id: 't10', name: 'Pioneers',      org: 'Cedar Valley',       division: 'U14', initial: 'CV', claimCode: 'pioneers-cedarvalley-2026' },
-  { id: 't11', name: 'Raptors',       org: 'Bayview Charter',    division: 'U14', initial: 'BC', claimCode: 'raptors-bayview-2026' },
-  { id: 't12', name: 'Cyclones',      org: 'Hilltop Academy',    division: 'U14', initial: 'HA', claimCode: 'cyclones-hilltop-2026' },
-  { id: 't13', name: 'Comets',        org: 'Northgate High',     division: 'U14', initial: 'NH', claimCode: 'comets-northgate-2026' },
-  { id: 't14', name: 'Mustangs',      org: 'Briarcliff Prep',    division: 'U14', initial: 'BP', claimCode: 'mustangs-briarcliff-2026' },
-  { id: 't15', name: 'Lady Eagles',   org: 'Eastside Prep',      division: 'U18', initial: 'EP', claimCode: 'lady-eagles-eastside-2026' },
-  { id: 't16', name: 'Lady Tigers',   org: 'Lincoln High',       division: 'U18', initial: 'LH', claimCode: 'lady-tigers-lincoln-2026' },
-  { id: 't17', name: 'Sparrows',      org: 'Westfield Catholic', division: 'U14', initial: 'WC', claimCode: 'sparrows-westfield-2026' },
-  { id: 't18', name: 'Lady Bears',    org: 'Madison Heights',    division: 'U14', initial: 'MH', claimCode: 'lady-bears-madison-2026' },
+  /* === Senior Domestic · Thursday Men D (Sesh Rigs's league, 8 teams from BA org doc) === */
+  { id: 't1',  name: 'Sesh Rigs',              org: 'Southern Districts Spartans', division: 'Thursday Men D', initial: 'SR', claimCode: 'sesh-rigs-spartans-2026' },
+  { id: 't2',  name: 'Medium Fundamentals',    org: 'Southern Districts Spartans', division: 'Thursday Men D', initial: 'MF', claimCode: 'medium-fundamentals-spartans-2026' },
+  { id: 't3',  name: 'Hustle HQ',              org: 'Southern Districts Spartans', division: 'Thursday Men D', initial: 'HQ', claimCode: 'hustle-hq-spartans-2026' },
+  { id: 't4',  name: 'Hoopin Huskies',         org: 'Southern Districts Spartans', division: 'Thursday Men D', initial: 'HH', claimCode: 'hoopin-huskies-spartans-2026' },
+  { id: 't5',  name: 'Shaqtin A Fool',         org: 'Southern Districts Spartans', division: 'Thursday Men D', initial: 'SF', claimCode: 'shaqtin-a-fool-spartans-2026' },
+  { id: 't6',  name: 'KingSlayers',            org: 'Southern Districts Spartans', division: 'Thursday Men D', initial: 'KS', claimCode: 'kingslayers-spartans-2026' },
+  { id: 't7',  name: 'Chump Central',          org: 'Southern Districts Spartans', division: 'Thursday Men D', initial: 'CC', claimCode: 'chump-central-spartans-2026' },
+  { id: 't8',  name: 'Nothing But All Stars',  org: 'Southern Districts Spartans', division: 'Thursday Men D', initial: 'NB', claimCode: 'nothing-but-all-stars-spartans-2026' },
 
-  /* === Men's Varsity (U18 boys) expansion — 11 new schools === */
-  _t('t19', 'Eagles',     'Maple Ridge',         'U18', 'MR'),
-  _t('t20', 'Bulldogs',   'Crestwood High',      'U18', 'CH'),
-  _t('t21', 'Vikings',    'Sherwood Prep',       'U18', 'SP'),
-  _t('t22', 'Pirates',    'Brookfield',          'U18', 'BF'),
-  _t('t23', 'Lions',      'Stonebridge',         'U18', 'SB'),
-  _t('t24', 'Cardinals',  'Whitfield',           'U18', 'WF'),
-  _t('t25', 'Panthers',   'Foxborough Charter',  'U18', 'FC'),
-  _t('t26', 'Trojans',    'Pinehurst Academy',   'U18', 'PA'),
-  _t('t27', 'Cougars',    'Glenmoor',            'U18', 'GM'),
-  _t('t28', 'Warriors',   'Carlton High',        'U18', 'CA'),
-  _t('t29', 'Rangers',    'Greenwood Academy',   'U18', 'GA'),
+  /* === Senior Domestic · Monday Men/Vets (mock peers) === */
+  _t('t9',  'Court Vision',        'Southern Districts Spartans', 'Monday Men/Vets', 'CV'),
+  _t('t10', 'Old Heads',           'Southern Districts Spartans', 'Monday Men/Vets', 'OH'),
+  _t('t11', 'Glass Cleaners',      'Southern Districts Spartans', 'Monday Men/Vets', 'GC'),
+  _t('t12', 'Pick & Roll United',  'Southern Districts Spartans', 'Monday Men/Vets', 'PR'),
+  _t('t13', 'Run It Back',         'Southern Districts Spartans', 'Monday Men/Vets', 'RB'),
+  _t('t14', 'Veteran Heat',        'Southern Districts Spartans', 'Monday Men/Vets', 'VH'),
 
-  /* === Women's Varsity (U18 girls) expansion — 12 new schools === */
-  _t('t30', 'Lady Hawks',     'Maple Ridge',        'U18', 'MR'),
-  _t('t31', 'Lady Wolves',    'Crestwood High',     'U18', 'CH'),
-  _t('t32', 'Lady Vikings',   'Sherwood Prep',      'U18', 'SP'),
-  _t('t33', 'Lady Falcons',   'Brookfield',         'U18', 'BF'),
-  _t('t34', 'Lady Lions',     'Stonebridge',        'U18', 'SB'),
-  _t('t35', 'Lady Knights',   'Whitfield',          'U18', 'WF'),
-  _t('t36', 'Lady Panthers',  'Foxborough Charter', 'U18', 'FC'),
-  _t('t37', 'Lady Trojans',   'Pinehurst Academy',  'U18', 'PA'),
-  _t('t38', 'Lady Cougars',   'Glenmoor',           'U18', 'GM'),
-  _t('t39', 'Lady Pirates',   'Carlton High',       'U18', 'CA'),
-  _t('t40', 'Lady Cardinals', 'Greenwood Academy',  'U18', 'GA'),
-  _t('t71', 'Lady Warriors',  'Ashbrook',           'U18', 'AB'),
+  /* === Senior Domestic · Tuesday Women === */
+  _t('t15', 'Lady Spartans',       'Southern Districts Spartans', 'Tuesday Women',  'LS'),
+  _t('t16', 'Net Gains',           'Southern Districts Spartans', 'Tuesday Women',  'NG'),
+  _t('t17', 'Hoop Squad',          'Southern Districts Spartans', 'Tuesday Women',  'HS'),
+  _t('t18', 'Brick City',          'Southern Districts Spartans', 'Tuesday Women',  'BC'),
+  _t('t19', 'Free Throwers',       'Southern Districts Spartans', 'Tuesday Women',  'FT'),
+  _t('t20', 'Tip-Off Crew',        'Southern Districts Spartans', 'Tuesday Women',  'TC'),
 
-  /* === Boys U16 expansion — 13 JV-style teams === */
-  _t('t41', 'Wolves JV',    'Eastside Prep',       'U16', 'EP'),
-  _t('t42', 'Tigers JV',    'Lincoln High',        'U16', 'LH'),
-  _t('t43', 'Spartans JV',  'Oakwood Prep',        'U16', 'OP'),
-  _t('t44', 'Hawks JV',     'Westfield Catholic',  'U16', 'WC'),
-  _t('t45', 'Bears JV',     'Madison Heights',     'U16', 'MH'),
-  _t('t46', 'Falcons JV',   'Riverside Academy',   'U16', 'RA'),
-  _t('t47', 'Knights JV',   'Saint Marks',         'U16', 'SM'),
-  _t('t48', 'Eagles JV',    'Maple Ridge',         'U16', 'MR'),
-  _t('t49', 'Vikings JV',   'Sherwood Prep',       'U16', 'SP'),
-  _t('t50', 'Lions JV',     'Stonebridge',         'U16', 'SB'),
-  _t('t51', 'Panthers JV',  'Foxborough Charter',  'U16', 'FC'),
-  _t('t52', 'Cougars JV',   'Glenmoor',            'U16', 'GM'),
-  _t('t53', 'Warriors JV',  'Carlton High',        'U16', 'CA'),
+  /* === Senior Domestic · Wednesday Mixed === */
+  _t('t21', 'Mixed Bag',           'Southern Districts Spartans', 'Wednesday Mixed', 'MB'),
+  _t('t22', 'Switch Defence',      'Southern Districts Spartans', 'Wednesday Mixed', 'SD'),
+  _t('t23', 'Crossover Crew',      'Southern Districts Spartans', 'Wednesday Mixed', 'CC'),
+  _t('t24', 'Bench Mob',           'Southern Districts Spartans', 'Wednesday Mixed', 'BM'),
+  _t('t25', 'Full Court Press',    'Southern Districts Spartans', 'Wednesday Mixed', 'FP'),
 
-  /* === Boys U14 expansion — 5 more to top up the existing 9 === */
-  _t('t54', 'Tigers Cubs',  'Lincoln High',        'U14', 'LH'),
-  _t('t55', 'Spartans Jr',  'Oakwood Prep',        'U14', 'OP'),
-  _t('t56', 'Eagles Cubs',  'Maple Ridge',         'U14', 'MR'),
-  _t('t57', 'Vikings Jr',   'Sherwood Prep',       'U14', 'SP'),
-  _t('t58', 'Lions Cubs',   'Stonebridge',         'U14', 'SB'),
+  /* === NBL1 · QLD (semi-pro pathway) === */
+  _t('t26', 'Brisbane Capitals',         'NBL1 North · QLD', 'NBL1 Men',   'BC'),
+  _t('t27', 'Sunshine Coast Phoenix',    'NBL1 North · QLD', 'NBL1 Men',   'SP'),
+  _t('t28', 'Cairns Marlins',            'NBL1 North · QLD', 'NBL1 Men',   'CM'),
+  _t('t29', 'Toowoomba Mountaineers',    'NBL1 North · QLD', 'NBL1 Men',   'TM'),
+  _t('t30', 'Gold Coast Rollers',        'NBL1 North · QLD', 'NBL1 Men',   'GR'),
+  _t('t31', 'Ipswich Force',             'NBL1 North · QLD', 'NBL1 Men',   'IF'),
+  _t('t32', 'Logan Thunder',             'NBL1 North · QLD', 'NBL1 Men',   'LT'),
+  _t('t33', 'Mackay Meteors',            'NBL1 North · QLD', 'NBL1 Men',   'MM'),
+  _t('t34', 'Townsville Heat',           'NBL1 North · QLD', 'NBL1 Men',   'TH'),
+  _t('t35', 'USC Rip',                   'NBL1 North · QLD', 'NBL1 Men',   'UR'),
 
-  /* === Girls U14 expansion — 12 more to top up the existing 2 === */
-  _t('t59', 'Lady Wolves Jr',    'Northside Academy',  'U14', 'NA'),
-  _t('t60', 'Lady Tigers Cubs',  'Lincoln High',       'U14', 'LH'),
-  _t('t61', 'Lady Falcons Jr',   'Riverside Academy',  'U14', 'RA'),
-  _t('t62', 'Lady Knights Jr',   'Saint Marks',        'U14', 'SM'),
-  _t('t63', 'Lady Pioneers',     'Cedar Valley',       'U14', 'CV'),
-  _t('t64', 'Lady Raptors',      'Bayview Charter',    'U14', 'BC'),
-  _t('t65', 'Lady Cyclones',     'Hilltop Academy',    'U14', 'HA'),
-  _t('t66', 'Lady Comets',       'Northgate High',     'U14', 'NH'),
-  _t('t67', 'Lady Mustangs',     'Briarcliff Prep',    'U14', 'BP'),
-  _t('t68', 'Lady Eagles Cubs',  'Maple Ridge',        'U14', 'MR'),
-  _t('t69', 'Lady Vikings Jr',   'Sherwood Prep',      'U14', 'SP'),
-  _t('t70', 'Lady Lions Cubs',   'Stonebridge',        'U14', 'SB'),
+  /* === Junior Reps · U18 === */
+  _t('t36', 'Spartans U18',              'Southern Districts Spartans', 'Junior Reps U18', 'SU'),
+  _t('t37', 'Brisbane Capitals U18',     'Brisbane Capitals',           'Junior Reps U18', 'BU'),
+  _t('t38', 'Northside Wizards U18',     'Northside Wizards',           'Junior Reps U18', 'WU'),
+  _t('t39', 'Gold Coast Seahawks U18',   'North Gold Coast Seahawks',   'Junior Reps U18', 'GS'),
+  _t('t40', 'South West Pirates U18',    'South West Metro Pirates',    'Junior Reps U18', 'SW'),
+  _t('t41', 'Logan U18',                 'Logan Basketball',            'Junior Reps U18', 'LU'),
+  _t('t42', 'Ipswich U18',               'Ipswich Basketball',          'Junior Reps U18', 'IU'),
+  _t('t43', 'Gold Coast U18',            'Gold Coast Basketball',       'Junior Reps U18', 'GU'),
+  _t('t44', 'Toowoomba U18',             'Toowoomba Basketball',        'Junior Reps U18', 'TU'),
+  _t('t45', 'Sunshine Coast U18',        'Sunshine Coast Basketball',   'Junior Reps U18', 'CU'),
+  _t('t46', 'Cairns U18',                'Cairns Basketball',           'Junior Reps U18', 'KU'),
+  _t('t47', 'Mackay U18',                'Mackay Basketball',           'Junior Reps U18', 'MU'),
+
+  /* === Junior Reps · U16 === */
+  _t('t48', 'Spartans U16',              'Southern Districts Spartans', 'Junior Reps U16', 'S6'),
+  _t('t49', 'Brisbane Capitals U16',     'Brisbane Capitals',           'Junior Reps U16', 'B6'),
+  _t('t50', 'Northside Wizards U16',     'Northside Wizards',           'Junior Reps U16', 'W6'),
+  _t('t51', 'Gold Coast Seahawks U16',   'North Gold Coast Seahawks',   'Junior Reps U16', 'G6'),
+  _t('t52', 'South West Pirates U16',    'South West Metro Pirates',    'Junior Reps U16', 'P6'),
+  _t('t53', 'Logan U16',                 'Logan Basketball',            'Junior Reps U16', 'L6'),
+  _t('t54', 'Ipswich U16',               'Ipswich Basketball',          'Junior Reps U16', 'I6'),
+  _t('t55', 'Gold Coast U16',            'Gold Coast Basketball',       'Junior Reps U16', 'C6'),
+  _t('t56', 'Toowoomba U16',             'Toowoomba Basketball',        'Junior Reps U16', 'T6'),
+  _t('t57', 'Sunshine Coast U16',        'Sunshine Coast Basketball',   'Junior Reps U16', 'U6'),
+  _t('t58', 'Cairns U16',                'Cairns Basketball',           'Junior Reps U16', 'K6'),
+
+  /* === Junior Reps · U14 === */
+  _t('t59', 'Spartans U14',              'Southern Districts Spartans', 'Junior Reps U14', 'S4'),
+  _t('t60', 'Brisbane Capitals U14',     'Brisbane Capitals',           'Junior Reps U14', 'B4'),
+  _t('t61', 'Northside Wizards U14',     'Northside Wizards',           'Junior Reps U14', 'W4'),
+  _t('t62', 'Gold Coast Seahawks U14',   'North Gold Coast Seahawks',   'Junior Reps U14', 'G4'),
+  _t('t63', 'South West Pirates U14',    'South West Metro Pirates',    'Junior Reps U14', 'P4'),
+  _t('t64', 'Logan U14',                 'Logan Basketball',            'Junior Reps U14', 'L4'),
+  _t('t65', 'Ipswich U14',               'Ipswich Basketball',          'Junior Reps U14', 'I4'),
+  _t('t66', 'Gold Coast U14',            'Gold Coast Basketball',       'Junior Reps U14', 'C4'),
+  _t('t67', 'Toowoomba U14',             'Toowoomba Basketball',        'Junior Reps U14', 'T4'),
+  _t('t68', 'Sunshine Coast U14',        'Sunshine Coast Basketball',   'Junior Reps U14', 'U4'),
+  _t('t69', 'Cairns U14',                'Cairns Basketball',           'Junior Reps U14', 'K4'),
+  _t('t70', 'Mackay U14',                'Mackay Basketball',           'Junior Reps U14', 'M4'),
+  _t('t71', 'Bundaberg U14',             'Bundaberg Basketball',        'Junior Reps U14', 'D4'),
 ];
 
-/* Every league now carries ~14 teams. Pixellot Cup is an invitational
-   that pulls one or two top sides from each league below it. */
+/* Leagues — reflect SDBAL's actual program tree (Senior Domestic by
+   night) plus NBL1 (semi-pro pathway) and Junior Reps by age bracket.
+   The user's invited league (Thursday Men D) is first so it leads the
+   "follow more teams" picker. */
 const LEAGUES = [
-  { id: 'l-mens-varsity',   name: "Men's Varsity",   sub: 'Top-tier boys',
-    teamIds: ['t1','t3','t8','t19','t20','t21','t22','t23','t24','t25','t26','t27','t28','t29'] },
-  { id: 'l-womens-varsity', name: "Women's Varsity", sub: 'Top-tier girls',
-    teamIds: ['t15','t16','t30','t31','t32','t33','t34','t35','t36','t37','t38','t39','t40','t71'] },
-  { id: 'l-boys-u16',       name: 'Boys U16',
-    teamIds: ['t4','t41','t42','t43','t44','t45','t46','t47','t48','t49','t50','t51','t52','t53'] },
-  { id: 'l-boys-u14',       name: 'Boys U14',
-    teamIds: ['t5','t6','t7','t9','t10','t11','t12','t13','t14','t54','t55','t56','t57','t58'] },
-  { id: 'l-girls-u14',      name: 'Girls U14',
-    teamIds: ['t17','t18','t59','t60','t61','t62','t63','t64','t65','t66','t67','t68','t69','t70'] },
-  { id: 'l-pixellot-cup',   name: 'Pixellot Cup',    sub: 'Open invitational',
-    teamIds: ['t1','t3','t8','t15','t16','t19','t20','t30','t31','t41','t48','t60','t63','t68'] },
+  { id: 'l-thu-men-d',    name: 'Senior Domestic · Thursday Men D',  sub: "Tal's competition · Thursdays",
+    teamIds: ['t1','t2','t3','t4','t5','t6','t7','t8'] },
+  { id: 'l-mon-men-vets', name: 'Senior Domestic · Monday Men/Vets', sub: 'Open-age men · Mondays',
+    teamIds: ['t9','t10','t11','t12','t13','t14'] },
+  { id: 'l-tue-women',    name: 'Senior Domestic · Tuesday Women',   sub: 'Open-age women · Tuesdays',
+    teamIds: ['t15','t16','t17','t18','t19','t20'] },
+  { id: 'l-wed-mixed',    name: 'Senior Domestic · Wednesday Mixed', sub: 'Mixed · Wednesdays',
+    teamIds: ['t21','t22','t23','t24','t25'] },
+  { id: 'l-nbl1-qld',     name: 'NBL1 · QLD',                        sub: 'Semi-pro pathway · QLD clubs',
+    teamIds: ['t26','t27','t28','t29','t30','t31','t32','t33','t34','t35'] },
+  { id: 'l-reps-u18',     name: 'Junior Reps · U18',                 sub: 'State-rep youth · QLD',
+    teamIds: ['t36','t37','t38','t39','t40','t41','t42','t43','t44','t45','t46','t47'] },
+  { id: 'l-reps-u16',     name: 'Junior Reps · U16',                 sub: 'State-rep youth · QLD',
+    teamIds: ['t48','t49','t50','t51','t52','t53','t54','t55','t56','t57','t58'] },
+  { id: 'l-reps-u14',     name: 'Junior Reps · U14',                 sub: 'State-rep youth · QLD',
+    teamIds: ['t59','t60','t61','t62','t63','t64','t65','t66','t67','t68','t69','t70','t71'] },
 ];
 
 const ROSTER = [
@@ -2016,7 +2118,7 @@ const _injectAvatarSkeletonCSS = (() => {
    Produces "{verb} vs {opp}" titles + body text per moment tag. */
 const dropEditorialCopy = (moment, gameId) => {
   const game = SEED_GAMES.find(g => g.id === gameId);
-  const opp = game ? game.away.split(' ')[0] : 'Lincoln';
+  const opp = game ? game.away.split(' ')[0] : 'Medium';
   const TAG_BODY = {
     top:    `Game-changer in the closing moments. The kind of clip your coach will rewatch tomorrow.`,
     hot:    `Catch-fire-and-don't-stop energy. You strung this together when the team needed it.`,
@@ -2438,7 +2540,7 @@ const MenuAccountPage = ({ onBack, onSubPage }) => {
   const [email, setEmail] = useState('tal@example.com');
   const [pendingEmail, setPendingEmail] = useState(null);
   const [phone, setPhone] = useState('+1 (415) 555-0167');
-  const [club, setClub] = useState('Eastside Prep · Varsity');
+  const [club, setClub] = useState('Southern Districts Spartans · Sesh Rigs');
   const [reauthOpen, setReauthOpen] = useState(false);
   const [reauthPwd, setReauthPwd] = useState('');
   const [reauthErr, setReauthErr] = useState(null);
@@ -4359,15 +4461,15 @@ const HighlightCircles = ({ viewed, onWatch, setHlOwner, onPickMoment, onOpenGam
           onClick={openHLFor('self')} />
         {/* Live team — opens GameVideoViewer of the live game. Always
             red, never gray — live is live. Outside the HL chain. */}
-        <IdentityCircle kind="team" avatar={{ initial: 'EP' }} label="Varsity"
+        <IdentityCircle kind="team" avatar={{ initial: 'SR' }} label="Sesh Rigs"
           liveGame={{ gameId: liveGame.id }}
           onClick={() => onOpenGameVideo(liveGame.id)} />
         {/* Non-live team — opens GameVideoViewer of the team's last/next
             game so the circle leads to actual team video, not a profile.
             Outside the HL chain (different viewer surface). */}
-        <IdentityCircle kind="team" avatar={{ initial: 'LH' }} label="Tigers"
-          isViewed={viewed.has('team-tigers')}
-          onClick={onWatch('team-tigers', () => onOpenGameVideo(gameIdForTeam('Tigers')))} />
+        <IdentityCircle kind="team" avatar={{ initial: 'HQ' }} label="Hustle HQ"
+          isViewed={viewed.has('team-hustleHQ')}
+          onClick={onWatch('team-hustleHQ', () => onOpenGameVideo(gameIdForTeam('Hustle HQ')))} />
         {/* Followed players — every circle opens HighlightViewer at that
             player's most recent moment. openHLFor wires up the chain
             owner so finishing this player's reel auto-advances to the
@@ -5084,7 +5186,7 @@ const GameCard = ({ state: initialState = 'off', onOpenGame, onOpenDrop, atVenue
      demo cycle at `pre`. */
   const next = SEED_GAMES.find(x => x.status === 'upcoming');
   const last = SEED_GAMES.find(x => x.status === 'just-ended');
-  const lastOpp = last ? last.away.split(' ')[0] : 'Northside';
+  const lastOpp = last ? last.away.split(' ')[0] : 'Medium';
   const insight = {
     date: 'APR 3',
     title: 'Crash on the boards',
@@ -5756,69 +5858,182 @@ const PlayButton = () => (
   </div>
 );
 
-/* DivisionTileGrid — direct port of DS DivisionTileGrid.tsx.
-   Horizontal scroll row of 6 pills (96×64), with eyebrow header,
-   live-division red ember, and proper Eastside Athletic data. */
-const WATCH_CLIENT_LABEL = 'Eastside Athletic';
-const WATCH_DIVISIONS = [
-  { id: 'varsity',   name: 'VARSITY',  sub: 'U18 · 16 players', live: true,  games: ['gL', 'gE', 'g1', 'g2', 'gP1', 'gP2'] },
-  { id: 'girls-jv',  name: 'GIRLS JV', sub: 'U16 · 14 players', live: false, games: ['g4'] },
-  { id: 'middle',    name: 'MIDDLE',   sub: 'U14 · 18 players', live: true,  games: ['g3'] },
-  { id: 'football',  name: 'FOOTBALL', sub: '40 players',       live: false, games: [] },
-  { id: 'track',     name: 'TRACK',    sub: 'Co-ed · 24',       live: false, games: [] },
-  { id: 'wrestling', name: 'WREST',    sub: 'Boys · 12',        live: false, games: [] },
-];
+/* WATCH_PROGRAMS_BY_STATE — programs the Watch tab surfaces per BA
+   state member. Replaces the old WATCH_DIVISIONS (which carried
+   American school-tier vocabulary like VARSITY / GIRLS JV / MIDDLE +
+   non-basketball tiles like FOOTBALL / TRACK / WREST — neither of
+   which fit a Basketball Australia prototype).
+   Each state has its own program list because BA's pathways vary by
+   state (e.g. QLD has SDBAL Senior Domestic + NBL1 North + QSL +
+   Junior Reps; VIC has Big V + NBL1 South; smaller states have
+   different mixes). For the prototype we surface a representative
+   set per state so the state switcher actually shows different
+   content per pick. Junior Reps is rolled into a single tile with
+   "U18 · U16 · U14" in the subtitle (per spec). */
+const WATCH_PROGRAMS_BY_STATE = {
+  QLD: [
+    { id: 'senior-domestic', name: 'Senior Domestic', sub: 'Open age · SDBAL', live: true,  games: ['gL','gE','g1','g2','gP1','gP2'] },
+    { id: 'nbl1-north',      name: 'NBL1 North',      sub: 'Semi-pro · 10 clubs', live: false, games: [] },
+    { id: 'junior-reps',     name: 'Junior Reps',     sub: 'U18 · U16 · U14',     live: false, games: [] },
+    { id: 'qsl',             name: 'QSL',             sub: 'State league',        live: false, games: [] },
+    { id: '3x3',             name: '3x3',             sub: 'Half-court',          live: false, games: [] },
+    { id: 'walking',         name: 'Walking',         sub: 'Inclusion · all ages',live: false, games: [] },
+  ],
+  VIC: [
+    { id: 'big-v',           name: 'Big V',           sub: 'State league',        live: false, games: [] },
+    { id: 'nbl1-south',      name: 'NBL1 South',      sub: 'Semi-pro · VIC',      live: true,  games: [] },
+    { id: 'junior-reps',     name: 'Junior Reps',     sub: 'U18 · U16 · U14',     live: false, games: [] },
+    { id: 'metro',           name: 'Metro League',    sub: 'Senior community',    live: false, games: [] },
+    { id: '3x3',             name: '3x3',             sub: 'Half-court',          live: false, games: [] },
+  ],
+  NSW: [
+    { id: 'wsbl',            name: 'Waratah League',  sub: 'NSW state league',    live: false, games: [] },
+    { id: 'nbl1-east',       name: 'NBL1 East',       sub: 'Semi-pro · NSW',      live: true,  games: [] },
+    { id: 'junior-reps',     name: 'Junior Reps',     sub: 'U18 · U16 · U14',     live: false, games: [] },
+    { id: 'metro',           name: 'Metro League',    sub: 'Senior community',    live: false, games: [] },
+    { id: '3x3',             name: '3x3',             sub: 'Half-court',          live: false, games: [] },
+  ],
+  WA: [
+    { id: 'sbl',             name: 'SBL',             sub: 'State league · WA',   live: false, games: [] },
+    { id: 'nbl1-west',       name: 'NBL1 West',       sub: 'Semi-pro · WA',       live: false, games: [] },
+    { id: 'junior-reps',     name: 'Junior Reps',     sub: 'U18 · U16 · U14',     live: false, games: [] },
+    { id: '3x3',             name: '3x3',             sub: 'Half-court',          live: false, games: [] },
+  ],
+  SA: [
+    { id: 'premier-league',  name: 'Premier League',  sub: 'SA state',            live: false, games: [] },
+    { id: 'nbl1-central',    name: 'NBL1 Central',    sub: 'Semi-pro · SA',       live: false, games: [] },
+    { id: 'junior-reps',     name: 'Junior Reps',     sub: 'U18 · U16 · U14',     live: false, games: [] },
+    { id: '3x3',             name: '3x3',             sub: 'Half-court',          live: false, games: [] },
+  ],
+  TAS: [
+    { id: 'state-league',    name: 'State League',    sub: 'TAS',                 live: false, games: [] },
+    { id: 'nbl1-south',      name: 'NBL1 South',      sub: 'Semi-pro · TAS',      live: false, games: [] },
+    { id: 'junior-reps',     name: 'Junior Reps',     sub: 'U18 · U16 · U14',     live: false, games: [] },
+  ],
+  ACT: [
+    { id: 'state-league',    name: 'State League',    sub: 'ACT',                 live: false, games: [] },
+    { id: 'nbl1-east',       name: 'NBL1 East',       sub: 'Semi-pro · ACT',      live: false, games: [] },
+    { id: 'junior-reps',     name: 'Junior Reps',     sub: 'U18 · U16 · U14',     live: false, games: [] },
+  ],
+  NT: [
+    { id: 'state-league',    name: 'NT League',       sub: 'Top end',             live: false, games: [] },
+    { id: 'junior-reps',     name: 'Junior Reps',     sub: 'U18 · U16 · U14',     live: false, games: [] },
+    { id: '3x3',             name: '3x3',             sub: 'Half-court',          live: false, games: [] },
+  ],
+};
+/* WATCH_STATE_STORAGE_KEY — persists the Watch tab's selected state so
+   the user lands back in QLD (or wherever they were exploring) on
+   reload, matching the rest of the prototype's localStorage memory. */
+const WATCH_STATE_STORAGE_KEY = 'halo:watch-state';
+const loadWatchState = () => {
+  try { const s = localStorage.getItem(WATCH_STATE_STORAGE_KEY); return s && WATCH_PROGRAMS_BY_STATE[s] ? s : 'QLD'; }
+  catch { return 'QLD'; }
+};
+const stateName = (code) => (STATES_DATA.find(s => s.code === code) || {}).name || code;
 
-const DivisionTileGrid = ({ active, onPick }) => (
-  <div className="px-4 lg:px-8 xl:px-12 pt-0 lg:pt-2 pb-3">
-    {/* Eyebrow row — client label + division count */}
-    <div className="flex items-baseline justify-between mb-2 lg:mb-3">
-      <span className="sf text-[10.5px] tracking-[0.14em] uppercase font-semibold" style={{ color: 'rgba(255,255,255,0.55)' }}>
-        {WATCH_CLIENT_LABEL.toUpperCase()} · Divisions
-      </span>
-      <span className="sf text-[10.5px] tracking-[0.10em] uppercase font-semibold tabular-nums" style={{ color: 'rgba(255,255,255,0.45)' }}>
-        {WATCH_DIVISIONS.length}
-      </span>
-    </div>
-    {/* Horizontal scroll row of pills — bleed-padded via negative margin */}
-    <div className="flex gap-2 overflow-x-auto -mx-4 lg:-mx-8 xl:-mx-12 px-4 lg:px-8 xl:px-12 pb-1 no-scrollbar">
-      {WATCH_DIVISIONS.map(d => {
-        const isOn = active === d.id;
-        const isDimmed = !!active && !isOn;
-        return (
-          <button key={d.id} onClick={() => onPick(isOn ? null : d.id)}
-            className={`relative shrink-0 squircle-md flex flex-col items-center justify-center text-center transition-all ${isOn ? 'lg-aura' : 'lg-glass'} ${isDimmed ? 'opacity-40' : ''}`}
-            style={{
-              width: 140, height: 64, paddingInline: 14,
-              ...(isOn ? {
-                background: 'radial-gradient(ellipse 80% 60% at 30% 30%, rgba(0,214,254,0.32) 0%, transparent 65%), linear-gradient(180deg, rgba(0,214,254,0.18) 0%, rgba(0,214,254,0.10) 100%)',
-                border: '1px solid rgba(0,214,254,0.55)',
-                boxShadow: '0 0 24px -4px rgba(0,214,254,0.45), inset 0 1px 0 rgba(255,255,255,0.18)',
-              } : {}),
-            }}>
-            {/* Live ember — top-end, red anim-pulse */}
-            {d.live && (
-              <div className="absolute top-1.5 end-1.5">
-                <div className="w-1.5 h-1.5 rounded-full anim-pulse-dot" style={{ background: '#ef4444', boxShadow: '0 0 6px rgba(239,68,68,0.7)' }} />
-              </div>
-            )}
-            <span className="sf-display text-[12.5px] font-bold tracking-tight block leading-none"
-              style={{ color: isOn ? '#fff' : 'rgba(255,255,255,0.95)' }}>
-              {d.name}
-            </span>
-            <span className="sf text-[8.5px] tracking-[0.10em] uppercase font-semibold mt-1 block leading-none"
-              style={{ color: isOn ? 'rgba(255,255,255,0.80)' : 'rgba(255,255,255,0.50)' }}>
-              {d.sub}
-            </span>
-          </button>
-        );
-      })}
-    </div>
-  </div>
-);
+/* WatchStateSwitcherPill — top-right of the Watch hero, opens a glass
+   sheet listing the 8 BA states. Selecting one updates the heading,
+   tile grid, and (later) rail content for the Watch tab. */
+const WatchStateSwitcherPill = ({ selected, onSelect }) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button onClick={() => setOpen(true)}
+        className="lg-glass squircle-sm px-3 py-1.5 inline-flex items-center gap-1.5 transition-transform active:scale-[0.97]"
+        style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.10)' }}
+        title={`Watching: ${stateName(selected)}`}>
+        <span className="sf text-[10px] tracking-[0.18em] uppercase font-bold leading-none" style={{ color: 'rgba(255,255,255,0.55)' }}>State</span>
+        <span className="sf-display text-[12px] font-bold leading-none tabular-nums" style={{ color: '#fff' }}>{selected}</span>
+        <svg width={10} height={10} viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ color: 'rgba(255,255,255,0.55)' }}>
+          <path d="M3 5 L7 9 L11 5" />
+        </svg>
+      </button>
+      {open && (
+        <>
+          <div onClick={() => setOpen(false)}
+            className="fixed inset-0 z-[90]" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)' }} />
+          <div className="fixed z-[100] squircle-md lg-glass-card overflow-hidden"
+            style={{ top: 24, insetInlineEnd: 24, width: 280, maxWidth: 'calc(100vw - 48px)', boxShadow: '0 24px 60px -16px rgba(0,0,0,0.6)' }}>
+            <div className="px-4 pt-3.5 pb-2.5" style={{ borderBottom: '1px solid var(--hairline)' }}>
+              <div className="sf text-[10px] tracking-[0.18em] uppercase font-bold" style={{ color: 'var(--text-muted)' }}>Pick a state</div>
+              <div className="sf-display text-[14px] font-bold tracking-[-0.01em] mt-0.5" style={{ color: 'var(--text-primary)' }}>Basketball Australia</div>
+            </div>
+            <div className="max-h-[60vh] overflow-y-auto py-1">
+              {STATES_DATA.map(s => {
+                const isOn = s.code === selected;
+                return (
+                  <button key={s.code} onClick={() => { onSelect(s.code); setOpen(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-start transition-colors hover:bg-white/[0.04]"
+                    style={isOn ? { background: 'var(--brand-cyan-soft)' } : undefined}>
+                    <span className="sf-display text-[12px] font-bold tabular-nums w-9" style={{ color: isOn ? 'var(--brand-cyan-text)' : 'var(--text-primary)' }}>{s.code}</span>
+                    <span className="sf text-[12.5px] flex-1" style={{ color: isOn ? 'var(--brand-cyan-text)' : 'var(--text-secondary)' }}>{s.name}</span>
+                    {isOn && <Icon name="check" size={12} stroke={2.2} />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+    </>
+  );
+};
 
-const DivisionFilterChip = ({ active, onClear }) => {
-  const div = WATCH_DIVISIONS.find(d => d.id === active);
+/* DivisionTileGrid — reads programs for the currently-selected BA state.
+   Heading reads "Basketball <State name> · Programs". Tiles are
+   horizontal-scroll pills with optional red live-ember dot. */
+const DivisionTileGrid = ({ active, onPick, selectedState }) => {
+  const programs = WATCH_PROGRAMS_BY_STATE[selectedState] || [];
+  return (
+    <div className="px-4 lg:px-8 xl:px-12 pt-0 lg:pt-2 pb-3">
+      {/* Eyebrow row — Basketball <State> · Programs + count */}
+      <div className="flex items-baseline justify-between mb-2 lg:mb-3">
+        <span className="sf text-[10.5px] tracking-[0.14em] uppercase font-semibold" style={{ color: 'rgba(255,255,255,0.55)' }}>
+          Basketball {stateName(selectedState)} · Programs
+        </span>
+        <span className="sf text-[10.5px] tracking-[0.10em] uppercase font-semibold tabular-nums" style={{ color: 'rgba(255,255,255,0.45)' }}>
+          {programs.length}
+        </span>
+      </div>
+      <div className="flex gap-2 overflow-x-auto -mx-4 lg:-mx-8 xl:-mx-12 px-4 lg:px-8 xl:px-12 pb-1 no-scrollbar">
+        {programs.map(d => {
+          const isOn = active === d.id;
+          const isDimmed = !!active && !isOn;
+          return (
+            <button key={d.id} onClick={() => onPick(isOn ? null : d.id)}
+              className={`relative shrink-0 squircle-md flex flex-col items-center justify-center text-center transition-all ${isOn ? 'lg-aura' : 'lg-glass'} ${isDimmed ? 'opacity-40' : ''}`}
+              style={{
+                width: 156, height: 64, paddingInline: 14,
+                ...(isOn ? {
+                  background: 'radial-gradient(ellipse 80% 60% at 30% 30%, rgba(0,214,254,0.32) 0%, transparent 65%), linear-gradient(180deg, rgba(0,214,254,0.18) 0%, rgba(0,214,254,0.10) 100%)',
+                  border: '1px solid rgba(0,214,254,0.55)',
+                  boxShadow: '0 0 24px -4px rgba(0,214,254,0.45), inset 0 1px 0 rgba(255,255,255,0.18)',
+                } : {}),
+              }}>
+              {d.live && (
+                <div className="absolute top-1.5 end-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full anim-pulse-dot" style={{ background: '#ef4444', boxShadow: '0 0 6px rgba(239,68,68,0.7)' }} />
+                </div>
+              )}
+              <span className="sf-display text-[12.5px] font-bold tracking-tight block leading-tight"
+                style={{ color: isOn ? '#fff' : 'rgba(255,255,255,0.95)' }}>
+                {d.name}
+              </span>
+              <span className="sf text-[8.5px] tracking-[0.10em] uppercase font-semibold mt-1 block leading-none"
+                style={{ color: isOn ? 'rgba(255,255,255,0.80)' : 'rgba(255,255,255,0.50)' }}>
+                {d.sub}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+const DivisionFilterChip = ({ active, onClear, selectedState }) => {
+  const programs = WATCH_PROGRAMS_BY_STATE[selectedState] || [];
+  const div = programs.find(d => d.id === active);
   if (!div) return null;
   return (
     <div className="px-4 lg:px-8 xl:px-12 mb-3">
@@ -6007,7 +6222,7 @@ const FeaturedHero = ({ onWatch }) => {
             </div>
           )}
           <span className="sf text-[9.5px] tracking-[0.14em] uppercase font-semibold" style={{ color: 'var(--text-tertiary)' }}>
-            Basketball · U18
+            Senior Domestic · Thursday Men D
           </span>
         </div>
         <h1 className="sf-display font-bold leading-[0.95] tracking-[-0.025em] text-white" style={{ fontSize: 36 }}>
@@ -6076,26 +6291,36 @@ const WatchHeroDesktop = ({ onWatch }) => {
             </div>
           )}
           <span className="sf text-[10px] tracking-[0.16em] uppercase font-semibold" style={{ color: 'var(--text-tertiary)' }}>
-            Basketball · U18 · Eastside Gym
+            Senior Domestic · Thursday Men D · Rowland Cowan
           </span>
         </div>
         <h1 className="sf-display font-bold leading-[0.98] tracking-[-0.025em] text-white" style={{ fontSize: 44 }}>
           {game.home} vs<br />
           <span style={{ color: 'rgba(255,255,255,0.85)' }}>{game.away}</span>
         </h1>
-        <div className="sf-display text-[15px] mt-2 tabular-nums font-semibold" style={{ color: 'rgba(255,255,255,0.85)' }}>
-          {game.scoreHome != null ? `${game.scoreHome} — ${game.scoreAway}` : (isLive ? game.period : 'Upcoming')}
-          {game.momentsCount ? <span style={{ color: 'rgba(255,255,255,0.55)', fontWeight: 500 }}> · {game.momentsCount} moments</span> : null}
+        {/* Score readout — bumped from 15px to a clamp(34, 4.5vw, 52)
+            tabular-num display weight so it reads as the primary
+            scoreboard, not a caption. "X moments" suffix removed
+            (was redundant info — moments live on the cards below). */}
+        <div className="sf-display mt-2 tabular-nums font-bold tracking-[-0.025em]"
+          style={{
+            fontSize: 'clamp(34px, 4.5vw, 52px)',
+            lineHeight: 1,
+            color: '#fff',
+            textShadow: '0 0 24px rgba(0,214,254,0.30)',
+          }}>
+          {game.scoreHome != null ? (
+            <>{game.scoreHome}<span style={{ color: 'rgba(255,255,255,0.45)', margin: '0 0.35em' }}>—</span>{game.scoreAway}</>
+          ) : (isLive ? game.period : 'Upcoming')}
         </div>
-        <div className="flex items-center gap-2.5 mt-4">
+        <div className="flex items-center gap-2.5 mt-5">
+          {/* Watch live primary CTA — More info button removed per spec
+              (Bell + more-info copy didn't lead anywhere useful; the
+              cards below already carry game detail). */}
           <button onClick={() => onWatch(game.id, isLive)}
             className="lg-btn-primary lg-shine squircle-md sf font-bold text-[13px] flex items-center gap-2 px-5 py-2.5">
             <svg width={12} height={14} viewBox="0 0 12 14" fill="currentColor"><path d="M0 1.2v11.6c0 .9 1 1.4 1.7 1l9.6-5.8c.7-.4.7-1.5 0-1.9L1.7.2C1 -.2 0 .3 0 1.2z" /></svg>
             {isLive ? 'Watch live' : 'Watch full game'}
-          </button>
-          <button className="lg-glass squircle-md sf font-semibold text-[12.5px] flex items-center gap-2 px-4 py-2.5 text-white">
-            <Icon name="bell" size={12} />
-            More info
           </button>
         </div>
       </div>
@@ -6104,9 +6329,13 @@ const WatchHeroDesktop = ({ onWatch }) => {
 };
 
 /* WatchShell — desktop layout primitive. Sticky top bar with brand +
-   centered search + All Access pill + atmosphere full-bleed + hero +
-   rails column capped at 1200. Direct port of DS layouts/WatchShell. */
-const WatchShell = ({ hero, children, topBarCenter }) => (
+   centered search + state switcher pill + atmosphere full-bleed +
+   hero + rails column capped at 1200.
+   The right-side slot used to render an "All Access" subscription
+   badge, which was just chrome with no function — replaced with the
+   BA state switcher pill that drives the Watch tab's per-state
+   program filtering. */
+const WatchShell = ({ hero, children, topBarCenter, selectedState, onSelectState }) => (
   <div data-theme="dark" className="relative min-h-screen text-white sf" style={{ overflowX: 'clip' }}>
     {/* Atmosphere — full bleed */}
     <div className="lg-atmosphere" />
@@ -6125,9 +6354,9 @@ const WatchShell = ({ hero, children, topBarCenter }) => (
         </div>
         <div className="flex-1 min-w-0">{topBarCenter}</div>
         <div className="flex items-center gap-3 shrink-0">
-          <span className="lg-glass squircle-sm px-2.5 py-1 text-[10px] tracking-[0.14em] uppercase font-semibold" style={{ color: 'rgba(255,255,255,0.80)' }}>
-            All Access
-          </span>
+          {selectedState && onSelectState && (
+            <WatchStateSwitcherPill selected={selectedState} onSelect={onSelectState} />
+          )}
         </div>
       </div>
     </header>
@@ -6236,8 +6465,9 @@ const LivePlayerScreen = ({ game, onClose }) => {
 
 /* WatchRails — orchestrator for the 5 lanes. Honors activeDivision by
    filtering scope through WATCH_DIVISIONS[*].games whitelist. */
-const WatchRails = ({ activeDivision, onPushGame, onPickMoment }) => {
-  const div = activeDivision ? WATCH_DIVISIONS.find(d => d.id === activeDivision) : null;
+const WatchRails = ({ activeDivision, onPushGame, onPickMoment, selectedState = 'QLD' }) => {
+  const programs = WATCH_PROGRAMS_BY_STATE[selectedState] || [];
+  const div = activeDivision ? programs.find(d => d.id === activeDivision) : null;
   const liveGames = SEED_GAMES.filter(g => g.status === 'live');
   const ended = SEED_GAMES.filter(g => g.status === 'just-ended' || g.status === 'final');
   const scopedLive  = div ? liveGames.filter(g => div.games.includes(g.id)) : liveGames;
@@ -6285,28 +6515,43 @@ const EmptyScopedRail = ({ label }) => (
 const WatchScreen = ({ onOpenGame, onOpenGameVideo, onPickMoment }) => {
   const [activeDivision, setActiveDivision] = useState(null);
   const [query, setQuery] = useState('');
-  const [livePlayerGameId, setLivePlayerGameId] = useState(null);
-  /* Watch tab is a VIDEO surface — all non-live taps route to the
-     GameVideoViewer (16:9 video player), not to PostGameScreen (the
-     stat recap). Upcoming games fall through to PostGame as a tease
-     until the game starts. */
+  /* Selected BA state for the Watch tab — drives the program tiles +
+     heading. Persisted to localStorage so a demo reload lands back in
+     the state the user was browsing. Default QLD (Tal's home state). */
+  const [selectedState, setSelectedStateInternal] = useState(loadWatchState);
+  const setSelectedState = (code) => {
+    setSelectedStateInternal(code);
+    setActiveDivision(null); // clear the program filter when state changes
+    try { localStorage.setItem(WATCH_STATE_STORAGE_KEY, code); } catch {}
+  };
+  /* Watch tab is a VIDEO surface. Tap routing:
+     - LIVE  → GameVideoViewer (the canonical 16:9 horizontal player
+               the rest of the prototype uses). Previously this
+               opened a separate in-Watch LivePlayerScreen stub that
+               duplicated the player surface — removed.
+     - UPCOMING → PostGameScreen, which renders its PreGame variant
+                  (countdown + lineups + "after tipoff" placeholders).
+     - ENDED → GameVideoViewer (post-game stream playback). */
   const handlePush = (gameId, status) => {
-    if (status === 'live') {
-      setLivePlayerGameId(gameId);
-      return;
-    }
-    if (status === 'upcoming') {
-      onOpenGame(gameId);
-      return;
-    }
+    if (status === 'live')     { onOpenGameVideo(gameId); return; }
+    if (status === 'upcoming') { onOpenGame(gameId);      return; }
     onOpenGameVideo(gameId);
   };
   const body = (
     <>
-      <DivisionTileGrid active={activeDivision} onPick={setActiveDivision} />
-      <DivisionFilterChip active={activeDivision} onClear={() => setActiveDivision(null)} />
-      <WatchRails activeDivision={activeDivision} onPushGame={handlePush} onPickMoment={onPickMoment} />
+      <DivisionTileGrid active={activeDivision} onPick={setActiveDivision} selectedState={selectedState} />
+      <DivisionFilterChip active={activeDivision} onClear={() => setActiveDivision(null)} selectedState={selectedState} />
+      <WatchRails activeDivision={activeDivision} onPushGame={handlePush} onPickMoment={onPickMoment} selectedState={selectedState} />
     </>
+  );
+  /* Switcher pill — phone-only absolute overlay top-right. Desktop
+     mounts the pill inside WatchShell's top bar (where the dead
+     "All Access" pill used to live), so it doesn't need a separate
+     overlay layer there. */
+  const phoneStateSwitcher = (
+    <div className="absolute top-4 end-4 z-40">
+      <WatchStateSwitcherPill selected={selectedState} onSelect={setSelectedState} />
+    </div>
   );
   return (
     <>
@@ -6315,6 +6560,7 @@ const WatchScreen = ({ onOpenGame, onOpenGameVideo, onPickMoment }) => {
         <div className="lg-atmosphere" />
         <div className="absolute inset-0 z-[1] pointer-events-none"
           style={{ background: 'linear-gradient(180deg, var(--vignette-corner) 0%, transparent 30%, transparent 70%, var(--vignette-corner-soft) 100%)' }} />
+        {phoneStateSwitcher}
         {/* Phone header — sticky so the brand + search stay pinned at the
             top of the scroll context (was `absolute` which scrolled away with
             the rest of the watch tree). */}
@@ -6335,15 +6581,13 @@ const WatchScreen = ({ onOpenGame, onOpenGameVideo, onPickMoment }) => {
       <div className="hidden lg:block">
         <WatchShell
           topBarCenter={<WatchSearchInput query={query} setQuery={setQuery} onPickGame={handlePush} />}
-          hero={<WatchHeroDesktop onWatch={handlePush} />}>
+          hero={<WatchHeroDesktop onWatch={handlePush} />}
+          selectedState={selectedState}
+          onSelectState={setSelectedState}>
           {body}
         </WatchShell>
       </div>
 
-      {/* Live player overlay */}
-      {livePlayerGameId && (
-        <LivePlayerScreen game={SEED_GAMES.find(g => g.id === livePlayerGameId)} onClose={() => setLivePlayerGameId(null)} />
-      )}
     </>
   );
 };
@@ -8493,11 +8737,11 @@ const SD_CLIP_IMGS = [
   'https://images.unsplash.com/photo-1504450758481-7338eba7524a?auto=format&fit=crop&w=600&h=900&q=78',
   'https://images.unsplash.com/photo-1522098538805-b46f3a4e9e5d?auto=format&fit=crop&w=600&h=900&q=78',
 ];
-const SD_PLAYER = { name: 'Tal Weiss', number: 7, position: 'SG', team: 'Varsity' };
+const SD_PLAYER = { name: 'Tal Weiss', number: 7, position: 'SG', team: 'Sesh Rigs' };
 const SD_GAME = {
   date: 'April 3, 2026', shortDate: 'Apr 3',
-  opponent: 'Northside Wolves', home: 'Varsity', away: 'Northside',
-  scoreHome: 64, scoreAway: 58, venue: 'Eastside Prep Gym', result: 'W',
+  opponent: 'Medium Fundamentals', home: 'Sesh Rigs', away: 'Medium Fundamentals',
+  scoreHome: 64, scoreAway: 58, venue: 'Rowland Cowan Stadium', result: 'W',
 };
 const SD_HEADLINE = {
   big: '+6',
@@ -8512,7 +8756,7 @@ const SD_STAT_TICKER = [
   ['Career-high', '24 pts'], ['Closer', '+6 in final 8'],
   ['Field goals', '9/16'], ['Three-pointers', '3/7'], ['Free throws', '3/4'],
   ['Assists', '6 · season-high'], ['Steals', '3'], ['On-court net', '+14'],
-  ['Game-winning', '3 · Q4 0:08'], ['Apr 3, 2026', 'Eastside Prep'],
+  ['Game-winning', '3 · Q4 0:08'], ['Apr 3, 2026', 'Rowland Cowan'],
 ];
 const SD_OPENING = {
   q: 'Q1', ts: '7:33', title: 'Vision.',
@@ -8521,7 +8765,7 @@ const SD_OPENING = {
 const SD_QUARTERS = [
   {
     q: 'Q1', pts: 8, label: 'Points scored', title: 'You set the tone',
-    body: "Eight points before Coach Sarah called your first sub. Two threes attempted, one made, and you got to the line. Northside expected a slow-build. They got the no-look pass and the corner three.",
+    body: "Eight points before Coach called your first sub. Two threes attempted, one made, and you got to the line. The Fundies expected a slow-build. They got the no-look pass and the corner three.",
     fg: '3/5', tpt: '1/2', ft: '1/2',
     clip: { ts: 'Q1 · 7:33', caption: 'No-look pass · assist' },
     shots: [
@@ -8533,7 +8777,7 @@ const SD_QUARTERS = [
   },
   {
     q: 'Q2', pts: 6, label: 'Points at halftime: 14', title: 'Defense did the heavy lift',
-    body: "Three steals, two of them straight off Northside's lead guard. Six quiet points on six shots. The kind of quarter that doesn't show up on Instagram but shows up on tape.",
+    body: "Three steals, two of them straight off Medium Fundamentals' lead guard. Six quiet points on six shots. The kind of quarter that doesn't show up on Instagram but shows up on tape.",
     fg: '3/5', tpt: '0/2', ft: '0/0',
     clip: { ts: 'Q2 · 4:11', caption: 'Block · transition denied' },
     shots: [
@@ -8556,7 +8800,7 @@ const SD_QUARTERS = [
   },
   {
     q: 'Q4', pts: 6, label: 'Final: 24 · Career-best', title: 'You closed the door',
-    body: "Eight minutes left, four-point game. You scored or assisted on every Varsity bucket from 7:42 to 0:08. The crossover floater at the elbow. Then a corner three to ice it — and the gym understood what they'd watched.",
+    body: "Eight minutes left, four-point game. You scored or assisted on every Sesh Rigs bucket from 7:42 to 0:08. The crossover floater at the elbow. Then a corner three to ice it — and the gym understood what they'd watched.",
     fg: '2/3', tpt: '1/1', ft: '1/1', final: true,
     clip: { ts: 'Q4 · 0:08', caption: 'Game-winning 3' },
     shots: [
@@ -8570,9 +8814,13 @@ const SD_QUARTERS = [
    ('/clip.mp4', '/clip2.mp4') were stub paths that 404 in the deploy,
    which is why the storydrop looked like static placeholders. */
 const SD_SEASON_TOP_THREE = [
-  { name: 'Lincoln',   date: 'Mar 25', pts: 22, fg: '8/16', tpt: '2/5', venue: 'Lincoln High',     rank: 'Was #1',     headline: 'Twenty-two and a near-miss.',                img: SD_CLIP_IMGS[1], clipTs: 'Q3 · 4:22', clipCaption: 'Step-back jumper · top of arc',    clipVideo: SD_HALO_VIDEO_URL },
-  { name: 'Northside', date: 'Apr 3',  pts: 24, fg: '9/16', tpt: '3/7', venue: 'Eastside Prep',    rank: '#1 — tonight', headline: 'Career-best. +6 in the closing stretch.',  isThis: true, img: SD_CLIP_IMGS[2], clipTs: 'Q4 · 0:08', clipCaption: 'Game-winning 3 · ice it', clipVideo: SD_HALO_VIDEO_URL },
-  { name: 'Westfield', date: 'Feb 12', pts: 20, fg: '7/14', tpt: '2/6', venue: 'Westfield Catholic', rank: '#3 of the season', headline: 'Twenty on the road. Cold gym, hot start.', img: SD_CLIP_IMGS[3], clipTs: 'Q1 · 9:14', clipCaption: 'Opening drive · and-one', clipVideo: SD_HALO_VIDEO_URL },
+  /* Sesh Rigs's season top-3 nights — scoped to Thursday Men D peers
+     so the storydrop matches the data shown across the rest of the
+     prototype. The "isThis" entry is the focal Sesh Rigs vs
+     Medium Fundamentals rivalry. */
+  { name: 'Hustle HQ',            date: 'Mar 25', pts: 22, fg: '8/16', tpt: '2/5', venue: 'Rowland Cowan · Court 1', rank: 'Was #1',           headline: 'Twenty-two and a near-miss.',               img: SD_CLIP_IMGS[1], clipTs: 'Q3 · 4:22', clipCaption: 'Step-back jumper · top of arc', clipVideo: SD_HALO_VIDEO_URL },
+  { name: 'Medium Fundamentals',  date: 'Apr 3',  pts: 24, fg: '9/16', tpt: '3/7', venue: 'Rowland Cowan · Court 1', rank: '#1 — tonight',    headline: 'Career-best. +6 in the closing stretch.',   isThis: true, img: SD_CLIP_IMGS[2], clipTs: 'Q4 · 0:08', clipCaption: 'Game-winning 3 · ice it', clipVideo: SD_HALO_VIDEO_URL },
+  { name: 'KingSlayers',          date: 'Feb 12', pts: 20, fg: '7/14', tpt: '2/6', venue: 'Rowland Cowan · Court 2', rank: '#3 of the season', headline: 'Twenty against the Slayers. Hot start.',   img: SD_CLIP_IMGS[3], clipTs: 'Q1 · 9:14', clipCaption: 'Opening drive · and-one', clipVideo: SD_HALO_VIDEO_URL },
 ];
 
 /* ── SD atoms ──────────────────────────────────────────────────── */
