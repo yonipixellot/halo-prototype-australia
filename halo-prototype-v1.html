@@ -4625,21 +4625,28 @@ const NotifyMeOverlay = ({ onClose }) => {
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
   return (
+    /* Backdrop bumped from rgba(8,12,20,0.62) to a much heavier
+       rgba(4,6,12,0.82) + 16px blur because the previous opacity let
+       the morph card bleed through on both sides of the 420px modal,
+       which read as "content floating on top of a card" instead of a
+       proper modal. Higher alpha + stronger blur fully obscures the
+       underlying page. */
     <div className="fixed inset-0 z-50 anim-fade flex items-center justify-center p-4"
       onClick={onClose}
       style={{
-        background: 'rgba(8,12,20,0.62)',
-        backdropFilter: 'blur(8px) saturate(140%)',
-        WebkitBackdropFilter: 'blur(8px) saturate(140%)',
+        background: 'rgba(4,6,12,0.82)',
+        backdropFilter: 'blur(16px) saturate(140%)',
+        WebkitBackdropFilter: 'blur(16px) saturate(140%)',
       }}>
       <div onClick={(e) => e.stopPropagation()}
         className="relative w-full max-w-[420px] anim-slide-sheet squircle-md overflow-hidden"
         style={{
-          background: 'radial-gradient(ellipse 70% 50% at 30% 20%, rgba(0,214,254,0.16) 0%, transparent 60%), linear-gradient(180deg, var(--card-base-strong-top) 0%, var(--card-base-strong-bot) 100%)',
+          /* Modal card uses solid dark gradient (was glass-with-tint).
+             Solid bg gives the modal a crisp readable frame against
+             the now-heavily-dimmed backdrop. */
+          background: 'radial-gradient(ellipse 70% 50% at 30% 20%, rgba(0,214,254,0.18) 0%, transparent 60%), linear-gradient(180deg, #11151f 0%, #0a0d16 100%)',
           border: '1px solid var(--brand-cyan-border)',
-          backdropFilter: 'blur(28px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(28px) saturate(180%)',
-          boxShadow: '0 32px 80px -20px rgba(0,0,0,0.65), 0 0 60px -10px rgba(0,214,254,0.25), inset 0 1px 0 var(--glass-card-inset-top)',
+          boxShadow: '0 32px 80px -20px rgba(0,0,0,0.80), 0 0 80px -10px rgba(0,214,254,0.30), inset 0 1px 0 rgba(255,255,255,0.08)',
         }}>
         {/* Close button — top-end */}
         <button onClick={onClose} aria-label="Close"
