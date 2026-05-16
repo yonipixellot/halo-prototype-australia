@@ -4520,13 +4520,17 @@ const GAME_CYCLE = ['pre', 'live', 'just-ended', 'ready', 'ad'];
 const ALL_STATES = ['off', 'pre', 'live', 'just-ended', 'ready', 'ad'];
 
 /* MORPH_CARD_MIN_HEIGHT — single unified card height applied as a
-   min-height across every morph variant on every viewport. 220px fits
-   the densest variant (just-ended, ~212px native) with a touch of
-   breathing room. Lighter variants (off / live / capture / ad) get
-   vertical breathing space — content stays vertically-centered within
-   the frame so the card never visually changes shape when the demo
-   cycles. The home feed below stops shifting between transitions. */
-const MORPH_CARD_MIN_HEIGHT = 220;
+   min-height across every morph variant on every viewport. 240px fits
+   the densest variant (ready, with its 100px stacked-cards block on
+   top of header + score row + bottom padding ≈ 240px native). All
+   other variants get vertical breathing space — content stays
+   vertically-centered or justify-between within the frame so the card
+   never visually changes shape when the demo cycles. The home feed
+   below stops shifting between transitions.
+   Was 220 initially — bumped to 240 after the ready variant's
+   stacked-cards block (h-[100px] absolute stack + score row + chrome)
+   exceeded the floor and made ready visually taller than the others. */
+const MORPH_CARD_MIN_HEIGHT = 240;
 const nextDemoState = (s) => {
   if (s === 'off') return 'pre';
   const i = GAME_CYCLE.indexOf(s);
