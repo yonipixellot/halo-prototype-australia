@@ -10577,7 +10577,8 @@ const PackReveal = ({ gameId, onClose, onPickMoment }) => {
   }, []);
 
   return (
-    <div data-theme="dark" className="absolute inset-0 z-50 lg:fixed lg:z-[100] anim-fade flex flex-col items-center justify-center px-6"
+    <div data-theme="dark"
+      className={`absolute inset-0 z-50 lg:fixed lg:z-[100] anim-fade ${stage === 'reveal' ? 'flex flex-col overflow-y-auto onb-scroll' : 'flex flex-col items-center justify-center px-6'}`}
       style={{
         background:
           'radial-gradient(ellipse 60% 45% at 50% 35%, ' + (stage === 'reveal' ? 'rgba(0,214,254,0.35)' : 'rgba(0,214,254,0.18)') + ' 0%, transparent 65%),' +
@@ -10585,11 +10586,14 @@ const PackReveal = ({ gameId, onClose, onPickMoment }) => {
           'linear-gradient(180deg, #050810 0%, #020308 100%)',
         transition: 'background 800ms ease-out',
       }}>
-      {/* Close */}
-      <button onClick={onClose} aria-label="Close"
-        className="absolute top-11 end-4 z-30 w-9 h-9 lg-glass squircle-sm flex items-center justify-center text-white">
-        <Icon name="close" size={12} stroke={1.8} />
-      </button>
+      {/* Close — only in pack-stack stages. Reveal stage owns its
+         own header strip with a sibling close button. */}
+      {stage !== 'reveal' && (
+        <button onClick={onClose} aria-label="Close"
+          className="absolute top-11 end-4 z-30 w-9 h-9 lg-glass squircle-sm flex items-center justify-center text-white">
+          <Icon name="close" size={12} stroke={1.8} />
+        </button>
+      )}
 
       {/* === STAGE 1 + 2 — pack stack === */}
       {stage !== 'reveal' && (
@@ -10681,75 +10685,145 @@ const PackReveal = ({ gameId, onClose, onPickMoment }) => {
         </div>
       )}
 
-      {/* === STAGE 3 — revealed moments grid === */}
-      {stage === 'reveal' && (
-        <div className="anim-scale-in w-full max-w-[640px] flex flex-col items-center">
-          <div className="sf text-[10.5px] tracking-[0.20em] uppercase font-bold mb-3"
-            style={{ color: 'var(--brand-cyan-text)' }}>
-            You unlocked
-          </div>
-          <h1 className="sf-display text-[28px] font-bold tracking-[-0.025em] leading-tight mb-1 text-white text-center">
-            {moments.length} moments
-          </h1>
-          <h2 className="sf-display text-[16px] font-bold leading-tight mb-6 text-center"
-            style={{ color: 'var(--text-tertiary)' }}>
-            from {game ? `${game.home} vs ${game.away}` : 'last game'}
-          </h2>
-          {/* 3x2 grid of moment thumbs */}
-          <div className="grid grid-cols-3 gap-2.5 mb-7 w-full">
-            {moments.map((m, i) => (
-              <button key={m.id} onClick={() => onPickMoment(SEED_MOMENTS.indexOf(m))}
-                className="relative overflow-hidden squircle-md lg-aura lg-shine"
-                style={{
-                  aspectRatio: '9/16',
-                  background:
-                    'radial-gradient(ellipse 75% 65% at 25% 25%, rgba(0,214,254,0.20) 0%, transparent 60%),' +
-                    'radial-gradient(ellipse 75% 65% at 80% 80%, rgba(132,88,255,0.16) 0%, transparent 60%),' +
-                    'linear-gradient(180deg, var(--card-base-soft-top) 0%, var(--card-base-soft-bot) 100%)',
-                  border: '1px solid var(--glass-card-border)',
-                  backdropFilter: 'blur(36px) saturate(180%)',
-                  WebkitBackdropFilter: 'blur(36px) saturate(180%)',
-                  boxShadow: 'inset 0 1px 0 var(--glass-card-inset-top), var(--glass-card-shadow)',
-                  animation: `scaleIn 360ms cubic-bezier(.2,.8,.2,1) ${i * 60}ms both`,
-                }}>
-                <div className="absolute inset-0 hatch opacity-40" />
-                <div className="absolute inset-0 flex items-center justify-center z-10">
-                  <div className="w-10 h-10 rounded-full lg-glass-strong flex items-center justify-center">
-                    <svg width={11} height={13} viewBox="0 0 12 14" fill="#fff"
-                      style={{ width: 11, height: 13, marginInlineStart: 2 }}>
-                      <path d="M0 1.2v11.6c0 .9 1 1.4 1.7 1l9.6-5.8c.7-.4.7-1.5 0-1.9L1.7.2C1 -.2 0 .3 0 1.2z" />
-                    </svg>
-                  </div>
-                </div>
-                <div className="absolute inset-x-0 bottom-0 px-2 pt-6 pb-2 z-10"
-                  style={{ background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 60%, rgba(0,0,0,0.95) 100%)' }}>
-                  <div className="sf-display text-white text-[11px] font-bold leading-tight tracking-[-0.005em] truncate">{m.title}</div>
-                  <div className="sf text-white/65 text-[9.5px] mt-0.5 truncate">{m.sub}</div>
-                </div>
+      {/* === STAGE 3 — revealed moments grid ===
+         Desktop-first rebuild: header strip with game context,
+         title block with player attribution, hero + 5-sidekick grid
+         that fills the canvas (no more 640px island), real posters,
+         CTA row pinned at the bottom of the flow.
+         Phone (< lg) collapses the same structure into a 2-col grid
+         with the hero spanning the top row. */}
+      {stage === 'reveal' && (() => {
+        const homeTeam = teamByName(game.home);
+        const awayTeam = teamByName(game.away);
+        const homeWon = (game.scoreHome ?? 0) > (game.scoreAway ?? 0);
+        const awayWon = (game.scoreAway ?? 0) > (game.scoreHome ?? 0);
+        return (
+        <>
+          {/* Header strip — sticky inside the scroll container so the
+             game context stays visible while the user scans the grid. */}
+          <div className="sticky top-0 z-30 lg-header-fade px-5 lg:px-8 xl:px-12 pt-11 pb-4">
+            <div className="lg:max-w-[1100px] lg:mx-auto flex items-center gap-3 min-w-0">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <TeamCrest team={homeTeam} size={22} />
+                <span className="sf-display text-[14px] font-bold tracking-tight text-white truncate">{homeTeam.name}</span>
+                <span className="sf-display text-[15px] font-bold tabular-nums ms-1"
+                  style={{ color: homeWon ? '#fff' : 'rgba(255,255,255,0.55)' }}>{game.scoreHome}</span>
+                <span className="sf text-[10px]" style={{ color: 'rgba(255,255,255,0.40)' }}>—</span>
+                <span className="sf-display text-[15px] font-bold tabular-nums"
+                  style={{ color: awayWon ? '#fff' : 'rgba(255,255,255,0.55)' }}>{game.scoreAway}</span>
+                <TeamCrest team={awayTeam} size={22} />
+                <span className="sf-display text-[14px] font-bold tracking-tight text-white truncate">{awayTeam.name}</span>
+                {game.when && (
+                  <span className="sf text-[10.5px] tracking-[0.14em] uppercase font-semibold ms-3 shrink-0 hidden lg:inline"
+                    style={{ color: 'rgba(255,255,255,0.50)' }}>· {game.when}</span>
+                )}
+              </div>
+              <button onClick={onClose} aria-label="Close"
+                className="w-9 h-9 lg-glass squircle-sm flex items-center justify-center text-white shrink-0">
+                <Icon name="close" size={12} stroke={1.8} />
               </button>
-            ))}
+            </div>
           </div>
-          {/* CTA row */}
-          <div className="flex items-stretch gap-2 w-full">
-            <button onClick={() => onPickMoment(0)}
-              className="flex-1 squircle-sm py-3 sf text-[12.5px] font-semibold flex items-center justify-center gap-2"
-              style={{
-                color: '#0a0d18',
-                background: 'linear-gradient(180deg, rgba(0,235,255,1) 0%, rgba(0,200,250,1) 100%)',
-                boxShadow: '0 4px 12px -2px rgba(0,214,254,0.45), inset 0 1px 0 rgba(255,255,255,0.40)',
-              }}>
-              <svg width={11} height={12} viewBox="0 0 11 12" fill="currentColor" style={{ width: 11, height: 12 }}>
-                <path d="M1 1 L10 6 L1 11 Z" />
-              </svg>
-              Watch all moments
-            </button>
-            <button onClick={onClose}
-              className="lg-glass squircle-sm px-4 py-3 sf text-[12.5px] font-semibold text-white">
-              Later
-            </button>
+
+          {/* Title block — drop ceremony reveal text + player attribution. */}
+          <div className="anim-scale-in px-5 lg:px-8 xl:px-12 pt-2 lg:pt-4 pb-6 text-center">
+            <div className="lg:max-w-[1100px] lg:mx-auto">
+              <div className="sf text-[10.5px] tracking-[0.20em] uppercase font-bold mb-3"
+                style={{ color: 'var(--brand-cyan-text)' }}>
+                You unlocked
+              </div>
+              <h1 className="sf-display text-[34px] lg:text-[44px] font-bold tracking-[-0.025em] leading-[1.02] mb-2 text-white">
+                {moments.length} moments
+              </h1>
+              <h2 className="sf-display text-[13px] lg:text-[15px] font-semibold leading-tight"
+                style={{ color: 'var(--text-tertiary)' }}>
+                from {PLAYER.name}'s game · auto-clipped by Halo
+              </h2>
+            </div>
           </div>
-        </div>
-      )}
+
+          {/* Hero + sidekick grid.
+             Desktop (lg): 4-col grid, first moment spans 2×2 as hero.
+             Phone: 3-col with hero spanning 2 cols of row 1.
+             auto-rows-fr keeps every cell the same height so the hero's
+             2-row span stays in proportion. */}
+          <div className="px-5 lg:px-8 xl:px-12 pb-6">
+            <div className="lg:max-w-[1100px] lg:mx-auto grid gap-2.5 grid-cols-3 lg:grid-cols-4 auto-rows-fr">
+              {moments.map((m, i) => {
+                const isHero = i === 0;
+                return (
+                  <button key={m.id} onClick={() => onPickMoment(SEED_MOMENTS.indexOf(m))}
+                    className={`relative overflow-hidden squircle-md lg-aura lg-shine ${isHero ? 'col-span-2 row-span-2' : ''}`}
+                    style={{
+                      aspectRatio: '9 / 16',
+                      background: '#0a0e1a',
+                      border: '1px solid var(--glass-card-border)',
+                      boxShadow: 'inset 0 1px 0 var(--glass-card-inset-top), var(--glass-card-shadow)',
+                      animation: `scaleIn 420ms cubic-bezier(.2,.8,.2,1) ${i * 80}ms both`,
+                    }}>
+                    {/* Real poster from the underlying clip — the
+                       same 9:16 portrait posters that fill the rest
+                       of the app's thumb rails. */}
+                    {m.poster ? (
+                      <img src={m.poster} alt=""
+                        className="absolute inset-0 w-full h-full"
+                        style={{ objectFit: 'cover', objectPosition: 'center' }} />
+                    ) : (
+                      <div className="absolute inset-0 hatch opacity-40" />
+                    )}
+                    {/* Hero gets a TOP PLAY badge — visual emphasis. */}
+                    {isHero && (
+                      <div className="absolute top-3 start-3 z-10 squircle-sm px-2 py-1"
+                        style={{ background: 'rgba(0,214,254,0.18)', border: '1px solid rgba(0,214,254,0.55)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}>
+                        <span className="sf text-[9px] tracking-[0.18em] uppercase font-bold leading-none"
+                          style={{ color: 'var(--brand-cyan-text)' }}>Top play</span>
+                      </div>
+                    )}
+                    {/* Centered play glyph — bigger on hero. */}
+                    <div className="absolute inset-0 flex items-center justify-center z-10">
+                      <div className={`${isHero ? 'w-14 h-14' : 'w-10 h-10'} rounded-full lg-glass-strong flex items-center justify-center`}>
+                        <svg width={isHero ? 14 : 11} height={isHero ? 16 : 13} viewBox="0 0 12 14" fill="#fff"
+                          style={{ marginInlineStart: 2 }}>
+                          <path d="M0 1.2v11.6c0 .9 1 1.4 1.7 1l9.6-5.8c.7-.4.7-1.5 0-1.9L1.7.2C1 -.2 0 .3 0 1.2z" />
+                        </svg>
+                      </div>
+                    </div>
+                    {/* Bottom info — bigger type on hero. */}
+                    <div className="absolute inset-x-0 bottom-0 px-3 pt-8 pb-3 z-10"
+                      style={{ background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.55) 50%, rgba(0,0,0,0.95) 100%)' }}>
+                      <div className={`sf-display text-white font-bold leading-tight tracking-[-0.01em] truncate ${isHero ? 'text-[16px] lg:text-[19px]' : 'text-[11.5px]'}`}>{m.title}</div>
+                      <div className={`sf text-white/70 mt-0.5 truncate ${isHero ? 'text-[11.5px] lg:text-[12.5px]' : 'text-[10px]'}`}>{m.sub}</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* CTA row — pinned at the bottom of the flow. */}
+          <div className="px-5 lg:px-8 xl:px-12 pb-10">
+            <div className="lg:max-w-[1100px] lg:mx-auto flex items-stretch gap-2">
+              <button onClick={() => onPickMoment(0)}
+                className="flex-1 squircle-sm py-3 sf text-[13px] font-semibold flex items-center justify-center gap-2"
+                style={{
+                  color: '#0a0d18',
+                  background: 'linear-gradient(180deg, rgba(0,235,255,1) 0%, rgba(0,200,250,1) 100%)',
+                  boxShadow: '0 4px 12px -2px rgba(0,214,254,0.45), inset 0 1px 0 rgba(255,255,255,0.40)',
+                }}>
+                <svg width={11} height={12} viewBox="0 0 11 12" fill="currentColor" style={{ width: 11, height: 12 }}>
+                  <path d="M1 1 L10 6 L1 11 Z" />
+                </svg>
+                Watch all moments
+              </button>
+              <button onClick={onClose}
+                className="lg-glass squircle-sm px-5 py-3 sf text-[13px] font-semibold text-white">
+                Later
+              </button>
+            </div>
+          </div>
+        </>
+        );
+      })()}
     </div>
   );
 };
