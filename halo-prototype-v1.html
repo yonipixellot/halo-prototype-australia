@@ -10944,7 +10944,13 @@ const GameVideoViewer = ({ gameId, momentId, onClose }) => {
                   lineHeight: 1,
                 }}>HALO</span>
             </div>
-            <video key={`gv-${game.id}-${playing}`} src={HALO_VIDEO_URL}
+            {/* Swapped HALO_VIDEO_URL (remote pixellot-DS asset that
+               404s in the deploy) for local clips/condensed_game (1).mp4
+               so the GameVideoViewer plays real Sesh-vs-MF footage
+               instead of leaving the HALO watermark visible behind a
+               failed video load. Filename has a literal space + (1),
+               URL-encoded so the <video src> resolves. */}
+            <video key={`gv-${game.id}-${playing}`} src={'clips/' + encodeURIComponent('condensed_game (1).mp4')}
               autoPlay={playing} muted loop playsInline preload="auto"
               onError={(e) => { e.currentTarget.style.display = 'none'; }}
               className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
