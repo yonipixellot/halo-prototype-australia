@@ -4852,7 +4852,13 @@ const MorphLiveCard = ({ cycle, goPrev, goNext, onOpenGame }) => {
         WebkitBackdropFilter: 'blur(36px) saturate(180%)',
         color: 'var(--text-primary)',
       }}>
-      <div className="lg-live-amp" aria-hidden="true" />
+      {/* Removed the lg-live-amp div — its ::before pseudo-element
+          rendered a 14px broadcast tally rail at the top of the
+          card with a 12px box-shadow that bled downward as a
+          visible horizontal hairline crossing the LIVE pill and
+          StateNav. The rebuilt card already has its own red
+          radial blobs as background + the lg-live-ember outer
+          aura, so the additional tally rail was redundant. */}
 
       {/* ── TIER 1 · TOP CHROME ─────────────────────────────────
           LIVE pill carries period + clock so the live state is
@@ -4872,55 +4878,64 @@ const MorphLiveCard = ({ cycle, goPrev, goNext, onOpenGame }) => {
       </div>
 
       {/* ── TIER 2 · CENTER HERO ────────────────────────────────
-          Each team is one COLUMN: name above score, paired tightly
-          so the reader instantly sees who scored what. Two columns
-          flank an em-dash separator. Winning team renders in full
-          primary white (name + score); losing team dims to muted
-          gray so the leading side is unmistakable. Previously
-          team names sat as a single left-aligned sentence below
-          the score block, which broke the visual link between
-          name and number. */}
-      <div className="relative z-10 flex-1 flex items-center justify-center px-4 lg:px-5 py-1">
-        <div className="flex items-center justify-center gap-5 lg:gap-10">
-          {/* TEAM A column — name above score, right-aligned so it
-              reads toward the em-dash separator. */}
-          <div className="flex flex-col items-end min-w-0">
-            <div className="sf text-[10.5px] lg:text-[11.5px] tracking-[0.18em] uppercase font-bold mb-1.5 truncate max-w-[180px]"
-              style={{ color: homeWon ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>
+          Crest-anchored matchup poster. 5 elements horizontal:
+            [crest + name] · score · em-dash · score · [crest + name]
+          Crests are uniform 44px squares, so the visual mass on
+          each side stays balanced regardless of team name length
+          (Sesh Rigs vs Medium Fundamentals previously slid the
+          whole block right). Full names live as 10px captions
+          under the crests and truncate gracefully on narrow
+          screens via max-width + text-overflow. Same pattern as
+          PostGameScreen's ScoreHero — consistent visual language
+          across live + finished game surfaces. */}
+      <div className="relative z-10 flex-1 flex items-center justify-center px-3 lg:px-5 py-1">
+        <div className="flex items-center justify-center gap-3 lg:gap-5">
+          {/* TEAM A — crest + name caption */}
+          <div className="flex flex-col items-center min-w-0" style={{ maxWidth: 120, opacity: homeWon ? 1 : 0.55 }}>
+            <TeamCrest team={homeTeam} size={44} />
+            <div className="sf text-[9.5px] lg:text-[10px] tracking-[0.14em] uppercase font-bold mt-2 w-full text-center"
+              style={{
+                color: homeWon ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}>
               {g.home}
             </div>
-            <span className="sf-display tabular-nums font-bold leading-none"
-              style={{
-                fontSize: 'clamp(48px, 12vw, 68px)',
-                letterSpacing: '-0.045em',
-                color: homeWon ? 'var(--text-primary)' : 'var(--text-secondary)',
-                textShadow: homeWon ? '0 0 18px rgba(0,214,254,0.32)' : 'none',
-              }}>
-              {g.scoreHome}
-            </span>
           </div>
-          {/* Em-dash separator — sits between the score numbers,
-              not between team names (where the dash would read as
-              a hyphen between words). */}
-          <span className="sf-display font-bold leading-none self-end mb-3 lg:mb-4"
-            style={{ fontSize: 'clamp(24px, 6vw, 36px)', color: 'var(--text-faint)', letterSpacing: '-0.02em' }}>
+          {/* Score A */}
+          <span className="sf-display tabular-nums font-bold leading-none"
+            style={{
+              fontSize: 'clamp(44px, 11vw, 60px)',
+              letterSpacing: '-0.045em',
+              color: homeWon ? 'var(--text-primary)' : 'var(--text-secondary)',
+              textShadow: homeWon ? '0 0 18px rgba(0,214,254,0.32)' : 'none',
+            }}>
+            {g.scoreHome}
+          </span>
+          {/* Em-dash separator */}
+          <span className="sf-display font-bold leading-none"
+            style={{ fontSize: 'clamp(20px, 5vw, 30px)', color: 'var(--text-faint)', letterSpacing: '-0.02em' }}>
             —
           </span>
-          {/* TEAM B column — name above score, left-aligned to mirror. */}
-          <div className="flex flex-col items-start min-w-0">
-            <div className="sf text-[10.5px] lg:text-[11.5px] tracking-[0.18em] uppercase font-bold mb-1.5 truncate max-w-[180px]"
-              style={{ color: awayWon ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>
+          {/* Score B */}
+          <span className="sf-display tabular-nums font-bold leading-none"
+            style={{
+              fontSize: 'clamp(44px, 11vw, 60px)',
+              letterSpacing: '-0.045em',
+              color: awayWon ? 'var(--text-primary)' : 'var(--text-secondary)',
+              textShadow: awayWon ? '0 0 18px rgba(0,214,254,0.32)' : 'none',
+            }}>
+            {g.scoreAway}
+          </span>
+          {/* TEAM B — crest + name caption */}
+          <div className="flex flex-col items-center min-w-0" style={{ maxWidth: 120, opacity: awayWon ? 1 : 0.55 }}>
+            <TeamCrest team={awayTeam} size={44} />
+            <div className="sf text-[9.5px] lg:text-[10px] tracking-[0.14em] uppercase font-bold mt-2 w-full text-center"
+              style={{
+                color: awayWon ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}>
               {g.away}
             </div>
-            <span className="sf-display tabular-nums font-bold leading-none"
-              style={{
-                fontSize: 'clamp(48px, 12vw, 68px)',
-                letterSpacing: '-0.045em',
-                color: awayWon ? 'var(--text-primary)' : 'var(--text-secondary)',
-                textShadow: awayWon ? '0 0 18px rgba(0,214,254,0.32)' : 'none',
-              }}>
-              {g.scoreAway}
-            </span>
           </div>
         </div>
       </div>
