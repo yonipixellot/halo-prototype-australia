@@ -1570,56 +1570,56 @@ const countdownParts = (sec) => {
    the player's home state and provides the bulk of the seed data.
    The other 7 states get representative NBL1 / Junior Reps entries so
    the Watch state switcher has real content for each. */
+/* TEAMS_DB — each entry now carries a `src` field pointing at a real
+   PNG in prototype/logos/ (512×512, white bg, ~12% internal padding,
+   real official artwork — sourced from each org's site / NBL CDN /
+   Wikipedia per the logos/STATUS.md doc). TeamCrest renders the logo
+   with the team's accentA as a thin tinted ring; the initials-on-
+   tinted-glass fallback only kicks in when `src` is absent.
+   ACT Academy has no public mark — left without `src` so it falls
+   back to initials (per user pick). */
 const TEAMS_DB = {
-  /* ── QLD · Senior Domestic · Thursday Men D peers ── */
-  /* Target team (player). White / cream jersey per the BA org doc. */
-  seshRigs:     { id: 'seshRigs',     name: 'Sesh Rigs',             nickname: 'Rigs',     initial: 'SR', state: 'QLD', tier: 'senior',     accentA: 'rgba(245,243,235,0.60)', accentB: 'rgba(190,190,180,0.40)' },
-  /* Target team (rival). Red jersey per the actual match footage in
-     player-video-library.md (BA org doc originally said teal, but the
-     real videos show a red kit — the footage wins). */
-  mediumFund:   { id: 'mediumFund',   name: 'Medium Fundamentals',   nickname: 'Fundies',  initial: 'MF', state: 'QLD', tier: 'senior',     accentA: 'rgba(220,38,38,0.55)',   accentB: 'rgba(255,90,50,0.32)' },
-  hustleHQ:     { id: 'hustleHQ',     name: 'Hustle HQ',             nickname: 'Hustle',   initial: 'HQ', state: 'QLD', tier: 'senior',     accentA: 'rgba(255,140,40,0.55)',  accentB: 'rgba(255,90,40,0.30)' },
-  huskies:      { id: 'huskies',      name: 'Hoopin Huskies',        nickname: 'Huskies',  initial: 'HH', state: 'QLD', tier: 'senior',     accentA: 'rgba(132,88,255,0.55)',  accentB: 'rgba(0,170,220,0.32)' },
-  shaqtin:      { id: 'shaqtin',      name: 'Shaqtin A Fool',        nickname: 'Shaqtin',  initial: 'SF', state: 'QLD', tier: 'senior',     accentA: 'rgba(255,90,50,0.55)',   accentB: 'rgba(255,210,80,0.30)' },
-  kingSlayers:  { id: 'kingSlayers',  name: 'KingSlayers',           nickname: 'Slayers',  initial: 'KS', state: 'QLD', tier: 'senior',     accentA: 'rgba(255,210,80,0.55)',  accentB: 'rgba(255,140,40,0.36)' },
-  chumpCentral: { id: 'chumpCentral', name: 'Chump Central',         nickname: 'Chumps',   initial: 'CC', state: 'QLD', tier: 'senior',     accentA: 'rgba(132,88,255,0.55)',  accentB: 'rgba(255,90,158,0.36)' },
-  nbas:         { id: 'nbas',         name: 'Nothing But All Stars', nickname: 'NBAS',     initial: 'NB', state: 'QLD', tier: 'senior',     accentA: 'rgba(255,90,158,0.55)',  accentB: 'rgba(132,88,255,0.36)' },
-  /* ── QLD · NBL1 ── */
-  brisCapitals: { id: 'brisCapitals', name: 'Brisbane Capitals',     nickname: 'Capitals', initial: 'BC', state: 'QLD', tier: 'nbl1',       accentA: 'rgba(0,170,220,0.60)',   accentB: 'rgba(132,88,255,0.30)' },
-  sunshinePhx:  { id: 'sunshinePhx',  name: 'Sunshine Coast Phoenix',nickname: 'Phoenix',  initial: 'SP', state: 'QLD', tier: 'nbl1',       accentA: 'rgba(255,140,40,0.60)',  accentB: 'rgba(255,210,80,0.32)' },
-  cairnsM:      { id: 'cairnsM',      name: 'Cairns Marlins',        nickname: 'Marlins',  initial: 'CM', state: 'QLD', tier: 'nbl1',       accentA: 'rgba(0,214,254,0.55)',   accentB: 'rgba(74,222,128,0.32)' },
-  toowoombaMtn: { id: 'toowoombaMtn', name: 'Toowoomba Mountaineers',nickname: 'Mtnrs',    initial: 'TM', state: 'QLD', tier: 'nbl1',       accentA: 'rgba(132,88,255,0.55)',  accentB: 'rgba(0,170,220,0.32)' },
-  /* ── QLD · Junior Reps ── */
-  spartansU18:  { id: 'spartansU18',  name: 'Spartans U18',          nickname: 'U18',      initial: 'SU', state: 'QLD', tier: 'juniorReps', accentA: 'rgba(0,214,254,0.55)',   accentB: 'rgba(132,88,255,0.36)' },
-  wizardsU18:   { id: 'wizardsU18',   name: 'Northside Wizards U18', nickname: 'U18',      initial: 'WU', state: 'QLD', tier: 'juniorReps', accentA: 'rgba(132,88,255,0.55)',  accentB: 'rgba(255,90,158,0.36)' },
-  capitalsU18:  { id: 'capitalsU18',  name: 'Brisbane Capitals U18', nickname: 'U18',      initial: 'BU', state: 'QLD', tier: 'juniorReps', accentA: 'rgba(0,170,220,0.55)',   accentB: 'rgba(132,88,255,0.30)' },
+  seshRigs:     { id: 'seshRigs',     name: 'Sesh Rigs',             nickname: 'Rigs',     initial: 'SR', state: 'QLD', tier: 'senior',     accentA: 'rgba(245,243,235,0.60)', accentB: 'rgba(190,190,180,0.40)', src: 'logos/sesh-rigs.png' },
+  mediumFund:   { id: 'mediumFund',   name: 'Medium Fundamentals',   nickname: 'Fundies',  initial: 'MF', state: 'QLD', tier: 'senior',     accentA: 'rgba(220,38,38,0.55)',   accentB: 'rgba(255,90,50,0.32)',  src: 'logos/medium-fundamentals.png' },
+  hustleHQ:     { id: 'hustleHQ',     name: 'Hustle HQ',             nickname: 'Hustle',   initial: 'HQ', state: 'QLD', tier: 'senior',     accentA: 'rgba(255,140,40,0.55)',  accentB: 'rgba(255,90,40,0.30)',  src: 'logos/hustle-hq.png' },
+  huskies:      { id: 'huskies',      name: 'Hoopin Huskies',        nickname: 'Huskies',  initial: 'HH', state: 'QLD', tier: 'senior',     accentA: 'rgba(132,88,255,0.55)',  accentB: 'rgba(0,170,220,0.32)',  src: 'logos/hoopin-huskies.png' },
+  shaqtin:      { id: 'shaqtin',      name: 'Shaqtin A Fool',        nickname: 'Shaqtin',  initial: 'SF', state: 'QLD', tier: 'senior',     accentA: 'rgba(255,90,50,0.55)',   accentB: 'rgba(255,210,80,0.30)', src: 'logos/shaqtin-a-fool.png' },
+  kingSlayers:  { id: 'kingSlayers',  name: 'KingSlayers',           nickname: 'Slayers',  initial: 'KS', state: 'QLD', tier: 'senior',     accentA: 'rgba(255,210,80,0.55)',  accentB: 'rgba(255,140,40,0.36)', src: 'logos/kingslayers.png' },
+  chumpCentral: { id: 'chumpCentral', name: 'Chump Central',         nickname: 'Chumps',   initial: 'CC', state: 'QLD', tier: 'senior',     accentA: 'rgba(132,88,255,0.55)',  accentB: 'rgba(255,90,158,0.36)', src: 'logos/chump-central.png' },
+  nbas:         { id: 'nbas',         name: 'Nothing But All Stars', nickname: 'NBAS',     initial: 'NB', state: 'QLD', tier: 'senior',     accentA: 'rgba(255,90,158,0.55)',  accentB: 'rgba(132,88,255,0.36)', src: 'logos/nothing-but-all-stars.png' },
+  brisCapitals: { id: 'brisCapitals', name: 'Brisbane Capitals',     nickname: 'Capitals', initial: 'BC', state: 'QLD', tier: 'nbl1',       accentA: 'rgba(0,170,220,0.60)',   accentB: 'rgba(132,88,255,0.30)', src: 'logos/brisbane-capitals.png' },
+  sunshinePhx:  { id: 'sunshinePhx',  name: 'Sunshine Coast Phoenix',nickname: 'Phoenix',  initial: 'SP', state: 'QLD', tier: 'nbl1',       accentA: 'rgba(255,140,40,0.60)',  accentB: 'rgba(255,210,80,0.32)', src: 'logos/sunshine-coast-phoenix.png' },
+  cairnsM:      { id: 'cairnsM',      name: 'Cairns Marlins',        nickname: 'Marlins',  initial: 'CM', state: 'QLD', tier: 'nbl1',       accentA: 'rgba(0,214,254,0.55)',   accentB: 'rgba(74,222,128,0.32)', src: 'logos/cairns-marlins.png' },
+  toowoombaMtn: { id: 'toowoombaMtn', name: 'Toowoomba Mountaineers',nickname: 'Mtnrs',    initial: 'TM', state: 'QLD', tier: 'nbl1',       accentA: 'rgba(132,88,255,0.55)',  accentB: 'rgba(0,170,220,0.32)', src: 'logos/toowoomba-mountaineers.png' },
+  spartansU18:  { id: 'spartansU18',  name: 'Spartans U18',          nickname: 'U18',      initial: 'SU', state: 'QLD', tier: 'juniorReps', accentA: 'rgba(0,214,254,0.55)',   accentB: 'rgba(132,88,255,0.36)', src: 'logos/spartans-u18.png' },
+  wizardsU18:   { id: 'wizardsU18',   name: 'Northside Wizards U18', nickname: 'U18',      initial: 'WU', state: 'QLD', tier: 'juniorReps', accentA: 'rgba(132,88,255,0.55)',  accentB: 'rgba(255,90,158,0.36)', src: 'logos/northside-wizards-u18.png' },
+  capitalsU18:  { id: 'capitalsU18',  name: 'Brisbane Capitals U18', nickname: 'U18',      initial: 'BU', state: 'QLD', tier: 'juniorReps', accentA: 'rgba(0,170,220,0.55)',   accentB: 'rgba(132,88,255,0.30)', src: 'logos/brisbane-capitals-u18.png' },
 
-  /* ── VIC · NBL1 ── */
-  melbTigers:   { id: 'melbTigers',   name: 'Melbourne Tigers',      nickname: 'Tigers',   initial: 'MT', state: 'VIC', tier: 'nbl1',       accentA: 'rgba(255,210,80,0.55)',  accentB: 'rgba(20,30,40,0.40)' },
-  bendigoBrv:   { id: 'bendigoBrv',   name: 'Bendigo Braves',        nickname: 'Braves',   initial: 'BB', state: 'VIC', tier: 'nbl1',       accentA: 'rgba(255,90,50,0.55)',   accentB: 'rgba(20,30,40,0.40)' },
-  frankstonBl:  { id: 'frankstonBl',  name: 'Frankston Blues',       nickname: 'Blues',    initial: 'FB', state: 'VIC', tier: 'nbl1',       accentA: 'rgba(0,170,220,0.55)',   accentB: 'rgba(132,88,255,0.30)' },
-  knoxRaiders:  { id: 'knoxRaiders',  name: 'Knox Raiders',          nickname: 'Raiders',  initial: 'KR', state: 'VIC', tier: 'juniorReps', accentA: 'rgba(132,88,255,0.55)',  accentB: 'rgba(0,214,254,0.30)' },
-  /* ── NSW · NBL1 ── */
-  sydComets:    { id: 'sydComets',    name: 'Sydney Comets',         nickname: 'Comets',   initial: 'SC', state: 'NSW', tier: 'nbl1',       accentA: 'rgba(255,210,80,0.55)',  accentB: 'rgba(255,140,40,0.32)' },
-  manlyEagles:  { id: 'manlyEagles',  name: 'Manly Sea Eagles',      nickname: 'Eagles',   initial: 'ME', state: 'NSW', tier: 'nbl1',       accentA: 'rgba(255,90,50,0.55)',   accentB: 'rgba(255,210,80,0.32)' },
-  hillsHornets: { id: 'hillsHornets', name: 'Hills Hornets',         nickname: 'Hornets',  initial: 'HN', state: 'NSW', tier: 'nbl1',       accentA: 'rgba(255,210,80,0.55)',  accentB: 'rgba(20,30,40,0.40)' },
-  illHawks:     { id: 'illHawks',     name: 'Illawarra Hawks',       nickname: 'Hawks',    initial: 'IH', state: 'NSW', tier: 'juniorReps', accentA: 'rgba(255,90,50,0.55)',   accentB: 'rgba(132,88,255,0.30)' },
-  /* ── WA · NBL1 ── */
-  joonWolves:   { id: 'joonWolves',   name: 'Joondalup Wolves',      nickname: 'Wolves',   initial: 'JW', state: 'WA',  tier: 'nbl1',       accentA: 'rgba(74,222,128,0.55)',  accentB: 'rgba(0,170,220,0.30)' },
-  perthRdbacks: { id: 'perthRdbacks', name: 'Perth Redbacks',        nickname: 'Redbacks', initial: 'PR', state: 'WA',  tier: 'nbl1',       accentA: 'rgba(255,90,50,0.55)',   accentB: 'rgba(20,30,40,0.40)' },
-  cockburnCgr:  { id: 'cockburnCgr',  name: 'Cockburn Cougars',      nickname: 'Cougars',  initial: 'CG', state: 'WA',  tier: 'juniorReps', accentA: 'rgba(132,88,255,0.55)',  accentB: 'rgba(255,210,80,0.30)' },
-  /* ── SA · NBL1 ── */
-  forestEagles: { id: 'forestEagles', name: 'Forestville Eagles',    nickname: 'Eagles',   initial: 'FE', state: 'SA',  tier: 'nbl1',       accentA: 'rgba(0,214,254,0.55)',   accentB: 'rgba(255,210,80,0.30)' },
-  norwoodFl:    { id: 'norwoodFl',    name: 'Norwood Flames',        nickname: 'Flames',   initial: 'NF', state: 'SA',  tier: 'nbl1',       accentA: 'rgba(255,90,50,0.55)',   accentB: 'rgba(255,210,80,0.32)' },
-  southAdPnt:   { id: 'southAdPnt',   name: 'South Adelaide Panthers', nickname: 'Panthers', initial: 'SA', state: 'SA',  tier: 'juniorReps', accentA: 'rgba(132,88,255,0.55)', accentB: 'rgba(20,30,40,0.40)' },
-  /* ── TAS · NBL1 ── */
-  hobartChrg:   { id: 'hobartChrg',   name: 'Hobart Chargers',       nickname: 'Chargers', initial: 'HC', state: 'TAS', tier: 'nbl1',       accentA: 'rgba(0,170,220,0.55)',   accentB: 'rgba(132,88,255,0.30)' },
-  launceTorn:   { id: 'launceTorn',   name: 'Launceston Tornadoes',  nickname: 'Tornadoes',initial: 'LT', state: 'TAS', tier: 'nbl1',       accentA: 'rgba(74,222,128,0.55)',  accentB: 'rgba(0,214,254,0.30)' },
-  /* ── ACT · NBL1 ── */
-  canbGunners:  { id: 'canbGunners',  name: 'Canberra Gunners',      nickname: 'Gunners',  initial: 'CG', state: 'ACT', tier: 'nbl1',       accentA: 'rgba(255,210,80,0.55)',  accentB: 'rgba(20,30,40,0.40)' },
+  melbTigers:   { id: 'melbTigers',   name: 'Melbourne Tigers',      nickname: 'Tigers',   initial: 'MT', state: 'VIC', tier: 'nbl1',       accentA: 'rgba(255,210,80,0.55)',  accentB: 'rgba(20,30,40,0.40)',   src: 'logos/melbourne-tigers.png' },
+  bendigoBrv:   { id: 'bendigoBrv',   name: 'Bendigo Braves',        nickname: 'Braves',   initial: 'BB', state: 'VIC', tier: 'nbl1',       accentA: 'rgba(255,90,50,0.55)',   accentB: 'rgba(20,30,40,0.40)',   src: 'logos/bendigo-braves.png' },
+  frankstonBl:  { id: 'frankstonBl',  name: 'Frankston Blues',       nickname: 'Blues',    initial: 'FB', state: 'VIC', tier: 'nbl1',       accentA: 'rgba(0,170,220,0.55)',   accentB: 'rgba(132,88,255,0.30)', src: 'logos/frankston-blues.png' },
+  knoxRaiders:  { id: 'knoxRaiders',  name: 'Knox Raiders',          nickname: 'Raiders',  initial: 'KR', state: 'VIC', tier: 'juniorReps', accentA: 'rgba(132,88,255,0.55)',  accentB: 'rgba(0,214,254,0.30)',  src: 'logos/knox-raiders.png' },
+  sydComets:    { id: 'sydComets',    name: 'Sydney Comets',         nickname: 'Comets',   initial: 'SC', state: 'NSW', tier: 'nbl1',       accentA: 'rgba(255,210,80,0.55)',  accentB: 'rgba(255,140,40,0.32)', src: 'logos/sydney-comets.png' },
+  manlyEagles:  { id: 'manlyEagles',  name: 'Manly Sea Eagles',      nickname: 'Eagles',   initial: 'ME', state: 'NSW', tier: 'nbl1',       accentA: 'rgba(255,90,50,0.55)',   accentB: 'rgba(255,210,80,0.32)', src: 'logos/manly-sea-eagles.png' },
+  hillsHornets: { id: 'hillsHornets', name: 'Hills Hornets',         nickname: 'Hornets',  initial: 'HN', state: 'NSW', tier: 'nbl1',       accentA: 'rgba(255,210,80,0.55)',  accentB: 'rgba(20,30,40,0.40)',   src: 'logos/hills-hornets.png' },
+  illHawks:     { id: 'illHawks',     name: 'Illawarra Hawks',       nickname: 'Hawks',    initial: 'IH', state: 'NSW', tier: 'juniorReps', accentA: 'rgba(255,90,50,0.55)',   accentB: 'rgba(132,88,255,0.30)', src: 'logos/illawarra-hawks.png' },
+  joonWolves:   { id: 'joonWolves',   name: 'Joondalup Wolves',      nickname: 'Wolves',   initial: 'JW', state: 'WA',  tier: 'nbl1',       accentA: 'rgba(74,222,128,0.55)',  accentB: 'rgba(0,170,220,0.30)',  src: 'logos/joondalup-wolves.png' },
+  perthRdbacks: { id: 'perthRdbacks', name: 'Perth Redbacks',        nickname: 'Redbacks', initial: 'PR', state: 'WA',  tier: 'nbl1',       accentA: 'rgba(255,90,50,0.55)',   accentB: 'rgba(20,30,40,0.40)',   src: 'logos/perth-redbacks.png' },
+  cockburnCgr:  { id: 'cockburnCgr',  name: 'Cockburn Cougars',      nickname: 'Cougars',  initial: 'CG', state: 'WA',  tier: 'juniorReps', accentA: 'rgba(132,88,255,0.55)',  accentB: 'rgba(255,210,80,0.30)', src: 'logos/cockburn-cougars.png' },
+  forestEagles: { id: 'forestEagles', name: 'Forestville Eagles',    nickname: 'Eagles',   initial: 'FE', state: 'SA',  tier: 'nbl1',       accentA: 'rgba(0,214,254,0.55)',   accentB: 'rgba(255,210,80,0.30)', src: 'logos/forestville-eagles.png' },
+  norwoodFl:    { id: 'norwoodFl',    name: 'Norwood Flames',        nickname: 'Flames',   initial: 'NF', state: 'SA',  tier: 'nbl1',       accentA: 'rgba(255,90,50,0.55)',   accentB: 'rgba(255,210,80,0.32)', src: 'logos/norwood-flames.png' },
+  southAdPnt:   { id: 'southAdPnt',   name: 'South Adelaide Panthers', nickname: 'Panthers', initial: 'SA', state: 'SA',  tier: 'juniorReps', accentA: 'rgba(132,88,255,0.55)', accentB: 'rgba(20,30,40,0.40)',  src: 'logos/south-adelaide-panthers.png' },
+  hobartChrg:   { id: 'hobartChrg',   name: 'Hobart Chargers',       nickname: 'Chargers', initial: 'HC', state: 'TAS', tier: 'nbl1',       accentA: 'rgba(0,170,220,0.55)',   accentB: 'rgba(132,88,255,0.30)', src: 'logos/hobart-chargers.png' },
+  launceTorn:   { id: 'launceTorn',   name: 'Launceston Tornadoes',  nickname: 'Tornadoes',initial: 'LT', state: 'TAS', tier: 'nbl1',       accentA: 'rgba(74,222,128,0.55)',  accentB: 'rgba(0,214,254,0.30)',  src: 'logos/launceston-tornadoes.png' },
+  canbGunners:  { id: 'canbGunners',  name: 'Canberra Gunners',      nickname: 'Gunners',  initial: 'CG', state: 'ACT', tier: 'nbl1',       accentA: 'rgba(255,210,80,0.55)',  accentB: 'rgba(20,30,40,0.40)',   src: 'logos/canberra-gunners.png' },
   actAcademy:   { id: 'actAcademy',   name: 'ACT Academy',           nickname: 'Academy',  initial: 'AA', state: 'ACT', tier: 'juniorReps', accentA: 'rgba(0,214,254,0.55)',   accentB: 'rgba(132,88,255,0.36)' },
-  /* ── NT · NBL1 ── */
-  darwinSalt:   { id: 'darwinSalt',   name: 'Darwin Salties',        nickname: 'Salties',  initial: 'DS', state: 'NT',  tier: 'nbl1',       accentA: 'rgba(255,140,40,0.55)',  accentB: 'rgba(255,90,50,0.30)' },
+  darwinSalt:   { id: 'darwinSalt',   name: 'Darwin Salties',        nickname: 'Salties',  initial: 'DS', state: 'NT',  tier: 'nbl1',       accentA: 'rgba(255,140,40,0.55)',  accentB: 'rgba(255,90,50,0.30)',  src: 'logos/darwin-salties.png' },
+};
+/* Brand marks used outside TEAMS_DB lookups (onboarding splash, About
+   footer, athlete-profile association line, settings tile). */
+const BRAND_MARKS = {
+  ba: 'logos/ba-national.png',
+  spartans: 'logos/org-spartans.png',
 };
 /* Lookup by team display name — SEED_GAMES uses display strings like "Sesh Rigs" */
 const teamByName = (name) => Object.values(TEAMS_DB).find(t => t.name === name) || TEAMS_DB.seshRigs;
@@ -1634,15 +1634,18 @@ const teamByInitial = (initial) => Object.values(TEAMS_DB).find(t => t.initial =
    Watch tab's state switcher. QLD is Tal's home state. The state
    switcher persists selection in localStorage so a demo reload keeps
    the user in the state they were exploring. */
+/* STATES_DATA — each member federation now carries a `src` field for
+   its badge. Rendered in the Watch tab state-switcher pill (before the
+   text) and inside the dropdown menu rows. */
 const STATES_DATA = [
-  { code: 'ACT', name: 'Australian Capital Territory' },
-  { code: 'NSW', name: 'New South Wales' },
-  { code: 'NT',  name: 'Northern Territory' },
-  { code: 'QLD', name: 'Queensland' },
-  { code: 'SA',  name: 'South Australia' },
-  { code: 'TAS', name: 'Tasmania' },
-  { code: 'VIC', name: 'Victoria' },
-  { code: 'WA',  name: 'Western Australia' },
+  { code: 'ACT', name: 'Australian Capital Territory', src: 'logos/state-act.png' },
+  { code: 'NSW', name: 'New South Wales',              src: 'logos/state-nsw.png' },
+  { code: 'NT',  name: 'Northern Territory',           src: 'logos/state-nt.png'  },
+  { code: 'QLD', name: 'Queensland',                   src: 'logos/state-qld.png' },
+  { code: 'SA',  name: 'South Australia',              src: 'logos/state-sa.png'  },
+  { code: 'TAS', name: 'Tasmania',                     src: 'logos/state-tas.png' },
+  { code: 'VIC', name: 'Victoria',                     src: 'logos/state-vic.png' },
+  { code: 'WA',  name: 'Western Australia',            src: 'logos/state-wa.png'  },
 ];
 /* Per-state team lookup — used by the Watch tab to filter rails by
    the currently-selected state code. Senior Domestic is QLD-only in
@@ -1653,13 +1656,41 @@ const teamsByStateTier = (stateCode, tier) =>
 
 /* TeamCrest — squircle-md tinted shield with the team initial.
    Size variants: hero (64), sm (28). Used in score hero, tab headers, table rows. */
+/* TeamCrest — square crest container, used everywhere a team mark
+   needs to appear. Render chain:
+     1. team.src present → white logo disc with the team's accentA
+        as a thin tinted ring around it (matches "tinted ring" pick).
+        The hatch + radial-gradient backdrop are HIDDEN so the logo
+        reads first, brand color stays as the ring.
+     2. team.src absent → current initials-on-tinted-glass fallback.
+   Logos are 512×512 PNG with white bg + 12% internal padding, so
+   object-fit:contain keeps the mark inside its native breathing room. */
 const TeamCrest = ({ team, size = 64 }) => {
   const fontSize = size >= 56 ? Math.round(size * 0.34) : Math.round(size * 0.42);
+  const hasLogo = !!(team && team.src);
+  const radius = size >= 48 ? 16 : 10;
+  if (hasLogo) {
+    const ringColor = (team.accentA || 'rgba(255,255,255,0.30)').replace(/,[\d.]+\)$/, ',0.80)');
+    return (
+      <div className="relative shrink-0 overflow-hidden flex items-center justify-center"
+        style={{
+          width: size, height: size,
+          borderRadius: radius,
+          background: '#fff',
+          border: `1.5px solid ${ringColor}`,
+          boxShadow: `0 0 0 1px rgba(0,0,0,0.04), 0 4px 16px -6px rgba(0,0,0,0.45)`,
+        }}>
+        <img src={team.src} alt={team.name || ''}
+          className="absolute inset-0 w-full h-full"
+          style={{ objectFit: 'contain', objectPosition: 'center', padding: Math.max(2, Math.round(size * 0.06)) }} />
+      </div>
+    );
+  }
   return (
     <div className="relative shrink-0 overflow-hidden flex items-center justify-center lg-glass-strong"
       style={{
         width: size, height: size,
-        borderRadius: size >= 48 ? 16 : 10,
+        borderRadius: radius,
         background: `radial-gradient(ellipse 80% 70% at 30% 25%, ${team.accentA} 0%, transparent 60%), radial-gradient(ellipse 80% 70% at 80% 80%, ${team.accentB} 0%, transparent 60%), var(--glass-strong-bg)`,
         border: '1px solid var(--glass-strong-border)',
         boxShadow: `inset 0 1px 0 var(--glass-strong-inset-top), 0 4px 16px -6px rgba(0,0,0,0.45)`,
@@ -2124,12 +2155,29 @@ const IdentityCircle = ({ kind = 'team', avatar, team, label, isClaimed, isNew, 
   const ringStyle = viewedActive ? 'solid' : (isUnclaimed ? 'dashed' : 'solid');
   const ringWidth = isLive ? 3 : viewedActive ? 1.75 : isUnclaimed ? 1.75 : 2.5;
 
-  /* Avatar resolution chain: src → silhouette (claimed) → jersey → initial → skeleton */
+  /* Avatar resolution chain:
+       src on avatar → look up team logo by initial (for team-kind
+       circles) → silhouette (claimed) → jersey → initial → skeleton
+     The team-logo lookup runs only when kind==='team' and the inline
+     avatar object has an initial that matches a TEAMS_DB entry; the
+     logo paints inside the existing circular crest on a white fill
+     so the mark reads first. */
   let avatarBody;
+  const teamLookup = (kind === 'team' && avatar && avatar.initial) ? teamByInitial(avatar.initial) : null;
+  const teamLogoSrc = teamLookup && teamLookup.src;
   if (!avatar) {
     avatarBody = <div className="absolute inset-0 lg-avatar-skeleton" aria-hidden="true" />;
   } else if (avatar.src) {
     avatarBody = <img src={avatar.src} alt="" className="absolute inset-0 w-full h-full object-cover" />;
+  } else if (teamLogoSrc) {
+    avatarBody = (
+      <>
+        <div className="absolute inset-0" style={{ background: '#fff' }} />
+        <img src={teamLogoSrc} alt=""
+          className="absolute inset-0 w-full h-full"
+          style={{ objectFit: 'contain', objectPosition: 'center', padding: 4 }} />
+      </>
+    );
   } else if (isClaimedPlayer) {
     avatarBody = <div className="absolute inset-0 flex items-center justify-center"><SilhouetteAvatar /></div>;
   } else if (avatar.jersey != null) {
@@ -2186,6 +2234,7 @@ const IdentityCircle = ({ kind = 'team', avatar, team, label, isClaimed, isNew, 
             (e.g. EP/HQ placeholders, generic onboarding crests). */}
         {kind === 'player' && team && (() => {
           const teamRec = team.initial ? teamByInitial(team.initial) : null;
+          const logoSrc = team.src || (teamRec && teamRec.src);
           const tintA = teamRec ? teamRec.accentA : 'var(--canvas-bg-soft)';
           const tintB = teamRec ? teamRec.accentB : 'transparent';
           return (
@@ -2193,15 +2242,21 @@ const IdentityCircle = ({ kind = 'team', avatar, team, label, isClaimed, isNew, 
             style={{
               bottom: 0, insetInlineEnd: 0,
               width: 'var(--crest-size)', height: 'var(--crest-size)',
-              background: teamRec
-                ? `radial-gradient(circle at 35% 30%, ${tintA} 0%, ${tintB} 70%, var(--canvas-bg-soft) 100%)`
-                : 'var(--canvas-bg-soft)',
+              background: logoSrc
+                ? '#fff'
+                : (teamRec
+                  ? `radial-gradient(circle at 35% 30%, ${tintA} 0%, ${tintB} 70%, var(--canvas-bg-soft) 100%)`
+                  : 'var(--canvas-bg-soft)'),
               border: '2px solid var(--canvas-bg)',
               color: 'var(--text-primary)',
               fontSize: '8.5px', fontWeight: 800, letterSpacing: '0.02em',
               boxShadow: 'inset 0 1px 0 var(--glass-card-inset-top), 0 3px 8px -2px rgba(0,0,0,0.50)',
             }}>
-            {team.src ? <img src={team.src} alt="" className="absolute inset-0 w-full h-full object-cover" /> : team.initial}
+            {logoSrc
+              ? <img src={logoSrc} alt=""
+                  className="absolute inset-0 w-full h-full"
+                  style={{ objectFit: 'contain', objectPosition: 'center', padding: 2 }} />
+              : team.initial}
           </div>
           );
         })()}
@@ -6240,13 +6295,20 @@ const stateName = (code) => (STATES_DATA.find(s => s.code === code) || {}).name 
    tile grid, and (later) rail content for the Watch tab. */
 const WatchStateSwitcherPill = ({ selected, onSelect }) => {
   const [open, setOpen] = useState(false);
+  const selectedState = STATES_DATA.find(s => s.code === selected);
   return (
     <>
       <button onClick={() => setOpen(true)}
-        className="lg-glass squircle-sm px-3 py-1.5 inline-flex items-center gap-1.5 transition-transform active:scale-[0.97]"
+        className="lg-glass squircle-sm ps-1 pe-3 py-1 inline-flex items-center gap-2 transition-transform active:scale-[0.97]"
         style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.10)' }}
         title={`Watching: ${stateName(selected)}`}>
-        <span className="sf text-[10px] tracking-[0.18em] uppercase font-bold leading-none" style={{ color: 'rgba(255,255,255,0.55)' }}>State</span>
+        {selectedState && selectedState.src && (
+          <span className="inline-flex items-center justify-center overflow-hidden"
+            style={{ width: 22, height: 22, background: '#fff', borderRadius: 6 }}>
+            <img src={selectedState.src} alt=""
+              style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 2 }} />
+          </span>
+        )}
         <span className="sf-display text-[12px] font-bold leading-none tabular-nums" style={{ color: '#fff' }}>{selected}</span>
         <svg width={10} height={10} viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ color: 'rgba(255,255,255,0.55)' }}>
           <path d="M3 5 L7 9 L11 5" />
@@ -6269,7 +6331,14 @@ const WatchStateSwitcherPill = ({ selected, onSelect }) => {
                   <button key={s.code} onClick={() => { onSelect(s.code); setOpen(false); }}
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-start transition-colors hover:bg-white/[0.04]"
                     style={isOn ? { background: 'var(--brand-cyan-soft)' } : undefined}>
-                    <span className="sf-display text-[12px] font-bold tabular-nums w-9" style={{ color: isOn ? 'var(--brand-cyan-text)' : 'var(--text-primary)' }}>{s.code}</span>
+                    {s.src ? (
+                      <span className="inline-flex items-center justify-center overflow-hidden shrink-0"
+                        style={{ width: 26, height: 26, background: '#fff', borderRadius: 6 }}>
+                        <img src={s.src} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 2 }} />
+                      </span>
+                    ) : (
+                      <span className="sf-display text-[12px] font-bold tabular-nums w-9" style={{ color: isOn ? 'var(--brand-cyan-text)' : 'var(--text-primary)' }}>{s.code}</span>
+                    )}
                     <span className="sf text-[12.5px] flex-1" style={{ color: isOn ? 'var(--brand-cyan-text)' : 'var(--text-secondary)' }}>{s.name}</span>
                     {isOn && <Icon name="check" size={12} stroke={2.2} />}
                   </button>
@@ -7666,7 +7735,15 @@ const AthleteProfileScreen = ({ onPickMoment, onBack, onOpenGame, asTab = true, 
                 {PLAYER.name}
               </div>
               <div className="sf text-[12px] mt-0.5 truncate" style={{ color: 'var(--text-tertiary)' }}>
-                {PLAYER.position} · {PLAYER.team} · U14 · USA
+                {PLAYER.position} · {PLAYER.team} · {PLAYER.division}
+              </div>
+              <div className="mt-1.5 inline-flex items-center gap-1.5">
+                <span className="inline-flex items-center justify-center overflow-hidden shrink-0"
+                  style={{ width: 18, height: 18, background: '#fff', borderRadius: 5 }}>
+                  <img src={BRAND_MARKS.spartans} alt=""
+                    style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 1 }} />
+                </span>
+                <span className="sf text-[11.5px] font-medium truncate" style={{ color: 'var(--text-secondary)' }}>{PLAYER.association}</span>
               </div>
               <button className="mt-3 lg-glass squircle-sm px-3.5 py-1.5 sf text-[11.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>
                 Edit profile
@@ -11137,9 +11214,27 @@ const LeagueAccordion = ({ chosen, toggle, setChosen, query = '' }) => {
                             ? 'inset 0 1px 0 var(--glass-card-inset-top), 0 0 24px -6px var(--brand-cyan-glow)'
                             : 'inset 0 1px 0 var(--glass-card-inset-top)',
                         }}>
-                        <div className="w-12 h-12 squircle-sm lg-glass-strong flex items-center justify-center mb-2 shrink-0">
-                          <span className="sf-display text-[13.5px] font-bold text-white">{team.initial}</span>
-                        </div>
+                        {(() => {
+                          const teamRec = teamByName(team.name);
+                          const logoSrc = teamRec && teamRec.src;
+                          const ringColor = teamRec && teamRec.accentA
+                            ? teamRec.accentA.replace(/,[\d.]+\)$/, ',0.55)')
+                            : 'var(--glass-strong-border)';
+                          if (logoSrc) {
+                            return (
+                              <div className="w-12 h-12 squircle-sm flex items-center justify-center mb-2 shrink-0 overflow-hidden"
+                                style={{ background: '#fff', border: `1.5px solid ${ringColor}` }}>
+                                <img src={logoSrc} alt={team.name}
+                                  style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 3 }} />
+                              </div>
+                            );
+                          }
+                          return (
+                            <div className="w-12 h-12 squircle-sm lg-glass-strong flex items-center justify-center mb-2 shrink-0">
+                              <span className="sf-display text-[13.5px] font-bold text-white">{team.initial}</span>
+                            </div>
+                          );
+                        })()}
                         <div className="sf-display text-[13px] font-bold leading-tight tracking-[-0.01em] line-clamp-1 w-full" style={{ color: 'var(--text-primary)' }}>
                           {team.name}
                         </div>
@@ -11301,9 +11396,26 @@ const TeamRosterAccordion = ({ teamIds, chosenPlayers, togglePlayer, setChosenPl
                 borderEndStartRadius: isOpen ? 0 : undefined,
                 borderEndEndRadius: isOpen ? 0 : undefined,
               }}>
-              <div className="w-11 h-11 squircle-sm lg-glass-strong flex items-center justify-center shrink-0">
-                <span className="sf-display text-[13px] font-bold text-white">{team.initial}</span>
-              </div>
+              {(() => {
+                const teamRec = teamByName(team.name);
+                const logoSrc = teamRec && teamRec.src;
+                const ringColor = teamRec && teamRec.accentA
+                  ? teamRec.accentA.replace(/,[\d.]+\)$/, ',0.55)')
+                  : 'var(--glass-strong-border)';
+                if (logoSrc) {
+                  return (
+                    <div className="w-11 h-11 squircle-sm flex items-center justify-center shrink-0 overflow-hidden"
+                      style={{ background: '#fff', border: `1.5px solid ${ringColor}` }}>
+                      <img src={logoSrc} alt={team.name} style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 2 }} />
+                    </div>
+                  );
+                }
+                return (
+                  <div className="w-11 h-11 squircle-sm lg-glass-strong flex items-center justify-center shrink-0">
+                    <span className="sf-display text-[13px] font-bold text-white">{team.initial}</span>
+                  </div>
+                );
+              })()}
               <div className="flex-1 min-w-0">
                 <div className="sf-display text-[14.5px] font-bold leading-tight tracking-[-0.01em] truncate" style={{ color: 'var(--text-primary)' }}>{team.name}</div>
                 <div className="sf text-[11.5px] mt-0.5 truncate" style={{ color: 'var(--text-tertiary)' }}>
@@ -11572,22 +11684,38 @@ const PlayerInviteEntry = ({ teamId, onSignUp, onSignIn, onBack }) => {
     <OnboardStepper step={1} total={4} onBack={onBack} label="Step 1 of 4" />
     <div className="flex-1 onb-scroll px-6 pt-4 pb-[120px] anim-fade flex flex-col">
       <div className="flex-1 flex flex-col items-center justify-center text-center">
-        {/* Team disc — initial-letterform, no photo (players don't have one yet). */}
-        <div className="relative mb-6" style={{ width: 120, height: 120 }}>
-          <div className="absolute inset-0 rounded-full"
-            style={{ background: 'radial-gradient(circle, rgba(0,214,254,0.45) 0%, transparent 65%)', filter: 'blur(16px)' }} />
-          <div className="relative rounded-full lg-glass-card flex items-center justify-center"
-            style={{
-              width: 120, height: 120,
-              border: '2.5px solid var(--brand-cyan)',
-              boxShadow: '0 0 40px -8px rgba(0,214,254,0.55), 0 12px 40px -12px rgba(0,0,0,0.55)',
-              color: 'var(--brand-cyan-text)',
-            }}>
-            <span className="sf-display font-bold" style={{ fontSize: 44, letterSpacing: '-0.02em', lineHeight: 1 }}>
-              {team ? team.initial : 'H'}
-            </span>
-          </div>
-        </div>
+        {/* Team disc — real logo if the OB team maps to a TEAMS_DB
+           entry with src; otherwise initial-letterform fallback. */}
+        {(() => {
+          const teamRec = team ? teamByName(team.name) : null;
+          const logoSrc = teamRec && teamRec.src;
+          const ringColor = teamRec && teamRec.accentA
+            ? teamRec.accentA.replace(/,[\d.]+\)$/, ',0.85)')
+            : 'var(--brand-cyan)';
+          return (
+            <div className="relative mb-6" style={{ width: 120, height: 120 }}>
+              <div className="absolute inset-0 rounded-full"
+                style={{ background: 'radial-gradient(circle, rgba(0,214,254,0.45) 0%, transparent 65%)', filter: 'blur(16px)' }} />
+              <div className="relative rounded-full flex items-center justify-center overflow-hidden"
+                style={{
+                  width: 120, height: 120,
+                  background: logoSrc ? '#fff' : undefined,
+                  border: `2.5px solid ${ringColor}`,
+                  boxShadow: '0 0 40px -8px rgba(0,214,254,0.55), 0 12px 40px -12px rgba(0,0,0,0.55)',
+                  color: 'var(--brand-cyan-text)',
+                }}>
+                {logoSrc ? (
+                  <img src={logoSrc} alt={team.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 12 }} />
+                ) : (
+                  <span className="sf-display font-bold" style={{ fontSize: 44, letterSpacing: '-0.02em', lineHeight: 1 }}>
+                    {team ? team.initial : 'H'}
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })()}
         {/* Eyebrow */}
         <p className="sf text-[11px] tracking-[0.18em] uppercase font-bold mb-2" style={{ color: 'var(--brand-cyan-text)' }}>
           You're invited
