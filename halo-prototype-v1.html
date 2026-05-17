@@ -6136,11 +6136,17 @@ const HorizontalGameCard = ({ game, onOpenGame }) => {
           )}
         </div>
 
-        {/* Editorial score block — THE hero.
-            tabular-nums + clamp() means both phone and 640px desktop see
-            the score as the most prominent thing on the card. */}
+        {/* Editorial scoreboard — single horizontal row, crest on
+            baseline next to score on each side. Same pattern as
+            MorphLiveCard's scoreboard so the two live surfaces (home
+            morph card + Games tab live card) read with one visual
+            language. The previous version stacked a 22+22 mini-crest
+            cluster beside a 'Sesh Rigs vs. Medium Fundamentals'
+            caption in the bottom strip — that text clipped on phone
+            and the crest cluster looked separate from the score. */}
         <div className="relative z-10 flex-1 flex items-center justify-center px-5 lg:px-6 py-2">
-          <div className="flex items-baseline gap-4 lg:gap-6">
+          <div className="flex items-center justify-center gap-3 lg:gap-5">
+            <TeamCrest team={homeTeam} size={56} />
             <span className="sf-display tabular-nums font-bold leading-none"
               style={{
                 fontSize: 'clamp(54px, 14vw, 72px)',
@@ -6164,28 +6170,16 @@ const HorizontalGameCard = ({ game, onOpenGame }) => {
               }}>
               {game.scoreAway}
             </span>
+            <TeamCrest team={awayTeam} size={56} />
           </div>
         </div>
 
-        {/* Bottom row — teams (with crest pair) + Watch live CTA.
-            Two micro-crests reinforce identity without competing with the score.
-            CTA is cyan + a chevron — same affordance pattern as compact rows. */}
-        <div className="relative z-10 flex items-end justify-between gap-4 px-5 lg:px-6 pb-5 lg:pb-6 pt-2">
-          <div className="flex items-center gap-2.5 min-w-0 flex-1">
-            <div className="relative shrink-0" style={{ width: 44, height: 28 }}>
-              <div className="absolute" style={{ insetInlineStart: 0, top: 0 }}>
-                <TeamCrest team={homeTeam} size={22} />
-              </div>
-              <div className="absolute" style={{ insetInlineEnd: 0, bottom: 0 }}>
-                <TeamCrest team={awayTeam} size={22} />
-              </div>
-            </div>
-            <div className="min-w-0">
-              <div className="sf-display text-[14px] lg:text-[15px] font-bold leading-tight tracking-[-0.015em] truncate" style={{ color: 'var(--text-primary)' }}>
-                {homeTeam.name} <span className="font-normal" style={{ color: 'var(--text-tertiary)' }}>vs.</span> {awayTeam.name}
-              </div>
-            </div>
-          </div>
+        {/* Bottom row — Watch live CTA only.
+            The bottom team-name caption was dropped along with the
+            stacked-crest cluster — crests now live on the score
+            baseline above. CTA right-aligned so it doesn't compete
+            visually with the centered scoreboard. */}
+        <div className="relative z-10 flex items-end justify-end gap-4 px-5 lg:px-6 pb-5 lg:pb-6 pt-2">
           <span className="sf text-[12px] font-bold tracking-tight flex items-center gap-1 shrink-0" style={{ color: 'var(--brand-cyan-text)', textShadow: '0 0 8px rgba(0,214,254,0.4)' }}>
             Watch live
             <svg width={11} height={11} viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="icon-flip-rtl">
