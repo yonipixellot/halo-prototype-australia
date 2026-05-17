@@ -8218,10 +8218,12 @@ const ComingAfterTipoff = () => {
 
 const PostGameScreen = ({ gameId, onBack, onPickMoment, setHlOwner, captures = [] }) => {
   /* recapOpen toggles a full-screen overlay that plays the condensed
-     game clip. Wired to the "Game highlight" thumbnail's click.
-     The clip itself ships at clips/condensed_game (1).mp4 — same
-     same-origin static-asset model as the per-player clips. */
-  const [recapOpen, setRecapOpen] = useState(false);
+     game clip. Value is null when closed, otherwise 'recap' or 'full'
+     to track which thumb opened it — controls the eyebrow label on
+     the overlay's top chrome ('RECAP' vs 'FULL GAME'). Both modes
+     play the same clips/condensed_game (1).mp4 for the demo; a real
+     product would split them onto different assets. */
+  const [recapOpen, setRecapOpen] = useState(null);
   const g = SEED_GAMES.find(x => x.id === gameId) || SEED_GAMES.find(x => x.status === 'just-ended');
   const isUpcoming = g.status === 'upcoming';
   const myMoments = SEED_MOMENTS;
@@ -8267,7 +8269,7 @@ const PostGameScreen = ({ gameId, onBack, onPickMoment, setHlOwner, captures = [
         <GameVideoEmbed kind="full" title="Watch the full game"
           sub={`${homeTeam.name} ${g.scoreHome} · ${awayTeam.name} ${g.scoreAway}`}
           duration="1:32:00"
-          onClick={() => setRecapOpen(true)} />
+          onClick={() => setRecapOpen('full')} />
       </PgSection>
 
       {/* Game highlight — big RecapCard.
@@ -8279,7 +8281,7 @@ const PostGameScreen = ({ gameId, onBack, onPickMoment, setHlOwner, captures = [
         <PgSection title="Game highlight">
           <GameVideoEmbed kind="recap" title={recap.title} sub={recap.sub}
             duration={fmt.dur(recap.dur)}
-            onClick={() => setRecapOpen(true)} />
+            onClick={() => setRecapOpen('recap')} />
         </PgSection>
       )}
 
@@ -8350,7 +8352,9 @@ const PostGameScreen = ({ gameId, onBack, onPickMoment, setHlOwner, captures = [
       {recapOpen && (
         <div data-theme="dark" className="fixed inset-0 z-[80] anim-fade flex flex-col"
           style={{ background: '#050810' }}>
-          {/* Top chrome — game title + close X */}
+          {/* Top chrome — game title + close X. Eyebrow label flips
+             between 'Recap' and 'Full game' depending on which thumb
+             opened the overlay (recapOpen carries the mode). */}
           <div className="absolute top-0 inset-x-0 z-30 px-4 pt-11 pb-4 flex items-center justify-between gap-2 pointer-events-none">
             <div className="pointer-events-auto flex items-center gap-2 min-w-0">
               <TeamCrest team={homeTeam} size={22} />
@@ -8359,9 +8363,11 @@ const PostGameScreen = ({ gameId, onBack, onPickMoment, setHlOwner, captures = [
               <TeamCrest team={awayTeam} size={22} />
               <span className="sf-display text-[13px] font-bold tracking-tight text-white truncate">{awayTeam.name}</span>
               <span className="sf text-[10.5px] tracking-[0.16em] uppercase font-semibold ms-2"
-                style={{ color: 'var(--brand-cyan-text)' }}>Recap</span>
+                style={{ color: 'var(--brand-cyan-text)' }}>
+                {recapOpen === 'full' ? 'Full game' : 'Recap'}
+              </span>
             </div>
-            <button onClick={() => setRecapOpen(false)} aria-label="Close"
+            <button onClick={() => setRecapOpen(null)} aria-label="Close"
               className="pointer-events-auto w-9 h-9 lg-glass squircle-sm flex items-center justify-center text-white shrink-0">
               <Icon name="close" size={12} stroke={1.8} />
             </button>
@@ -8370,7 +8376,7 @@ const PostGameScreen = ({ gameId, onBack, onPickMoment, setHlOwner, captures = [
           <video
             src={'clips/' + encodeURIComponent('condensed_game (1).mp4')}
             autoPlay muted playsInline controls
-            onEnded={() => setRecapOpen(false)}
+            onEnded={() => setRecapOpen(null)}
             className="flex-1 w-full h-full"
             style={{ objectFit: 'contain', background: '#000' }} />
         </div>
