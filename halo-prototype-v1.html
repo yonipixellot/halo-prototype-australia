@@ -7223,14 +7223,20 @@ const WatchSearchInput = ({ query, setQuery, onPickGame }) => {
   );
 };
 
-/* LivePlayerScreen — full-screen stub player overlay for live games. */
+/* LivePlayerScreen — full-screen stub player overlay for live games.
+   Swapped HALO_VIDEO_URL (remote pixellot-DS asset that 404s in the
+   deploy) for the local clips/condensed_game (1).mp4 so the live
+   player demo actually plays the same Sesh-vs-MF footage the rest
+   of the prototype uses. Filename has a literal space + (1) — URL-
+   encoded so the <video src> resolves. */
 const LivePlayerScreen = ({ game, onClose }) => {
   if (!game) return null;
   return (
     <div data-theme="dark" className="fixed inset-0 z-[60] anim-fade" style={{ background: '#000' }}>
-      <video src={HALO_VIDEO_URL} autoPlay muted loop playsInline preload="auto"
+      <video src={'clips/' + encodeURIComponent('condensed_game (1).mp4')}
+        autoPlay muted loop playsInline preload="auto"
         className="absolute inset-0 w-full h-full object-cover"
-        style={{ filter: 'brightness(0.55)' }} />
+        style={{ filter: 'brightness(0.65)' }} />
       <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 30%, rgba(220,38,38,0.15), transparent 70%), linear-gradient(180deg, rgba(0,0,0,0.4) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.8) 100%)' }} />
       {/* Top bar */}
       <div className="absolute top-0 inset-x-0 z-10 flex items-center justify-between px-5 lg:px-8 pt-12 lg:pt-6 pb-4">
