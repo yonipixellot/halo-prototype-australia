@@ -1585,10 +1585,10 @@ const STORYTELLING_DROPS = [
 ];
 
 const FOLLOWING = [
-  { id: 'p2', name: 'Sarah Kim',  team: 'Sesh Rigs',     initials: 'SK' },
-  { id: 'p3', name: 'Jay Park',   team: 'Sesh Rigs',     initials: 'JP' },
-  { id: 'p4', name: 'Elena Ruiz', team: 'Hustle HQ',     initials: 'ER' },
-  { id: 'p5', name: 'Marcus Lee', team: 'Hoopin Huskies',initials: 'ML' },
+  { id: 'p2', name: 'Sarah Kim',  team: 'Sesh Rigs',     initials: 'SK', avatar: 'avatars/kim.png' },
+  { id: 'p3', name: 'Jay Park',   team: 'Sesh Rigs',     initials: 'JP', avatar: 'avatars/j-park.png' },
+  { id: 'p4', name: 'Elena Ruiz', team: 'Hustle HQ',     initials: 'ER', avatar: 'avatars/ruiz.png' },
+  { id: 'p5', name: 'Marcus Lee', team: 'Hoopin Huskies',initials: 'ML', avatar: 'avatars/lee.png' },
 ];
 
 /* GamesScreen date scrubber — 5 days centered on "today" (May 11, 2026).
@@ -1775,37 +1775,46 @@ const TeamCrest = ({ team, size = 64 }) => {
 };
 
 /* Rosters — 12 players each, starters first then bench. */
+/* Roster `avatar` field points at prototype/avatars/<slug>.png.
+   Slug convention is just lastname.png when unique; for lastname
+   collisions (two Parks, two Reyeses) use firstinitial-lastname.png
+   to keep filenames unambiguous.
+   Files may not yet exist — IdentityCircle and other avatar renderers
+   draw the fallback (initials / silhouette / jersey number) BEHIND the
+   img and onError hides the broken img, so any missing photos
+   gracefully fall back without breaking layout. Drop a file in to
+   activate it. */
 const HOME_ROSTER = [
   /* Starters */
-  { id: 'r1',  name: 'Tal Weiss',     number: 7,  position: 'SG' },
-  { id: 'r2',  name: 'Sarah Kim',     number: 12, position: 'PG' },
-  { id: 'r3',  name: 'Dylan Torres',  number: 24, position: 'SF' },
-  { id: 'r4',  name: 'Jay Park',      number: 4,  position: 'PF' },
-  { id: 'r5',  name: 'Marcus Lee',    number: 15, position: 'C'  },
+  { id: 'r1',  name: 'Tal Weiss',     number: 7,  position: 'SG', avatar: 'avatars/weiss.png' },
+  { id: 'r2',  name: 'Sarah Kim',     number: 12, position: 'PG', avatar: 'avatars/kim.png' },
+  { id: 'r3',  name: 'Dylan Torres',  number: 24, position: 'SF', avatar: 'avatars/torres.png' },
+  { id: 'r4',  name: 'Jay Park',      number: 4,  position: 'PF', avatar: 'avatars/j-park.png' },
+  { id: 'r5',  name: 'Marcus Lee',    number: 15, position: 'C',  avatar: 'avatars/lee.png' },
   /* Bench */
-  { id: 'r6',  name: 'Eli Cohen',     number: 9,  position: 'SG' },
-  { id: 'r7',  name: 'Owen Brooks',   number: 11, position: 'PG' },
-  { id: 'r8',  name: 'Noah Patel',    number: 3,  position: 'SF' },
-  { id: 'r9',  name: 'Ryder Sun',     number: 21, position: 'PF' },
-  { id: 'r10', name: 'Alex Tan',      number: 8,  position: 'SG' },
-  { id: 'r11', name: 'Marco Reyes',   number: 17, position: 'C'  },
-  { id: 'r12', name: 'Caleb Wong',    number: 2,  position: 'PG' },
+  { id: 'r6',  name: 'Eli Cohen',     number: 9,  position: 'SG', avatar: 'avatars/cohen.png' },
+  { id: 'r7',  name: 'Owen Brooks',   number: 11, position: 'PG', avatar: 'avatars/brooks.png' },
+  { id: 'r8',  name: 'Noah Patel',    number: 3,  position: 'SF', avatar: 'avatars/patel.png' },
+  { id: 'r9',  name: 'Ryder Sun',     number: 21, position: 'PF', avatar: 'avatars/sun.png' },
+  { id: 'r10', name: 'Alex Tan',      number: 8,  position: 'SG', avatar: 'avatars/tan.png' },
+  { id: 'r11', name: 'Marco Reyes',   number: 17, position: 'C',  avatar: 'avatars/marco-reyes.png' },
+  { id: 'r12', name: 'Caleb Wong',    number: 2,  position: 'PG', avatar: 'avatars/wong.png' },
 ];
 const AWAY_ROSTER = [
   /* Starters */
-  { id: 'a1',  name: 'C. Bell',       number: 7,  position: 'PG' },
-  { id: 'a2',  name: 'M. Reyes',      number: 15, position: 'SG' },
-  { id: 'a3',  name: 'D. Park',       number: 33, position: 'PF' },
-  { id: 'a4',  name: 'J. Howard',     number: 5,  position: 'SF' },
-  { id: 'a5',  name: 'A. Singh',      number: 14, position: 'C'  },
+  { id: 'a1',  name: 'C. Bell',       number: 7,  position: 'PG', avatar: 'avatars/bell.png' },
+  { id: 'a2',  name: 'M. Reyes',      number: 15, position: 'SG', avatar: 'avatars/m-reyes.png' },
+  { id: 'a3',  name: 'D. Park',       number: 33, position: 'PF', avatar: 'avatars/d-park.png' },
+  { id: 'a4',  name: 'J. Howard',     number: 5,  position: 'SF', avatar: 'avatars/howard.png' },
+  { id: 'a5',  name: 'A. Singh',      number: 14, position: 'C',  avatar: 'avatars/singh.png' },
   /* Bench */
-  { id: 'a6',  name: 'T. Olsen',      number: 22, position: 'SG' },
-  { id: 'a7',  name: 'R. Vance',      number: 11, position: 'PG' },
-  { id: 'a8',  name: 'K. Mendez',     number: 6,  position: 'SF' },
-  { id: 'a9',  name: 'B. Foster',     number: 18, position: 'PF' },
-  { id: 'a10', name: 'L. Diaz',       number: 4,  position: 'SG' },
-  { id: 'a11', name: 'S. Ito',        number: 13, position: 'C'  },
-  { id: 'a12', name: 'P. Khoury',     number: 25, position: 'PG' },
+  { id: 'a6',  name: 'T. Olsen',      number: 22, position: 'SG', avatar: 'avatars/olsen.png' },
+  { id: 'a7',  name: 'R. Vance',      number: 11, position: 'PG', avatar: 'avatars/vance.png' },
+  { id: 'a8',  name: 'K. Mendez',     number: 6,  position: 'SF', avatar: 'avatars/mendez.png' },
+  { id: 'a9',  name: 'B. Foster',     number: 18, position: 'PF', avatar: 'avatars/foster.png' },
+  { id: 'a10', name: 'L. Diaz',       number: 4,  position: 'SG', avatar: 'avatars/diaz.png' },
+  { id: 'a11', name: 'S. Ito',        number: 13, position: 'C',  avatar: 'avatars/ito.png' },
+  { id: 'a12', name: 'P. Khoury',     number: 25, position: 'PG', avatar: 'avatars/khoury.png' },
 ];
 
 /* Per-player game stats — keyed by roster id. Bench plays fewer minutes. */
@@ -2261,7 +2270,26 @@ const IdentityCircle = ({ kind = 'team', avatar, team, label, isClaimed, isNew, 
   if (!avatar) {
     avatarBody = <div className="absolute inset-0 lg-avatar-skeleton" aria-hidden="true" />;
   } else if (avatar.src) {
-    avatarBody = <img src={avatar.src} alt="" className="absolute inset-0 w-full h-full object-cover" />;
+    /* Render the fallback (silhouette / initials / jersey) BEHIND the
+       img so if the file is missing (avatars/ folder not yet
+       populated), onError hides the broken-img and the fallback
+       remains visible. Once the user drops the real headshot into
+       prototype/avatars/, it covers the fallback. */
+    const fallback = isClaimedPlayer
+      ? <SilhouetteAvatar />
+      : avatar.jersey != null
+        ? <span className="sf-display font-bold tabular-nums text-[17px] leading-none tracking-[-0.02em]">#{avatar.jersey}</span>
+        : avatar.initial
+          ? <span className={`sf-display font-bold ${avatar.initial.length > 1 ? 'text-[15px]' : 'text-[18px]'} leading-none`}>{avatar.initial}</span>
+          : null;
+    avatarBody = (
+      <>
+        <div className="absolute inset-0 flex items-center justify-center">{fallback}</div>
+        <img src={avatar.src} alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+          onError={(e) => { e.target.style.display = 'none'; }} />
+      </>
+    );
   } else if (teamLogoSrc) {
     avatarBody = (
       <>
@@ -4759,7 +4787,7 @@ const HighlightCircles = ({ viewed, onWatch, setHlOwner, onPickMoment, onOpenGam
             ignores isViewed for kind='self' — the ring stays cyan,
             "new" dot stays visible. Your own content shouldn't
             visually read as "watched and done." */}
-        <IdentityCircle kind="self" avatar={{ initial: 'T' }} label="You" isNew
+        <IdentityCircle kind="self" avatar={{ initial: 'T', src: 'avatars/weiss.png' }} label="You" isNew
           onClick={openHLFor('self')} />
         {/* Live team — opens GameVideoViewer of the live game. Always
             red, never gray — live is live. Outside the HL chain. */}
@@ -4776,10 +4804,16 @@ const HighlightCircles = ({ viewed, onWatch, setHlOwner, onPickMoment, onOpenGam
             player's most recent moment. openHLFor wires up the chain
             owner so finishing this player's reel auto-advances to the
             next unwatched circle. */}
-        <IdentityCircle kind="player" avatar={{ initial: 'S' }} team={{ initial: 'SR' }} label="S. Kim" isClaimed isNew
+        {/* Home circles — each player carries an avatar.src pointing
+            at prototype/avatars/<name>.jpg. The IdentityCircle's
+            avatar-resolution chain shows the silhouette/initial
+            fallback when the file is missing (onError hides the
+            broken img), so the circle never renders broken — drop
+            the photo in to activate. */}
+        <IdentityCircle kind="player" avatar={{ initial: 'S', src: 'avatars/kim.png' }} team={{ initial: 'SR' }} label="S. Kim" isClaimed isNew
           isViewed={viewed.has('player-sarah')}
           onClick={openHLFor('player-sarah')} />
-        <IdentityCircle kind="player" avatar={{ initial: 'D' }} team={{ initial: 'SR' }} label="D. Torres" isClaimed
+        <IdentityCircle kind="player" avatar={{ initial: 'D', src: 'avatars/torres.png' }} team={{ initial: 'SR' }} label="D. Torres" isClaimed
           isViewed={viewed.has('player-dylan')}
           onClick={openHLFor('player-dylan')} />
         {/* Opponent-team players (Medium Fundamentals) — replaced the
@@ -4787,10 +4821,10 @@ const HighlightCircles = ({ viewed, onWatch, setHlOwner, onPickMoment, onOpenGam
             from the BA video library. Each carries a real per-player
             clip set so the auto-chain plays actual footage instead
             of dummy SEED_MOMENTS for these slots. */}
-        <IdentityCircle kind="player" avatar={{ jersey: 7 }} team={{ initial: 'MF' }} label="C. Bell" isClaimed={false}
+        <IdentityCircle kind="player" avatar={{ jersey: 7, src: 'avatars/bell.png' }} team={{ initial: 'MF' }} label="C. Bell" isClaimed={false}
           isViewed={viewed.has('player-bell')}
           onClick={openHLFor('player-bell')} />
-        <IdentityCircle kind="player" avatar={{ jersey: 15 }} team={{ initial: 'MF' }} label="M. Reyes" isClaimed={false}
+        <IdentityCircle kind="player" avatar={{ jersey: 15, src: 'avatars/m-reyes.png' }} team={{ initial: 'MF' }} label="M. Reyes" isClaimed={false}
           isViewed={viewed.has('player-reyes')}
           onClick={openHLFor('player-reyes')} />
       </div>
