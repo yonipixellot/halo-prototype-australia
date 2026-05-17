@@ -1311,6 +1311,11 @@ const _poster = (file) => 'clips/posters/' + file.replace(/\.mp4$/, '.jpg');
    "Full game" + "Game highlight" cards and the Home "Team moments"
    Full Game Recap tiles. */
 const RECAP_POSTER = 'clips/posters/condensed_game.jpg';
+/* FULLGAME_POSTER — second frame from condensed_game.mp4 captured at
+   t=7s, used on the Full game card so it doesn't look identical to the
+   Game highlight (Recap) thumb. Both cards still play the same asset
+   for the demo — the visual distinction is purely the poster frame. */
+const FULLGAME_POSTER = 'clips/posters/condensed_game_full.jpg';
 
 /* SEED_MOMENTS — the abstract "your highlights" feed used by Home
    DropsSection, PostGame "Your highlights" rail, Profile drops, etc.
@@ -8082,11 +8087,28 @@ const YourGameStats = ({ playerNumber = 7 }) => {
   );
 };
 
-/* Team stats — 8-row H2H comparison. v3.2 line 11680. */
+/* Team stats — 8-row H2H comparison. v3.2 line 11680.
+   Bar fill + glow now pull from each team's TEAMS_DB accentA so a
+   Sesh Rigs vs Medium Fundamentals match reads bone (home) / red
+   (away), not the old hardcoded cyan / purple that was a stale
+   pre-BA assumption. Same parse-rgba pattern OtherPlayersSection
+   uses — extract the r/g/b channels, re-emit the bar at full
+   saturation (0.92) and the glow at low alpha (0.35) so it never
+   bleeds outside its row. */
 const TeamStatsSection = ({ game }) => {
   const rows = teamStatsFor(game);
   const homeTeam = teamByName(game.home);
   const awayTeam = teamByName(game.away);
+  const _accentBar = (team) => {
+    const m = (team.accentA || 'rgba(0,214,254,1)').match(/(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+    const r = m ? +m[1] : 0, g = m ? +m[2] : 214, b = m ? +m[3] : 254;
+    return {
+      fill: `rgba(${r},${g},${b},0.92)`,
+      glow: `0 0 8px rgba(${r},${g},${b},0.35)`,
+    };
+  };
+  const homeBar = _accentBar(homeTeam);
+  const awayBar = _accentBar(awayTeam);
   return (
     <PgSection title="Team stats">
       <div className="lg-glass-card squircle-md p-4">
@@ -8108,14 +8130,14 @@ const TeamStatsSection = ({ game }) => {
               <div className="min-w-0">
                 <div className="sf text-[12px] font-semibold tabular-nums leading-none mb-1.5 text-end" style={{ color: 'var(--text-primary)' }}>{r.home}</div>
                 <div className="h-1.5 rounded-full overflow-hidden flex justify-end" style={{ background: 'var(--hatch-grain)' }}>
-                  <div className="h-full rounded-full" style={{ width: `${Math.max(6, Math.min(100, (r.hv / r.max) * 100))}%`, background: 'var(--brand-cyan)', boxShadow: '0 0 8px var(--brand-cyan-glow)' }} />
+                  <div className="h-full rounded-full" style={{ width: `${Math.max(6, Math.min(100, (r.hv / r.max) * 100))}%`, background: homeBar.fill, boxShadow: homeBar.glow }} />
                 </div>
               </div>
               <div className="sf text-[11px] font-semibold text-center px-2 whitespace-nowrap" style={{ color: 'var(--text-tertiary)' }}>{r.label}</div>
               <div className="min-w-0">
                 <div className="sf text-[12px] font-semibold tabular-nums leading-none mb-1.5" style={{ color: 'var(--text-tertiary)' }}>{r.away}</div>
                 <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--hatch-grain)' }}>
-                  <div className="h-full rounded-full" style={{ width: `${Math.max(6, Math.min(100, (r.av / r.max) * 100))}%`, background: 'rgba(132,88,255,0.7)' }} />
+                  <div className="h-full rounded-full" style={{ width: `${Math.max(6, Math.min(100, (r.av / r.max) * 100))}%`, background: awayBar.fill, boxShadow: awayBar.glow }} />
                 </div>
               </div>
             </div>
@@ -8459,7 +8481,7 @@ const PostGameScreen = ({ gameId, onBack, onPickMoment, setHlOwner, captures = [
         <GameVideoEmbed kind="full" title="Watch the full game"
           sub={`${homeTeam.name} ${g.scoreHome} · ${awayTeam.name} ${g.scoreAway}`}
           duration="1:32:00"
-          poster={RECAP_POSTER}
+          poster={FULLGAME_POSTER}
           onClick={() => setRecapOpen('full')} />
       </PgSection>
 
