@@ -1289,13 +1289,42 @@ const SEED_GAMES = [
   { id: 'gP2', home: 'Sesh Rigs', away: 'Nothing But All Stars', status: 'final',  scoreHome: 55, scoreAway: 48, when: 'Last week' },
 ];
 
+/* Local clip path builder. After dropping Drive iframes (which couldn't
+   autoplay or expose end events), the 28 MP4s ship inside the repo
+   under prototype/clips/{white,red}/<jersey>{w,r}/<filename>. Spaces
+   in folder names are URL-encoded so the <video src> attribute resolves
+   without a 404 on browsers that don't auto-encode. */
+const _clip = (kit, num, file) => 'clips/' + kit + '/' + num + '%20' + kit + '/' + file;
+
+/* _poster(file) — given a clip's source MP4 filename, returns the
+   path to its pre-generated still-frame JPG under clips/posters/.
+   Posters are produced one-off via ffmpeg at 40% into each clip.
+   Same filename stem as the MP4, just under posters/ with a .jpg
+   extension. Used by every thumbnail surface in the prototype so the
+   demo populates with real game frames instead of gradient placeholders.
+   Defined BEFORE SEED_MOMENTS / PLAYER_CLIPS / TEAM_MOMENTS so they can
+   reference it during module init (was previously below SEED_MOMENTS,
+   which threw a temporal-dead-zone ReferenceError and produced a
+   black screen on first paint). */
+const _poster = (file) => 'clips/posters/' + file.replace(/\.mp4$/, '.jpg');
+/* Convenience: the condensed-game recap poster — used by the PostGame
+   "Full game" + "Game highlight" cards and the Home "Team moments"
+   Full Game Recap tiles. */
+const RECAP_POSTER = 'clips/posters/condensed_game.jpg';
+
+/* SEED_MOMENTS — the abstract "your highlights" feed used by Home
+   DropsSection, PostGame "Your highlights" rail, Profile drops, etc.
+   Each moment now carries a `poster` ref so the thumbnails render
+   real game frames instead of placeholder gradients. Mapped 1:1 to
+   Tal Weiss's 7 clip posters (these moments are framed from his
+   POV — "your" highlights). */
 const SEED_MOMENTS = [
-  { id: 'm1', gameId: 'gE', title: 'Game-winning 3',    sub: 'Q4 · 0:08', dur: 9,  tag: 'top',    rx: 24 },
-  { id: 'm2', gameId: 'gE', title: 'Steal + break',     sub: 'Q3 · 8:42', dur: 11, tag: 'hot',    rx: 18 },
-  { id: 'm3', gameId: 'gE', title: 'Block on Lakewood', sub: 'Q2 · 4:11', dur: 8,  tag: 'coach',  rx: 14 },
-  { id: 'm4', gameId: 'gE', title: 'Half-court 3',      sub: 'Q3 · 1:22', dur: 12, tag: 'streak', rx: 22 },
-  { id: 'm5', gameId: 'gE', title: 'Crossover floater', sub: 'Q4 · 6:04', dur: 10, tag: null,    rx: 9  },
-  { id: 'm6', gameId: 'gE', title: 'No-look pass',      sub: 'Q1 · 7:33', dur: 14, tag: 'hot',    rx: 16 },
+  { id: 'm1', gameId: 'gE', title: 'Game-winning 3',    sub: 'Q4 · 0:08', dur: 9,  tag: 'top',    rx: 24, poster: _poster('full_7_blue_7.mp4') },
+  { id: 'm2', gameId: 'gE', title: 'Steal + break',     sub: 'Q3 · 8:42', dur: 11, tag: 'hot',    rx: 18, poster: _poster('full_7_blue_5.mp4') },
+  { id: 'm3', gameId: 'gE', title: 'Block on Lakewood', sub: 'Q2 · 4:11', dur: 8,  tag: 'coach',  rx: 14, poster: _poster('full_7_blue_4.mp4') },
+  { id: 'm4', gameId: 'gE', title: 'Half-court 3',      sub: 'Q3 · 1:22', dur: 12, tag: 'streak', rx: 22, poster: _poster('full_7_blue_6.mp4') },
+  { id: 'm5', gameId: 'gE', title: 'Crossover floater', sub: 'Q4 · 6:04', dur: 10, tag: null,     rx: 9,  poster: _poster('full_7_blue_3.mp4') },
+  { id: 'm6', gameId: 'gE', title: 'No-look pass',      sub: 'Q1 · 7:33', dur: 14, tag: 'hot',    rx: 16, poster: _poster('full_7_blue_1.mp4') },
 ];
 
 /* PLAYER_CLIPS — real footage from the Sesh Rigs vs Medium Fundamentals
@@ -1306,61 +1335,49 @@ const SEED_MOMENTS = [
    The legacy SEED_MOMENTS above is kept for the storydrop's mock
    moment data + the existing PostGameScreen rails that aren't yet
    wired to per-player. */
-/* Local clip path builder. After dropping Drive iframes (which couldn't
-   autoplay or expose end events), the 28 MP4s now ship inside the
-   repo under prototype/clips/{white,red}/<jersey>{w,r}/<filename>.
-   Spaces in folder names are URL-encoded so the <video src> attribute
-   resolves without a 404 on browsers that don't auto-encode.
-
-   Args:
-     kit  — 'white' (Sesh Rigs) | 'red' (Medium Fundamentals)
-     num  — jersey number string ('7', '12', '24', '7', '15')
-     file — filename inside the folder ('full_7_blue_1.mp4', etc.)
-*/
-const _clip = (kit, num, file) => 'clips/' + kit + '/' + num + '%20' + kit + '/' + file;
 const PLAYER_CLIPS = {
   /* r1 — Tal Weiss · #7 · Sesh Rigs (7 clips, kit=white) */
   r1: [
-    { id: 'tw1', src: _clip('white', '7',  'full_7_blue_1.mp4'),  title: 'Drive 1',      sub: 'Q1 · 8:24' },
-    { id: 'tw2', src: _clip('white', '7',  'full_7_blue_2.mp4'),  title: 'Drive 2',      sub: 'Q1 · 5:11' },
-    { id: 'tw3', src: _clip('white', '7',  'full_7_blue_3.mp4'),  title: 'Drive 3',      sub: 'Q2 · 9:42' },
-    { id: 'tw4', src: _clip('white', '7',  'full_7_blue_4.mp4'),  title: 'Drive 4',      sub: 'Q2 · 4:18' },
-    { id: 'tw5', src: _clip('white', '7',  'full_7_blue_5.mp4'),  title: 'Drive 5',      sub: 'Q3 · 7:33' },
-    { id: 'tw6', src: _clip('white', '7',  'full_7_blue_6.mp4'),  title: 'Drive 6',      sub: 'Q3 · 2:55' },
-    { id: 'tw7', src: _clip('white', '7',  'full_7_blue_7.mp4'),  title: 'Game-winning', sub: 'Q4 · 0:08' },
+    { id: 'tw1', src: _clip('white', '7',  'full_7_blue_1.mp4'),  poster: _poster('full_7_blue_1.mp4'),  title: 'Drive 1',      sub: 'Q1 · 8:24' },
+    { id: 'tw2', src: _clip('white', '7',  'full_7_blue_2.mp4'),  poster: _poster('full_7_blue_2.mp4'),  title: 'Drive 2',      sub: 'Q1 · 5:11' },
+    { id: 'tw3', src: _clip('white', '7',  'full_7_blue_3.mp4'),  poster: _poster('full_7_blue_3.mp4'),  title: 'Drive 3',      sub: 'Q2 · 9:42' },
+    { id: 'tw4', src: _clip('white', '7',  'full_7_blue_4.mp4'),  poster: _poster('full_7_blue_4.mp4'),  title: 'Drive 4',      sub: 'Q2 · 4:18' },
+    { id: 'tw5', src: _clip('white', '7',  'full_7_blue_5.mp4'),  poster: _poster('full_7_blue_5.mp4'),  title: 'Drive 5',      sub: 'Q3 · 7:33' },
+    { id: 'tw6', src: _clip('white', '7',  'full_7_blue_6.mp4'),  poster: _poster('full_7_blue_6.mp4'),  title: 'Drive 6',      sub: 'Q3 · 2:55' },
+    { id: 'tw7', src: _clip('white', '7',  'full_7_blue_7.mp4'),  poster: _poster('full_7_blue_7.mp4'),  title: 'Game-winning', sub: 'Q4 · 0:08' },
   ],
   /* r2 — Sarah Kim · #12 · Sesh Rigs (5 clips, kit=white) */
   r2: [
-    { id: 'sk1', src: _clip('white', '12', 'full_12_blue_1.mp4'), title: 'Drive 1',      sub: 'Q1 · 9:50' },
-    { id: 'sk2', src: _clip('white', '12', 'full_12_blue_2.mp4'), title: 'Drive 2',      sub: 'Q1 · 3:24' },
-    { id: 'sk3', src: _clip('white', '12', 'full_12_blue_3.mp4'), title: 'Drive 3',      sub: 'Q2 · 7:11' },
-    { id: 'sk4', src: _clip('white', '12', 'full_12_blue_4.mp4'), title: 'Drive 4',      sub: 'Q3 · 5:42' },
-    { id: 'sk5', src: _clip('white', '12', 'full_12_blue_5.mp4'), title: 'Drive 5',      sub: 'Q4 · 4:18' },
+    { id: 'sk1', src: _clip('white', '12', 'full_12_blue_1.mp4'), poster: _poster('full_12_blue_1.mp4'), title: 'Drive 1',      sub: 'Q1 · 9:50' },
+    { id: 'sk2', src: _clip('white', '12', 'full_12_blue_2.mp4'), poster: _poster('full_12_blue_2.mp4'), title: 'Drive 2',      sub: 'Q1 · 3:24' },
+    { id: 'sk3', src: _clip('white', '12', 'full_12_blue_3.mp4'), poster: _poster('full_12_blue_3.mp4'), title: 'Drive 3',      sub: 'Q2 · 7:11' },
+    { id: 'sk4', src: _clip('white', '12', 'full_12_blue_4.mp4'), poster: _poster('full_12_blue_4.mp4'), title: 'Drive 4',      sub: 'Q3 · 5:42' },
+    { id: 'sk5', src: _clip('white', '12', 'full_12_blue_5.mp4'), poster: _poster('full_12_blue_5.mp4'), title: 'Drive 5',      sub: 'Q4 · 4:18' },
   ],
   /* r3 — Dylan Torres · #24 · Sesh Rigs (8 clips, kit=white) */
   r3: [
-    { id: 'dt1', src: _clip('white', '24', 'full_24_white_1.mp4'), title: 'Drive 1', sub: 'Q1 · 9:14' },
-    { id: 'dt2', src: _clip('white', '24', 'full_24_white_2.mp4'), title: 'Drive 2', sub: 'Q1 · 6:02' },
-    { id: 'dt3', src: _clip('white', '24', 'full_24_white_3.mp4'), title: 'Drive 3', sub: 'Q1 · 2:48' },
-    { id: 'dt4', src: _clip('white', '24', 'full_24_white_4.mp4'), title: 'Drive 4', sub: 'Q2 · 8:33' },
-    { id: 'dt5', src: _clip('white', '24', 'full_24_white_5.mp4'), title: 'Drive 5', sub: 'Q2 · 3:11' },
-    { id: 'dt6', src: _clip('white', '24', 'full_24_white_6.mp4'), title: 'Drive 6', sub: 'Q3 · 7:42' },
-    { id: 'dt7', src: _clip('white', '24', 'full_24_white_7.mp4'), title: 'Drive 7', sub: 'Q3 · 1:55' },
-    { id: 'dt8', src: _clip('white', '24', 'full_24_white_8.mp4'), title: 'Drive 8', sub: 'Q4 · 5:21' },
+    { id: 'dt1', src: _clip('white', '24', 'full_24_white_1.mp4'), poster: _poster('full_24_white_1.mp4'), title: 'Drive 1', sub: 'Q1 · 9:14' },
+    { id: 'dt2', src: _clip('white', '24', 'full_24_white_2.mp4'), poster: _poster('full_24_white_2.mp4'), title: 'Drive 2', sub: 'Q1 · 6:02' },
+    { id: 'dt3', src: _clip('white', '24', 'full_24_white_3.mp4'), poster: _poster('full_24_white_3.mp4'), title: 'Drive 3', sub: 'Q1 · 2:48' },
+    { id: 'dt4', src: _clip('white', '24', 'full_24_white_4.mp4'), poster: _poster('full_24_white_4.mp4'), title: 'Drive 4', sub: 'Q2 · 8:33' },
+    { id: 'dt5', src: _clip('white', '24', 'full_24_white_5.mp4'), poster: _poster('full_24_white_5.mp4'), title: 'Drive 5', sub: 'Q2 · 3:11' },
+    { id: 'dt6', src: _clip('white', '24', 'full_24_white_6.mp4'), poster: _poster('full_24_white_6.mp4'), title: 'Drive 6', sub: 'Q3 · 7:42' },
+    { id: 'dt7', src: _clip('white', '24', 'full_24_white_7.mp4'), poster: _poster('full_24_white_7.mp4'), title: 'Drive 7', sub: 'Q3 · 1:55' },
+    { id: 'dt8', src: _clip('white', '24', 'full_24_white_8.mp4'), poster: _poster('full_24_white_8.mp4'), title: 'Drive 8', sub: 'Q4 · 5:21' },
   ],
   /* a1 — C. Bell · #7 · Medium Fundamentals (5 clips, kit=red) */
   a1: [
-    { id: 'cb0', src: _clip('red', '7',  'full_7_red_0.mp4'), title: 'Drive 1', sub: 'Q1 · 9:33' },
-    { id: 'cb1', src: _clip('red', '7',  'full_7_red_1.mp4'), title: 'Drive 2', sub: 'Q1 · 4:11' },
-    { id: 'cb2', src: _clip('red', '7',  'full_7_red_2.mp4'), title: 'Drive 3', sub: 'Q2 · 7:22' },
-    { id: 'cb3', src: _clip('red', '7',  'full_7_red_3.mp4'), title: 'Drive 4', sub: 'Q3 · 5:14' },
-    { id: 'cb4', src: _clip('red', '7',  'full_7_red_4.mp4'), title: 'Drive 5', sub: 'Q4 · 3:48' },
+    { id: 'cb0', src: _clip('red', '7',  'full_7_red_0.mp4'), poster: _poster('full_7_red_0.mp4'), title: 'Drive 1', sub: 'Q1 · 9:33' },
+    { id: 'cb1', src: _clip('red', '7',  'full_7_red_1.mp4'), poster: _poster('full_7_red_1.mp4'), title: 'Drive 2', sub: 'Q1 · 4:11' },
+    { id: 'cb2', src: _clip('red', '7',  'full_7_red_2.mp4'), poster: _poster('full_7_red_2.mp4'), title: 'Drive 3', sub: 'Q2 · 7:22' },
+    { id: 'cb3', src: _clip('red', '7',  'full_7_red_3.mp4'), poster: _poster('full_7_red_3.mp4'), title: 'Drive 4', sub: 'Q3 · 5:14' },
+    { id: 'cb4', src: _clip('red', '7',  'full_7_red_4.mp4'), poster: _poster('full_7_red_4.mp4'), title: 'Drive 5', sub: 'Q4 · 3:48' },
   ],
   /* a2 — M. Reyes · #15 · Medium Fundamentals (3 clips, kit=red) */
   a2: [
-    { id: 'mr0', src: _clip('red', '15', 'full_15_red_00.mp4'), title: 'Drive 1', sub: 'Q2 · 8:11' },
-    { id: 'mr1', src: _clip('red', '15', 'full_15_red_01.mp4'), title: 'Drive 2', sub: 'Q3 · 6:42' },
-    { id: 'mr3', src: _clip('red', '15', 'full_15_red_03.mp4'), title: 'Drive 3', sub: 'Q4 · 4:21' },
+    { id: 'mr0', src: _clip('red', '15', 'full_15_red_00.mp4'), poster: _poster('full_15_red_00.mp4'), title: 'Drive 1', sub: 'Q2 · 8:11' },
+    { id: 'mr1', src: _clip('red', '15', 'full_15_red_01.mp4'), poster: _poster('full_15_red_01.mp4'), title: 'Drive 2', sub: 'Q3 · 6:42' },
+    { id: 'mr3', src: _clip('red', '15', 'full_15_red_03.mp4'), poster: _poster('full_15_red_03.mp4'), title: 'Drive 3', sub: 'Q4 · 4:21' },
   ],
 };
 /* HL_OWNER_TO_ROSTER — bridge from the IdentityCircle owner ID
@@ -1738,11 +1755,16 @@ const teamStatsFor = (game) => {
   ];
 };
 
+/* TEAM_MOMENTS — broadcast-cut tiles for the Home "Team moments" rail.
+   Each entry now carries a poster ref so the rail thumbnails render
+   real game frames. The full-recap entries point at the condensed
+   game poster; top-plays / comeback use Tal's most cinematic clip
+   posters as stand-ins for the demo. */
 const TEAM_MOMENTS = [
-  { id: 'tm1', kind: 'full-recap', title: 'Full Game Recap',  sub: 'Sesh Rigs 64 · Medium Fundamentals 58', dur: 185, when: 'just now' },
-  { id: 'tm2', kind: 'top-plays',  title: 'Top 10 Plays',     sub: 'vs Hustle HQ · OT thriller',  dur: 127, when: '2d ago' },
-  { id: 'tm3', kind: 'comeback',   title: 'Q4 Comeback',      sub: '14-2 run to force OT',      dur: 94,  when: '3d ago' },
-  { id: 'tm4', kind: 'full-recap', title: 'Full Game Recap',  sub: 'Sesh Rigs 71 · Hustle HQ 63', dur: 195, when: '5d ago' },
+  { id: 'tm1', kind: 'full-recap', title: 'Full Game Recap',  sub: 'Sesh Rigs 64 · Medium Fundamentals 58', dur: 185, when: 'just now', poster: RECAP_POSTER },
+  { id: 'tm2', kind: 'top-plays',  title: 'Top 10 Plays',     sub: 'vs Hustle HQ · OT thriller',  dur: 127, when: '2d ago', poster: _poster('full_7_blue_7.mp4') },
+  { id: 'tm3', kind: 'comeback',   title: 'Q4 Comeback',      sub: '14-2 run to force OT',      dur: 94,  when: '3d ago', poster: _poster('full_7_blue_4.mp4') },
+  { id: 'tm4', kind: 'full-recap', title: 'Full Game Recap',  sub: 'Sesh Rigs 71 · Hustle HQ 63', dur: 195, when: '5d ago', poster: RECAP_POSTER },
 ];
 
 const fmt = {
@@ -2226,24 +2248,25 @@ const _injectAvatarSkeletonCSS = (() => {
 
 /* Editorial-copy generator — mirror of DS useDropEditorialCopy().
    Produces "{verb} vs {opp}" titles + body text per moment tag. */
+/* Editorial copy for drop thumbnails. Each "your highlights" moment
+   maps to a specific Tal Weiss clip (SEED_MOMENTS lives in his POV),
+   so the body line names him + the actual play context — no more
+   tag-template filler like "Closer vs Medium" that reads identical
+   on every card. Falls back to a generic player-attributed line if a
+   new moment is added without an entry here. */
 const dropEditorialCopy = (moment, gameId) => {
-  const game = SEED_GAMES.find(g => g.id === gameId);
-  const opp = game ? game.away.split(' ')[0] : 'Medium';
-  const TAG_BODY = {
-    top:    `Game-changer in the closing moments. The kind of clip your coach will rewatch tomorrow.`,
-    hot:    `Catch-fire-and-don't-stop energy. You strung this together when the team needed it.`,
-    coach:  `Defense gets the headline this time. Coach picked this one out himself.`,
-    streak: `Three in a row. The whole bench was on its feet by the end.`,
-  };
-  const TAG_TITLE = {
-    top:    `Closer vs ${opp}`,
-    hot:    `Run vs ${opp}`,
-    coach:  `Coach pick vs ${opp}`,
-    streak: `Streak vs ${opp}`,
+  const playerFirst = 'Tal';
+  const BODY_BY_ID = {
+    m1: `${playerFirst} · ${moment.sub} — corner three to seal it.`,
+    m2: `${playerFirst} · ${moment.sub} — pickoff steal, two on the break.`,
+    m3: `${playerFirst} · ${moment.sub} — Coach Levi's pick of the night.`,
+    m4: `${playerFirst} · ${moment.sub} — third triple in a row.`,
+    m5: `${playerFirst} · ${moment.sub} — defender lost his footing.`,
+    m6: `${playerFirst} · ${moment.sub} — alley to Sarah Kim.`,
   };
   return {
-    title: moment.tag ? TAG_TITLE[moment.tag] : `vs ${opp}`,
-    body:  moment.tag ? TAG_BODY[moment.tag]  : moment.title,
+    title: moment.title || 'Highlight',
+    body:  BODY_BY_ID[moment.id] || `${playerFirst} · ${moment.sub}`,
   };
 };
 
@@ -2272,11 +2295,31 @@ const EditorialDropThumb = ({ moment, onClick, sizeOverride, fluid = false }) =>
         WebkitBackdropFilter: 'blur(36px) saturate(180%)',
         boxShadow: 'inset 0 1px 0 var(--glass-card-inset-top), var(--glass-card-shadow)',
       }}>
-      {/* Cinematic radial bleed */}
-      <div className="absolute inset-0" style={{
-        background: 'radial-gradient(ellipse 80% 60% at 30% 25%, rgba(0,214,254,0.25) 0%, transparent 60%), radial-gradient(ellipse 80% 60% at 75% 75%, rgba(132,88,255,0.20) 0%, transparent 60%)'
-      }} />
-      <div className="absolute inset-0 hatch opacity-40" />
+      {/* Poster — real frame from the underlying clip. Player clip
+         posters are now 540×962 portrait (matches the 9:16 thumb shape
+         natively — earlier MP4s were stored as 1920×1080 with SAR
+         101:320 so they actually DISPLAY as portrait, and the
+         regenerated posters apply the SAR). object-fit:cover fills
+         the thumb edge-to-edge with no crop loss. */}
+      {moment.poster ? (
+        <>
+          <img src={moment.poster} alt=""
+            className="absolute inset-0 w-full h-full"
+            style={{ objectFit: 'cover', objectPosition: 'center' }} />
+        </>
+      ) : (
+        <>
+          <div className="absolute inset-0" style={{
+            background: 'radial-gradient(ellipse 80% 60% at 30% 25%, rgba(0,214,254,0.25) 0%, transparent 60%), radial-gradient(ellipse 80% 60% at 75% 75%, rgba(132,88,255,0.20) 0%, transparent 60%)'
+          }} />
+          <div className="absolute inset-0 hatch opacity-40" />
+        </>
+      )}
+      {/* Slight darken at the bottom of the thumb so the title chrome
+         stays readable. */}
+      {moment.poster && (
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.0) 55%, rgba(0,0,0,0.55) 100%)' }} />
+      )}
       {/* Duration chip top-start */}
       {durationStr && (
         <div className="absolute top-2.5 start-2.5 lg-glass-strong squircle-sm px-2 py-0.5 z-10">
@@ -5632,13 +5675,25 @@ const TeamMomentsRail = ({ onOpenGameVideo }) => (
           <button key={t.id} onClick={() => onOpenGameVideo('gE')} className="relative shrink-0 overflow-hidden text-start squircle-md lg-aura lg-shine"
             style={{
               width: 280, height: 158,
-              background: `radial-gradient(ellipse 75% 65% at 25% 25%, ${hue.a} 0%, transparent 60%), radial-gradient(ellipse 75% 65% at 80% 80%, ${hue.b} 0%, transparent 60%), linear-gradient(180deg, var(--card-base-soft-top) 0%, var(--card-base-soft-bot) 100%)`,
+              background: t.poster ? '#000' : `radial-gradient(ellipse 75% 65% at 25% 25%, ${hue.a} 0%, transparent 60%), radial-gradient(ellipse 75% 65% at 80% 80%, ${hue.b} 0%, transparent 60%), linear-gradient(180deg, var(--card-base-soft-top) 0%, var(--card-base-soft-bot) 100%)`,
               border: '1px solid var(--glass-card-border)',
               backdropFilter: 'blur(36px) saturate(180%)',
               WebkitBackdropFilter: 'blur(36px) saturate(180%)',
               boxShadow: 'inset 0 1px 0 var(--glass-card-inset-top), var(--glass-card-shadow)',
             }}>
-            <div className="absolute inset-0 hatch opacity-40" />
+            {t.poster ? (
+              <>
+                <img src={t.poster} alt=""
+                  className="absolute inset-0 w-full h-full"
+                  style={{ objectFit: 'cover', objectPosition: 'center' }} />
+                {/* Kind-tinted bloom + bottom scrim for chrome legibility. */}
+                <div className="absolute inset-0" style={{
+                  background: `radial-gradient(ellipse 50% 50% at 20% 20%, ${hue.a.replace(/,[\d.]+\)$/, ',0.25)')} 0%, transparent 65%), linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.0) 35%, rgba(0,0,0,0.65) 100%)`,
+                }} />
+              </>
+            ) : (
+              <div className="absolute inset-0 hatch opacity-40" />
+            )}
             {/* Kind chip top-start */}
             <div className="absolute top-3 start-3 lg-glass-strong squircle-sm px-2 py-0.5 z-10">
               <span className="sf text-[9.5px] font-bold tracking-[0.16em] uppercase leading-none" style={{ color: 'var(--text-primary)' }}>{hue.tag}</span>
@@ -6415,7 +6470,21 @@ const WatchVThumb = ({ moment, size = 'md', onClick }) => {
         boxShadow: 'inset 0 1px 0 var(--glass-card-inset-top), var(--glass-card-shadow)',
         color: '#fff',
       }}>
-      <div className="absolute inset-0 hatch opacity-40" />
+      {/* Poster — real frame from the underlying clip. Player clip
+         posters are now 540×962 portrait (matches the 9:16 thumb shape
+         natively — earlier MP4s were stored as 1920×1080 with SAR
+         101:320 so they actually DISPLAY as portrait, and the
+         regenerated posters apply the SAR). object-fit:cover fills
+         the thumb edge-to-edge with no crop loss. */}
+      {moment.poster ? (
+        <>
+          <img src={moment.poster} alt=""
+            className="absolute inset-0 w-full h-full"
+            style={{ objectFit: 'cover', objectPosition: 'center' }} />
+        </>
+      ) : (
+        <div className="absolute inset-0 hatch opacity-40" />
+      )}
       <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
         <PlayButton />
       </div>
@@ -7735,7 +7804,7 @@ const PgSectionFullBleed = ({ title, action, onAction, children, first = false }
 /* Recap full-game / big-recap embed — 16:9 glass thumbnail.
    Direct port of v3.2 RecapCard (big variant) + the inline full-game embed
    on PostGameScreen, unified into one component. */
-const GameVideoEmbed = ({ kind = 'full', title, sub, duration, onClick }) => (
+const GameVideoEmbed = ({ kind = 'full', title, sub, duration, poster, onClick }) => (
   <button onClick={onClick} className="relative w-full overflow-hidden text-start squircle-md lg-aura lg-shine"
     style={{
       aspectRatio: '16 / 9',
@@ -7746,11 +7815,26 @@ const GameVideoEmbed = ({ kind = 'full', title, sub, duration, onClick }) => (
       boxShadow: 'inset 0 1px 0 var(--glass-card-inset-top), var(--glass-card-shadow)',
       color: 'var(--text-primary)',
     }}>
-    {/* Cinematic radial bleed + hatch */}
-    <div className="absolute inset-0" style={{
-      background: 'radial-gradient(ellipse 80% 60% at 30% 25%, rgba(0,214,254,0.22) 0%, transparent 60%), radial-gradient(ellipse 80% 60% at 75% 75%, rgba(132,88,255,0.18) 0%, transparent 60%)'
-    }} />
-    <div className="absolute inset-0 hatch opacity-40" />
+    {/* Poster fills the 16:9 frame when provided. Slight darken under
+       it so the FULL GAME / RECAP chip + bottom title stay legible.
+       Falls back to the cinematic radial bleed + hatch when no
+       poster (e.g. Watch tab cross-team rail tiles). */}
+    {poster ? (
+      <>
+        <img src={poster} alt=""
+          className="absolute inset-0 w-full h-full"
+          style={{ objectFit: 'cover', objectPosition: 'center' }} />
+        <div className="absolute inset-0"
+          style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.0) 35%, rgba(0,0,0,0.0) 55%, rgba(0,0,0,0.55) 100%)' }} />
+      </>
+    ) : (
+      <>
+        <div className="absolute inset-0" style={{
+          background: 'radial-gradient(ellipse 80% 60% at 30% 25%, rgba(0,214,254,0.22) 0%, transparent 60%), radial-gradient(ellipse 80% 60% at 75% 75%, rgba(132,88,255,0.18) 0%, transparent 60%)'
+        }} />
+        <div className="absolute inset-0 hatch opacity-40" />
+      </>
+    )}
     {/* Kind chip top-start */}
     <div className="absolute top-3 start-3 lg-glass-strong squircle-sm px-2 py-0.5 z-10">
       <span className="sf text-[9.5px] font-bold tracking-[0.16em] uppercase leading-none" style={{ color: 'var(--text-primary)' }}>
@@ -7840,7 +7924,13 @@ const OtherPlayersSection = ({ game, onPickPlayer }) => {
     <PgSection title="Other players">
       <TeamTabs game={game} tab={tab} onChange={setTab} />
       <div className="grid grid-cols-3 lg:grid-cols-4 gap-3">
-        {players.map(p => (
+        {players.map(p => {
+          /* Pull this player's first clip poster (if they have clips).
+             Bench players without a clip mapping fall back to the
+             current initials-on-glass tint. */
+          const clips = PLAYER_CLIPS[p.id];
+          const tilePoster = clips && clips[0] && clips[0].poster;
+          return (
           <button key={p.id} onClick={() => onPickPlayer(p)}
             className="relative overflow-hidden text-start squircle-md lg-aura lg-shine"
             style={{
@@ -7851,21 +7941,37 @@ const OtherPlayersSection = ({ game, onPickPlayer }) => {
               WebkitBackdropFilter: 'blur(36px) saturate(180%)',
               boxShadow: 'inset 0 1px 0 var(--glass-card-inset-top), var(--glass-card-shadow)',
             }}>
-            <div className="absolute inset-0" style={{
-              background: `radial-gradient(ellipse 70% 60% at 30% 25%, ${tileTint} 0%, transparent 60%)`
-            }} />
-            <div className="absolute inset-0 hatch opacity-30" />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-10 h-10 rounded-full lg-glass-strong flex items-center justify-center sf-display text-[14px] font-bold" style={{ color: 'var(--text-primary)' }}>
-                {p.name.split(' ').map(s => s[0]).join('').slice(0,2)}
-              </div>
-            </div>
+            {tilePoster ? (
+              <>
+                {/* Poster — 9:16 portrait, natively matches the tile.
+                   Simple cover fill, team-tinted bottom scrim for the
+                   jersey-number chip + name to sit on. */}
+                <img src={tilePoster} alt=""
+                  className="absolute inset-0 w-full h-full"
+                  style={{ objectFit: 'cover', objectPosition: 'center' }} />
+                <div className="absolute inset-0"
+                  style={{ background: `linear-gradient(180deg, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.0) 50%, ${tileTint.replace(/,[\d.]+\)$/, ',0.18)')} 80%, rgba(0,0,0,0.65) 100%)` }} />
+              </>
+            ) : (
+              <>
+                <div className="absolute inset-0" style={{
+                  background: `radial-gradient(ellipse 70% 60% at 30% 25%, ${tileTint} 0%, transparent 60%)`
+                }} />
+                <div className="absolute inset-0 hatch opacity-30" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-full lg-glass-strong flex items-center justify-center sf-display text-[14px] font-bold" style={{ color: 'var(--text-primary)' }}>
+                    {p.name.split(' ').map(s => s[0]).join('').slice(0,2)}
+                  </div>
+                </div>
+              </>
+            )}
             <div className="absolute bottom-2 start-2 squircle-sm px-1.5 py-0.5"
               style={{ background: accentBg, color: accentText }}>
               <span className="sf text-[10px] font-bold leading-none tabular-nums">#{p.number}</span>
             </div>
           </button>
-        ))}
+          );
+        })}
       </div>
     </PgSection>
   );
@@ -8269,6 +8375,7 @@ const PostGameScreen = ({ gameId, onBack, onPickMoment, setHlOwner, captures = [
         <GameVideoEmbed kind="full" title="Watch the full game"
           sub={`${homeTeam.name} ${g.scoreHome} · ${awayTeam.name} ${g.scoreAway}`}
           duration="1:32:00"
+          poster={RECAP_POSTER}
           onClick={() => setRecapOpen('full')} />
       </PgSection>
 
@@ -8281,6 +8388,7 @@ const PostGameScreen = ({ gameId, onBack, onPickMoment, setHlOwner, captures = [
         <PgSection title="Game highlight">
           <GameVideoEmbed kind="recap" title={recap.title} sub={recap.sub}
             duration={fmt.dur(recap.dur)}
+            poster={RECAP_POSTER}
             onClick={() => setRecapOpen('recap')} />
         </PgSection>
       )}
@@ -8759,16 +8867,11 @@ const HighlightViewer = ({ hlOwner = 'self', momentIndex = 0, onClose, onWatchFu
   };
 
   /* NeighborThumb — desktop ghost prev/next preview.
-     Was just the empty VideoPoster (cyan/purple gradient + giant H
-     monogram) which told the user nothing about what was coming next.
-     Now renders the actual neighbor clip as a paused <video> seeked
-     to ~2s — first half-second of game footage is usually a fade-in
-     or bench shot, so 2s gives a more representative still frame.
-     Preload is 'metadata' so we only fetch the few KB needed to
-     decode the seek frame, not the whole clip.
-     For the ad slot (when the prev/next index lands on the sponsored
-     slide), we render the ad creative as an <img> instead — same
-     visual contract, different source. */
+     Renders as a real <video> element seeked to a representative
+     frame. No poster fallback — the user wants this to be pure video.
+     loadedmetadata listener seeks to ~2s (or duration/3, whichever is
+     less) so the element shows actual game footage paused at a
+     non-fade-in frame. Ad slot keeps the data-URI <img> fallback. */
   const NeighborThumb = ({ i }) => {
     const slotIsAd = isAdAt(i);
     const ma = momentAt(i);
@@ -8794,7 +8897,8 @@ const HighlightViewer = ({ hlOwner = 'self', momentIndex = 0, onClose, onWatchFu
     }
     if (!ma) return null;
     return (
-      <video ref={ref} src={ma.src} muted playsInline preload="metadata"
+      <video ref={ref} src={ma.src}
+        muted playsInline preload="metadata"
         className="absolute inset-0 w-full h-full"
         style={{ objectFit: 'cover', background: '#000', pointerEvents: 'none' }} />
     );
