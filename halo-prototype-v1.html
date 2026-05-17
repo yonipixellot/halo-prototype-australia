@@ -1275,6 +1275,7 @@ const { useState, useEffect, useReducer, useRef, useMemo, useCallback, Fragment 
    actual structure: Sesh Rigs is a confirmed team in Southern Districts
    Senior Domestic, Winter 2026, Thursday Men D division. */
 const PLAYER = { id: 'self', name: 'Tal Weiss', number: 7, position: 'SG', team: 'Sesh Rigs', initials: 'TW',
+  avatar: 'avatars/weiss.png',
   association: 'Southern Districts Spartans', program: 'Senior Domestic', division: 'Thursday Men D', state: 'QLD' };
 
 const SEED_GAMES = [
@@ -8150,7 +8151,20 @@ const AthleteProfileScreen = ({ onPickMoment, onBack, onOpenGame, asTab = true, 
             boxShadow: 'inset 0 1px 0 var(--glass-card-inset-top), var(--glass-card-shadow)',
           }}>
           <div className="flex items-center gap-4">
-            <JerseyBlock number={PLAYER.number} />
+            {/* Profile avatar — 68px squircle of Tal's headshot. The img
+               sits over a fallback JerseyBlock so if avatars/weiss.png
+               is missing the 'NO. 7' block stays visible (onError hides
+               the broken img). When the photo loads it covers the block
+               and reads as Tal's identity at a glance. */}
+            <div className="relative shrink-0" style={{ width: 68, height: 68 }}>
+              <JerseyBlock number={PLAYER.number} />
+              {PLAYER.avatar && (
+                <img src={PLAYER.avatar} alt=""
+                  className="absolute inset-0 w-full h-full squircle-md"
+                  style={{ objectFit: 'cover', objectPosition: 'center' }}
+                  onError={(e) => { e.target.style.display = 'none'; }} />
+              )}
+            </div>
             <div className="flex-1 min-w-0">
               <div className="sf-display text-[20px] font-bold leading-tight tracking-[-0.015em] truncate" style={{ color: 'var(--text-primary)' }}>
                 {PLAYER.name}
