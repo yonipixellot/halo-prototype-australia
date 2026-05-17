@@ -1015,6 +1015,13 @@
      editorial serif/mono pairing doesn't leak into the rest of the
      prototype (which uses its own SF stack). */
   .sd-root .sd-serif { font-family: 'Instrument Serif', Georgia, serif; }
+  /* halo-serif — globally scoped editorial serif. Use sparingly outside
+     the storydrop when a piece of content (quoted insight, drop title,
+     hero callout) benefits from the same editorial voice. Same family
+     as sd-serif so the visual language stays consistent. Single-weight
+     font, so call sites must NOT also use font-bold/font-semibold —
+     instead bump size and tighten letter-spacing for emphasis. */
+  .halo-serif { font-family: 'Instrument Serif', Georgia, serif; font-weight: 400; }
   /* sd-mono is the storydrop's eyebrow/meta voice. Swapped from
      JetBrains Mono (read as "techy code" per user critique) to Inter,
      which still gives the precise, tight tabular feel for ALL-CAPS
@@ -1822,6 +1829,22 @@ const fmt = {
     if (sec < 86400) return `in ${Math.round(sec/3600)}h`;
     if (sec < 86400*2) return 'tomorrow';
     return `in ${Math.round(sec/86400)}d`;
+  },
+  /* kickoffDate — compact uppercase tipoff label for the Home tab's
+     Upcoming card eyebrows. Returns one of:
+       'TODAY'                  (within the next 24h)
+       'TOMORROW'               (24–48h out)
+       'THU 21 MAY'             (further out — short weekday + day + month)
+     Derived from secondsUntilKickoff against `new Date()`, so the labels
+     stay correct regardless of when the prototype is opened. */
+  kickoffDate(sec) {
+    if (sec == null) return '';
+    if (sec < 86400) return 'TODAY';
+    if (sec < 86400*2) return 'TOMORROW';
+    const d = new Date(Date.now() + sec * 1000);
+    const days = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+    const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    return `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]}`;
   },
   dur(sec) { return `${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}`; },
 };
@@ -5586,7 +5609,13 @@ const GameCard = ({ state: initialState = 'off', onOpenGame, onOpenDrop, atVenue
       {/* Insight body — quoted title (21px) + body + stat callout */}
       <button className="relative z-10 w-full text-start px-4 pb-4 flex gap-3 items-start" onClick={() => onOpenGame(last.id)}>
         <div className="flex-1 min-w-0">
-          <div className="sf-display text-[21px] font-bold leading-[1.05] tracking-[-0.02em] mb-1.5" style={{ color: 'var(--text-primary)' }}>
+          {/* Quoted insight title — switched from sf-display bold to the
+              global halo-serif so it carries the same editorial voice as
+              the storydrop. Instrument Serif is a single-weight display
+              face; bumped size 21→26 and kept the tight letter-spacing
+              so it reads with the same emphasis as the previous bold
+              sans version. */}
+          <div className="halo-serif text-[26px] leading-[1.05] tracking-[-0.015em] mb-1.5" style={{ color: 'var(--text-primary)' }}>
             "{insight.title}"
           </div>
           <div className="sf text-[12.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{insight.body}</div>
@@ -5636,29 +5665,17 @@ const FollowingStrip = ({ onOpenGame }) => {
   return (
     <div className="mb-7">
       <SectionLabel subtitle="Tip-off in your circle" action="Manage">Following · upcoming</SectionLabel>
+      {/* Each upcoming card now uses VsPosterCard at 240x120 with the
+         UPCOMING eyebrow pill and "Tip-off X" subtitle. Same split-
+         color visual as the Watch tab's Full games + Suggestions —
+         keeps team identity dominant for pre-game framing. */}
       <div className="flex gap-3 overflow-x-auto no-scrollbar px-5 lg:px-8 xl:px-12 pb-2">
         {upcoming.map(g => (
-          <button key={g.id} onClick={() => onOpenGame(g.id)} className="shrink-0 squircle-md overflow-hidden text-start lg-aura lg-shine relative"
-            style={{
-              width: 240, height: 120,
-              background: 'linear-gradient(160deg, var(--card-base-soft-top) 0%, var(--card-base-soft-bot) 100%)',
-              border: '1px solid var(--glass-card-border)',
-              backdropFilter: 'blur(36px) saturate(180%)',
-              WebkitBackdropFilter: 'blur(36px) saturate(180%)',
-              boxShadow: 'inset 0 1px 0 var(--glass-card-inset-top), var(--glass-card-shadow)',
-            }}>
-            <div className="absolute inset-0" style={{
-              background: 'radial-gradient(ellipse 70% 60% at 30% 25%, rgba(0,214,254,0.15) 0%, transparent 60%), radial-gradient(ellipse 70% 60% at 80% 70%, rgba(132,88,255,0.12) 0%, transparent 60%)'
-            }} />
-            <div className="absolute top-3 start-3 lg-glass squircle-sm px-2 py-0.5">
-              <span className="sf text-[9.5px] font-semibold tracking-[0.12em] uppercase leading-none" style={{ color: 'var(--text-secondary)' }}>Upcoming</span>
-            </div>
-            <div className="absolute inset-x-0 bottom-0 px-3.5 pt-8 pb-3"
-              style={{ background: 'linear-gradient(180deg, var(--bottom-fade-start) 0%, var(--bottom-fade-mid) 70%, var(--bottom-fade-end) 100%)' }}>
-              <div className="sf-display text-[14px] font-bold leading-tight tracking-[-0.01em] truncate" style={{ color: 'var(--text-primary)' }}>{g.home} vs {g.away}</div>
-              <div className="sf text-[11px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>Tip-off {fmt.countdown(g.kickoffInSec)}</div>
-            </div>
-          </button>
+          <VsPosterCard key={g.id} game={g}
+            width={240} height={120}
+            eyebrow={fmt.kickoffDate(g.kickoffInSec)}
+            hideText
+            onClick={() => onOpenGame(g.id)} />
         ))}
       </div>
     </div>
@@ -6568,9 +6585,15 @@ const PosterCard = ({ game, big = false, onClick }) => {
    bottom strip carries the matchup line + final score. No play button
    per the user spec — the split-color treatment is the visual hook
    and the card affordance is implicit. */
-const VsPosterCard = ({ game, big = false, onClick }) => {
-  const W = big ? 260 : 220;
-  const H = big ? 156 : 130;
+const VsPosterCard = ({ game, big = false, onClick, width, height, eyebrow, subtitle, hideText = false }) => {
+  /* Default sizing follows the Watch tab convention (260x156 big,
+     220x130 small). Call sites with their own footprint (e.g. the
+     Home tab's Upcoming rail at 240x120) can override via
+     width/height props. eyebrow + subtitle let those same call sites
+     replace the default Final/Upcoming text without forking the
+     whole component. */
+  const W = width  != null ? width  : (big ? 260 : 220);
+  const H = height != null ? height : (big ? 156 : 130);
   const homeTeam = teamByName(game.home);
   const awayTeam = teamByName(game.away);
   /* Parse a team's accentA `rgba(r,g,b,a)` so we can re-emit it at
@@ -6623,10 +6646,18 @@ const VsPosterCard = ({ game, big = false, onClick }) => {
          have white padding bg baked in, so a circular crop reads
          as a clean coin. */}
       <div className="absolute inset-0 flex items-center justify-center gap-5 z-10"
-        style={{ paddingBottom: 36 }}>
+        style={{ paddingBottom: hideText ? 0 : 36 }}>
         <div className="rounded-full overflow-hidden flex items-center justify-center shrink-0"
           style={{
-            width: big ? 72 : 60, height: big ? 72 : 60,
+            /* Crest auto-shrinks for shorter cards: take 60% of the
+               available vertical space (card height minus the bottom
+               strip ~36px if it's rendered) and cap at the canonical
+               size for this variant. Lets 240x120 Home upcoming cards
+               render ~50px crests while the 260x156 Watch big still
+               gets 72px. When hideText is true, the full card height
+               is available so crests can grow further. */
+            width: Math.min(big ? 72 : 60, Math.round((H - (hideText ? 0 : 36)) * 0.6)),
+            height: Math.min(big ? 72 : 60, Math.round((H - (hideText ? 0 : 36)) * 0.6)),
             background: '#fff',
             border: '1px solid rgba(255,255,255,0.35)',
             boxShadow: '0 4px 14px rgba(0,0,0,0.30)',
@@ -6643,7 +6674,15 @@ const VsPosterCard = ({ game, big = false, onClick }) => {
           }}>VS</span>
         <div className="rounded-full overflow-hidden flex items-center justify-center shrink-0"
           style={{
-            width: big ? 72 : 60, height: big ? 72 : 60,
+            /* Crest auto-shrinks for shorter cards: take 60% of the
+               available vertical space (card height minus the bottom
+               strip ~36px if it's rendered) and cap at the canonical
+               size for this variant. Lets 240x120 Home upcoming cards
+               render ~50px crests while the 260x156 Watch big still
+               gets 72px. When hideText is true, the full card height
+               is available so crests can grow further. */
+            width: Math.min(big ? 72 : 60, Math.round((H - (hideText ? 0 : 36)) * 0.6)),
+            height: Math.min(big ? 72 : 60, Math.round((H - (hideText ? 0 : 36)) * 0.6)),
             background: '#fff',
             border: '1px solid rgba(255,255,255,0.35)',
             boxShadow: '0 4px 14px rgba(0,0,0,0.30)',
@@ -6653,24 +6692,40 @@ const VsPosterCard = ({ game, big = false, onClick }) => {
             : <span className="sf-display font-bold text-[20px]" style={{ color: '#0a0d18' }}>{awayTeam.initial}</span>}
         </div>
       </div>
-      {/* Bottom strip — solid-ish scrim so title + score reads over any
-         pair of team colors, including the bone+red worst-case. */}
-      <div className="absolute inset-x-0 bottom-0 px-3 pt-6 pb-3 z-10"
-        style={{ background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.85) 100%)' }}>
-        <div className={`sf-display font-bold leading-tight tracking-[-0.01em] truncate text-start ${big ? 'text-[14px]' : 'text-[12.5px]'}`}>
-          {game.home} vs {game.away}
+      {/* Optional eyebrow pill — top-start. Used by the Home tab's
+         Upcoming rail to surface "UPCOMING" before the user has seen
+         the bottom-strip subtitle. Watch tab call sites omit this
+         (the rail title already communicates state). */}
+      {eyebrow && (
+        <div className="absolute top-3 start-3 lg-glass squircle-sm px-2 py-0.5 z-10">
+          <span className="sf text-[9.5px] font-semibold tracking-[0.12em] uppercase leading-none" style={{ color: '#fff' }}>{eyebrow}</span>
         </div>
-        <div className={`sf font-semibold leading-tight mt-0.5 text-start tabular-nums tracking-[0.01em] ${big ? 'text-[11.5px]' : 'text-[11px]'}`}
-          style={{ color: 'rgba(255,255,255,0.85)' }}>
-          {game.scoreHome != null ? (
-            <>
-              {game.scoreHome}–{game.scoreAway}<span style={{ color: 'rgba(255,255,255,0.55)', fontWeight: 500 }}> · Final</span>
-            </>
-          ) : (
-            <span style={{ color: 'rgba(255,255,255,0.55)', fontWeight: 500, letterSpacing: '0.10em', textTransform: 'uppercase' }}>Upcoming</span>
-          )}
+      )}
+      {/* Bottom strip — only rendered when hideText is false. Call sites
+         that want a pure logo-vs-logo card (e.g. the Home Upcoming rail
+         where the SectionLabel already says 'Following · upcoming' and
+         the eyebrow pill says 'UPCOMING') pass hideText so the card
+         stays focused on team identity. */}
+      {!hideText && (
+        <div className="absolute inset-x-0 bottom-0 px-3 pt-6 pb-3 z-10"
+          style={{ background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.85) 100%)' }}>
+          <div className={`sf-display font-bold leading-tight tracking-[-0.01em] truncate text-start ${big ? 'text-[14px]' : 'text-[12.5px]'}`}>
+            {game.home} vs {game.away}
+          </div>
+          <div className={`sf font-semibold leading-tight mt-0.5 text-start tabular-nums tracking-[0.01em] ${big ? 'text-[11.5px]' : 'text-[11px]'}`}
+            style={{ color: 'rgba(255,255,255,0.85)' }}>
+            {subtitle != null ? (
+              subtitle
+            ) : game.scoreHome != null ? (
+              <>
+                {game.scoreHome}–{game.scoreAway}<span style={{ color: 'rgba(255,255,255,0.55)', fontWeight: 500 }}> · Final</span>
+              </>
+            ) : (
+              <span style={{ color: 'rgba(255,255,255,0.55)', fontWeight: 500, letterSpacing: '0.10em', textTransform: 'uppercase' }}>Upcoming</span>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </button>
   );
 };
