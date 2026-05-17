@@ -1284,9 +1284,15 @@ const SEED_GAMES = [
      so the storydrop, post-game recap and "drop is ready" all key off
      the rivalry. Score is a Sesh Rigs win to give the demo a positive
      narrative arc. */
-  { id: 'gE',  home: 'Sesh Rigs', away: 'Medium Fundamentals',   status: 'just-ended', scoreHome: 64, scoreAway: 58, momentsCount: 8, when: 'Yesterday · 7:30 PM' },
-  { id: 'gP1', home: 'Sesh Rigs', away: 'Hustle HQ',             status: 'final',  scoreHome: 71, scoreAway: 63, when: '3 days ago' },
-  { id: 'gP2', home: 'Sesh Rigs', away: 'Nothing But All Stars', status: 'final',  scoreHome: 55, scoreAway: 48, when: 'Last week' },
+  /* `poster` field: per-game still that the Watch tab's PosterCard
+     renders so the rail doesn't read as three identical gradient
+     tiles. All three demo games re-use frames from clips/condensed_game
+     (1).mp4 at distinct timestamps (mid / late / early), since that's
+     the only piece of broadcast footage shipping with the prototype.
+     A real product would attach each game's own broadcast still. */
+  { id: 'gE',  home: 'Sesh Rigs', away: 'Medium Fundamentals',   status: 'just-ended', scoreHome: 64, scoreAway: 58, momentsCount: 8, when: 'Yesterday · 7:30 PM', poster: 'clips/posters/condensed_game.jpg' },
+  { id: 'gP1', home: 'Sesh Rigs', away: 'Hustle HQ',             status: 'final',  scoreHome: 71, scoreAway: 63, when: '3 days ago', poster: 'clips/posters/condensed_game_late.jpg' },
+  { id: 'gP2', home: 'Sesh Rigs', away: 'Nothing But All Stars', status: 'final',  scoreHome: 55, scoreAway: 48, when: 'Last week', poster: 'clips/posters/condensed_game_full.jpg' },
 ];
 
 /* Local clip path builder. After dropping Drive iframes (which couldn't
@@ -6483,24 +6489,53 @@ const LiveCard = ({ game, onClick }) => (
 const PosterCard = ({ game, big = false, onClick }) => {
   const W = big ? 260 : 220;
   const H = big ? 156 : 130;
+  /* If the game has a real poster (frame from clips/condensed_game.mp4
+     at a distinct timestamp), use it as the card background and replace
+     the heavy gradient + hatch treatment with a darker bottom-fade scrim
+     so the title + score stays legible against any frame content. Games
+     without a poster (e.g., future fixtures) still fall back to the
+     blue/purple gradient stand-in. */
+  const hasPoster = !!game.poster;
   return (
     <button onClick={onClick} className="shrink-0 squircle-md relative overflow-hidden lg-shine lg-aura sf transition-transform hover:scale-[1.02]"
       style={
-        big
+        hasPoster
           ? {
               width: W, height: H,
-              background: 'radial-gradient(ellipse at 25% 20%, rgba(0,180,255,0.40) 0%, transparent 55%), radial-gradient(ellipse at 80% 75%, rgba(132,88,255,0.40) 0%, transparent 60%), linear-gradient(135deg, #0e1428 0%, #050a18 100%)',
-              boxShadow: '0 12px 32px -10px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.10)',
+              background: '#050810',
+              boxShadow: big
+                ? '0 12px 32px -10px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.10)'
+                : '0 8px 24px -8px rgba(0,0,0,0.50), inset 0 1px 0 rgba(255,255,255,0.08)',
               color: '#fff',
             }
-          : {
-              width: W, height: H,
-              background: 'radial-gradient(ellipse at 30% 30%, rgba(64,140,255,0.30) 0%, transparent 60%), linear-gradient(140deg, #131722 0%, #080b14 100%)',
-              boxShadow: '0 8px 24px -8px rgba(0,0,0,0.50), inset 0 1px 0 rgba(255,255,255,0.08)',
-              color: '#fff',
-            }
+          : big
+            ? {
+                width: W, height: H,
+                background: 'radial-gradient(ellipse at 25% 20%, rgba(0,180,255,0.40) 0%, transparent 55%), radial-gradient(ellipse at 80% 75%, rgba(132,88,255,0.40) 0%, transparent 60%), linear-gradient(135deg, #0e1428 0%, #050a18 100%)',
+                boxShadow: '0 12px 32px -10px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.10)',
+                color: '#fff',
+              }
+            : {
+                width: W, height: H,
+                background: 'radial-gradient(ellipse at 30% 30%, rgba(64,140,255,0.30) 0%, transparent 60%), linear-gradient(140deg, #131722 0%, #080b14 100%)',
+                boxShadow: '0 8px 24px -8px rgba(0,0,0,0.50), inset 0 1px 0 rgba(255,255,255,0.08)',
+                color: '#fff',
+              }
       }>
-      <div className="absolute inset-0 hatch-dark opacity-30 pointer-events-none" />
+      {hasPoster ? (
+        <>
+          <img src={game.poster} alt=""
+            className="absolute inset-0 w-full h-full pointer-events-none"
+            style={{ objectFit: 'cover', objectPosition: 'center' }} />
+          {/* Bottom-fade scrim so the title + score row reads against
+             any underlying frame content. Top is left clean so the
+             action in the still is visible. */}
+          <div className="absolute inset-0 pointer-events-none"
+            style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.0) 30%, rgba(0,0,0,0.0) 50%, rgba(0,0,0,0.75) 100%)' }} />
+        </>
+      ) : (
+        <div className="absolute inset-0 hatch-dark opacity-30 pointer-events-none" />
+      )}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <PlayButton />
       </div>
@@ -6515,6 +6550,121 @@ const PosterCard = ({ game, big = false, onClick }) => {
               {!big && game.momentsCount != null && game.momentsCount > 0 && (
                 <span style={{ color: 'rgba(255,255,255,0.45)', fontWeight: 500 }}> · {game.momentsCount} moments</span>
               )}
+            </>
+          ) : (
+            <span style={{ color: 'rgba(255,255,255,0.55)', fontWeight: 500, letterSpacing: '0.10em', textTransform: 'uppercase' }}>Upcoming</span>
+          )}
+        </div>
+      </div>
+    </button>
+  );
+};
+
+/* VsPosterCard — split-versus card used on the Full games and
+   Suggestions rails (Game highlights keeps the real-frame PosterCard
+   since the action still IS the highlight). Layout: 50/50 vertical
+   split, each half tinted with that team's TEAMS_DB accentA at higher
+   alpha for solid color blocks; crest disc + "VS" pill at the seam;
+   bottom strip carries the matchup line + final score. No play button
+   per the user spec — the split-color treatment is the visual hook
+   and the card affordance is implicit. */
+const VsPosterCard = ({ game, big = false, onClick }) => {
+  const W = big ? 260 : 220;
+  const H = big ? 156 : 130;
+  const homeTeam = teamByName(game.home);
+  const awayTeam = teamByName(game.away);
+  /* Parse a team's accentA `rgba(r,g,b,a)` so we can re-emit it at
+     different alphas. Mirrors the same helper OtherPlayersSection and
+     TeamStatsSection use — keeps the color logic consistent across
+     the prototype's team-colored surfaces. */
+  const _parse = (accent) => {
+    const m = (accent || 'rgba(0,214,254,1)').match(/(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+    return { r: m ? +m[1] : 0, g: m ? +m[2] : 214, b: m ? +m[3] : 254 };
+  };
+  const h = _parse(homeTeam.accentA);
+  const a = _parse(awayTeam.accentA);
+  const isLight = (c) => (c.r + c.g + c.b) / 3 > 180;
+  /* Each half painted with a top-to-bottom gradient (0.95 → 0.55 alpha)
+     so the color block has depth rather than reading as flat fill —
+     especially important when one team is Sesh Rigs (bone/cream) and
+     a flat 1.0-alpha bone would wash out everything. */
+  const homeBg = `linear-gradient(160deg, rgba(${h.r},${h.g},${h.b},0.95) 0%, rgba(${h.r},${h.g},${h.b},0.55) 100%)`;
+  const awayBg = `linear-gradient(200deg, rgba(${a.r},${a.g},${a.b},0.95) 0%, rgba(${a.r},${a.g},${a.b},0.55) 100%)`;
+  return (
+    <button onClick={onClick}
+      className="shrink-0 squircle-md relative overflow-hidden lg-shine lg-aura sf transition-transform hover:scale-[1.02]"
+      style={{
+        width: W, height: H,
+        background: '#050810',
+        boxShadow: big
+          ? '0 12px 32px -10px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.10)'
+          : '0 8px 24px -8px rgba(0,0,0,0.50), inset 0 1px 0 rgba(255,255,255,0.08)',
+        color: '#fff',
+      }}>
+      {/* Two halves. Each is absolutely positioned so the seam in the
+         middle stays pixel-tight regardless of card width. */}
+      <div className="absolute inset-y-0 start-0 pointer-events-none" style={{ width: '50%', background: homeBg }} />
+      <div className="absolute inset-y-0 end-0 pointer-events-none" style={{ width: '50%', background: awayBg }} />
+      {/* Diagonal seam — soft gradient between the two halves so the
+         hard line doesn't read as a screenshot crop. */}
+      <div className="absolute inset-y-0 pointer-events-none"
+        style={{
+          insetInlineStart: '42%', width: '16%',
+          background: 'linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.18) 50%, transparent 100%)',
+        }} />
+      {/* Crests + VS row — centered both axes inside the card. The
+         row is absolutely positioned to fill the card, then uses
+         flex centering, so the trio (crest · VS · crest) sits in the
+         optical middle regardless of card aspect.
+         Crests render as direct images clipped to a circle — no
+         nested disc-inside-disc treatment (TeamCrest's default
+         renders the logo on its own white square, which looked
+         like a square-in-a-circle here). The logo PNGs already
+         have white padding bg baked in, so a circular crop reads
+         as a clean coin. */}
+      <div className="absolute inset-0 flex items-center justify-center gap-5 z-10"
+        style={{ paddingBottom: 36 }}>
+        <div className="rounded-full overflow-hidden flex items-center justify-center shrink-0"
+          style={{
+            width: big ? 72 : 60, height: big ? 72 : 60,
+            background: '#fff',
+            border: '1px solid rgba(255,255,255,0.35)',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.30)',
+          }}>
+          {homeTeam.src
+            ? <img src={homeTeam.src} alt="" className="w-full h-full" style={{ objectFit: 'cover' }} />
+            : <span className="sf-display font-bold text-[20px]" style={{ color: '#0a0d18' }}>{homeTeam.initial}</span>}
+        </div>
+        <span className="sf-display font-bold text-white shrink-0"
+          style={{
+            fontSize: big ? 17 : 14,
+            letterSpacing: '0.04em',
+            textShadow: '0 1px 6px rgba(0,0,0,0.55), 0 0 14px rgba(0,0,0,0.35)',
+          }}>VS</span>
+        <div className="rounded-full overflow-hidden flex items-center justify-center shrink-0"
+          style={{
+            width: big ? 72 : 60, height: big ? 72 : 60,
+            background: '#fff',
+            border: '1px solid rgba(255,255,255,0.35)',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.30)',
+          }}>
+          {awayTeam.src
+            ? <img src={awayTeam.src} alt="" className="w-full h-full" style={{ objectFit: 'cover' }} />
+            : <span className="sf-display font-bold text-[20px]" style={{ color: '#0a0d18' }}>{awayTeam.initial}</span>}
+        </div>
+      </div>
+      {/* Bottom strip — solid-ish scrim so title + score reads over any
+         pair of team colors, including the bone+red worst-case. */}
+      <div className="absolute inset-x-0 bottom-0 px-3 pt-6 pb-3 z-10"
+        style={{ background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.85) 100%)' }}>
+        <div className={`sf-display font-bold leading-tight tracking-[-0.01em] truncate text-start ${big ? 'text-[14px]' : 'text-[12.5px]'}`}>
+          {game.home} vs {game.away}
+        </div>
+        <div className={`sf font-semibold leading-tight mt-0.5 text-start tabular-nums tracking-[0.01em] ${big ? 'text-[11.5px]' : 'text-[11px]'}`}
+          style={{ color: 'rgba(255,255,255,0.85)' }}>
+          {game.scoreHome != null ? (
+            <>
+              {game.scoreHome}–{game.scoreAway}<span style={{ color: 'rgba(255,255,255,0.55)', fontWeight: 500 }}> · Final</span>
             </>
           ) : (
             <span style={{ color: 'rgba(255,255,255,0.55)', fontWeight: 500, letterSpacing: '0.10em', textTransform: 'uppercase' }}>Upcoming</span>
@@ -6597,11 +6747,16 @@ const FeaturedHero = ({ onWatch }) => {
         minHeight: '62vh',
         background: 'radial-gradient(ellipse 70% 80% at 70% 30%, rgba(220,38,38,0.40) 0%, transparent 55%), radial-gradient(ellipse 60% 70% at 25% 75%, rgba(0,180,255,0.28) 0%, transparent 60%), linear-gradient(135deg, #0a0e1a 0%, #050810 60%, #0d1228 100%)',
       }}>
-      <video src={HALO_VIDEO_URL} autoPlay muted loop playsInline preload="auto" aria-hidden="true"
+      {/* Atmosphere video — same clips/atmosphere_loop.mp4 the desktop
+         hero uses (20s mid-game trim of condensed_game.mp4). Phone
+         layout is bottom-anchored with content over a full-bleed
+         video, so we keep the existing brightness/saturate filter
+         (no right-anchor or blur — phone doesn't have the
+         left-side-text breathing room that desktop's scrim creates,
+         the bottom-fade scrim below handles legibility instead). */}
+      <video src="clips/atmosphere_loop.mp4" autoPlay muted loop playsInline preload="auto" aria-hidden="true"
         className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         style={{
-          /* mask-image removed — bottom-fade scrim overlay below already
-             covers the fade, mask was redundant + GPU-expensive. */
           filter: 'brightness(0.55) saturate(0.7)',
         }} />
       <div className="absolute inset-0 pointer-events-none"
@@ -6659,14 +6814,30 @@ const WatchHeroDesktop = ({ onWatch }) => {
         maxHeight: 560,
         background: 'radial-gradient(ellipse 60% 70% at 75% 30%, rgba(220,38,38,0.32) 0%, transparent 55%), radial-gradient(ellipse 55% 60% at 85% 80%, rgba(132,88,255,0.30) 0%, transparent 60%), radial-gradient(ellipse 50% 60% at 25% 65%, rgba(0,180,255,0.22) 0%, transparent 55%), linear-gradient(135deg, #0a0e1a 0%, #050810 60%, #0d1228 100%)',
       }}>
-      <video src={HALO_VIDEO_URL} autoPlay muted loop playsInline preload="auto" aria-hidden="true"
+      {/* Atmosphere video — clips/atmosphere_loop.mp4 is a 20-second
+         trim of clips/condensed_game (1).mp4 (t=32..52), no audio,
+         scaled to 1280px and faststart-encoded so it can preload
+         and start instantly. Wired here instead of the old remote
+         HALO_VIDEO_URL so the demo plays a real Sesh-vs-MF clip as
+         broadcast atmosphere behind the hero.
+         Style picks (user elicitation, May 2026):
+         - Medium prominence: opacity 0.5 + blur(10px) reads as ambient
+           cinematic motion, not a foreground feature.
+         - Right-side anchored: object-position right pulls the focal
+           action toward where the existing horizontal scrim lets the
+           image breathe. The scrim below already fades to opaque on
+           the left so text stays legible.
+         - brightness 0.55 / saturate 0.90 keeps enough color that the
+           court reads as the court, not a grey wash. */}
+      <video src="clips/atmosphere_loop.mp4" autoPlay muted loop playsInline preload="auto" aria-hidden="true"
         className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         style={{
-          /* mix-blend-mode dropped — was the second-biggest scroll-stutter
-             source on desktop. A heavier darkness + lower saturation reads
-             the same ambient quality at far cheaper compositor cost. */
-          filter: 'brightness(0.30) saturate(0.55)',
-          opacity: 0.85,
+          /* Blur dropped per user feedback — the footage reads better
+             sharp; the existing horizontal scrim already keeps the
+             left-side text legible without softening the video. */
+          filter: 'brightness(0.55) saturate(0.90)',
+          opacity: 0.50,
+          objectPosition: 'right center',
         }} />
       {/* Horizontal scrim — opaque at start, transparent at end. Netflix pattern. */}
       <div className="absolute inset-0 pointer-events-none"
@@ -6878,11 +7049,18 @@ const WatchRails = ({ activeDivision, onPushGame, onPickMoment, selectedState = 
           {scopedLive.map(g => <LiveCard key={g.id} game={g} onClick={() => onPushGame(g.id, 'live')} />)}
         </WatchLane>
       )}
+      {/* Full games — VS split-color cards (per user spec). The
+         pre-game/scheduling context is best served by team identity,
+         not by a frame from inside a game that hasn't happened yet
+         in the narrative. */}
       <WatchLane title="Full games">
         {scopedEnded.length > 0
-          ? scopedEnded.map(g => <PosterCard key={g.id} game={g} big onClick={() => onPushGame(g.id, g.status)} />)
+          ? scopedEnded.map(g => <VsPosterCard key={g.id} game={g} big onClick={() => onPushGame(g.id, g.status)} />)
           : <EmptyScopedRail label="No full games in this division yet" />}
       </WatchLane>
+      {/* Game highlights — keeps real-frame PosterCard. The content
+         here IS the highlight, so showing actual basketball action
+         beats a matchup card. */}
       <WatchLane title="Game highlights">
         {scopedEnded.length > 0
           ? scopedEnded.slice(0, 5).map(g => <PosterCard key={g.id} game={g} big onClick={() => onPushGame(g.id, g.status)} />)
@@ -6893,9 +7071,11 @@ const WatchRails = ({ activeDivision, onPushGame, onPickMoment, selectedState = 
           <WatchVThumb key={m.id} moment={m} onClick={() => onPickMoment(i)} />
         ))}
       </WatchLane>
+      {/* Suggestions — also VS cards (these are pre-watch upsells, same
+         pre-game framing as Full games). */}
       <WatchLane title="Suggestions">
         {scopedEnded.length > 0
-          ? scopedEnded.slice().reverse().slice(0, 6).map(g => <PosterCard key={g.id} game={g} big onClick={() => onPushGame(g.id, g.status)} />)
+          ? scopedEnded.slice().reverse().slice(0, 6).map(g => <VsPosterCard key={g.id} game={g} big onClick={() => onPushGame(g.id, g.status)} />)
           : <EmptyScopedRail label="Pick a different division to see suggestions" />}
       </WatchLane>
     </>
