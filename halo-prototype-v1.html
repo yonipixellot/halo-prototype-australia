@@ -2043,11 +2043,18 @@ const _synthRoster = (teamId) => {
   });
 })();
 
+/* RIVAL_STARS — fictional standout players from rival Thursday Men D
+   teams. `teamKey` points at a TEAMS_DB entry so the rival-team chip
+   in the onboarding "Stars from other teams" section can render the
+   real team logo + accent color. Player names are placeholders — swap
+   for real division standouts when BA shares roster data. */
 const RIVAL_STARS = [
-  { id: 'rv1', name: 'Marcus Webb',   number: 4,  position: 'PG', teamInitial: 'WC', teamName: 'Hawks',   role: 'Division MVP'  },
-  { id: 'rv2', name: 'Devon Hayes',   number: 11, position: 'SF', teamInitial: 'MH', teamName: 'Bears',   role: 'Top scorer'    },
-  { id: 'rv3', name: 'Theo Lin',      number: 22, position: 'C',  teamInitial: 'RA', teamName: 'Falcons', role: 'Defensive POY' },
-  { id: 'rv4', name: 'Jaylen Reeves', number: 7,  position: 'PG', teamInitial: 'WC', teamName: 'Hawks',   role: 'Rising star'   },
+  { id: 'rv1', name: 'Marcus Webb',   number: 4,  position: 'PG', teamKey: 'mediumFund',  role: 'Division MVP'  },
+  { id: 'rv2', name: 'Devon Hayes',   number: 11, position: 'SF', teamKey: 'hustleHQ',    role: 'Top scorer'    },
+  { id: 'rv3', name: 'Theo Lin',      number: 22, position: 'C',  teamKey: 'kingSlayers', role: 'Defensive POY' },
+  { id: 'rv4', name: 'Jaylen Reeves', number: 7,  position: 'PG', teamKey: 'huskies',     role: 'Rising star'   },
+  { id: 'rv5', name: 'Andre Park',    number: 13, position: 'SF', teamKey: 'shaqtin',     role: 'Streak king'   },
+  { id: 'rv6', name: 'Sam Nguyen',    number: 9,  position: 'SG', teamKey: 'chumpCentral', role: 'Hot shooter'  },
 ];
 
 /* PERSONA_KINDS — picker meta. Enabled personas (Player, Fan) sit on
@@ -12549,6 +12556,64 @@ const ClaimAndFollow = ({ teamId, claimedSelfId, setClaimedSelfId, chosenPlayers
                   );
                 })}
               </div>
+              {/* Stars from other teams — division standouts you might
+                 want to follow. Each row shows the rival team's logo
+                 chip + accent color so the cross-team identity reads
+                 at a glance. Defaults to unfollowed; the user opts in. */}
+              {RIVAL_STARS.length > 0 && (() => {
+                const rivalsFollowed = RIVAL_STARS.filter(r => !!chosenPlayers[r.id]).length;
+                return (
+                  <>
+                    <div className="px-1 mt-7 mb-3">
+                      <div className="sf text-[10px] tracking-[0.18em] uppercase font-bold" style={{ color: 'var(--text-tertiary)' }}>
+                        Stars from other teams · {rivalsFollowed} followed
+                      </div>
+                      <div className="sf text-[10.5px] mt-1" style={{ color: 'var(--text-faint)' }}>
+                        Standouts in your division — auto-clipped into your feed when you tap follow.
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      {RIVAL_STARS.map(rv => {
+                        const rvTeam = TEAMS_DB[rv.teamKey];
+                        const isFollowed = !!chosenPlayers[rv.id];
+                        return (
+                          <button key={rv.id} type="button" onClick={() => togglePlayer(rv.id)} aria-pressed={isFollowed}
+                            className="w-full text-start squircle-sm p-2.5 flex items-center gap-2.5 lg-aura"
+                            style={{
+                              background: isFollowed ? 'rgba(0,214,254,0.06)' : 'transparent',
+                              border: isFollowed ? '1px solid rgba(0,214,254,0.22)' : '1px solid var(--glass-card-border)',
+                            }}>
+                            <JerseyBadge number={rv.number} size="sm" />
+                            <div className="flex-1 min-w-0">
+                              <div className="sf-display text-[13.5px] font-bold leading-tight truncate" style={{ color: 'var(--text-primary)' }}>{rv.name}</div>
+                              <div className="sf text-[10.5px] mt-0.5 truncate flex items-center gap-1.5" style={{ color: 'var(--text-tertiary)' }}>
+                                {rvTeam && rvTeam.src && (
+                                  <span className="inline-flex items-center justify-center overflow-hidden shrink-0"
+                                    style={{ width: 14, height: 14, background: '#fff', borderRadius: 3 }}>
+                                    <img src={rvTeam.src} alt=""
+                                      style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 1 }} />
+                                  </span>
+                                )}
+                                <span className="truncate">{rvTeam ? rvTeam.name : 'Rival'} · {rv.position}</span>
+                              </div>
+                            </div>
+                            <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
+                              style={isFollowed ? { background: 'var(--brand-cyan)' } : { background: 'var(--hatch-grain)', border: '1px solid var(--hairline-strong)' }}>
+                              {isFollowed && (
+                                <svg width={10} height={10} viewBox="0 0 14 14" fill="none" stroke="#000"
+                                  strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"
+                                  style={{ width: 10, height: 10, display: 'block' }}>
+                                  <path d="M3 7 L6 10 L11 4" />
+                                </svg>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                );
+              })()}
             </>
           );
         })()}
