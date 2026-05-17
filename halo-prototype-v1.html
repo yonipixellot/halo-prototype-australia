@@ -7233,7 +7233,7 @@ const LivePlayerScreen = ({ game, onClose }) => {
   if (!game) return null;
   return (
     <div data-theme="dark" className="fixed inset-0 z-[60] anim-fade" style={{ background: '#000' }}>
-      <video src={'clips/' + encodeURIComponent('condensed_game (1).mp4')}
+      <video src="clips/condensed_game.mp4"
         autoPlay muted loop playsInline preload="auto"
         className="absolute inset-0 w-full h-full object-cover"
         style={{ filter: 'brightness(0.65)' }} />
@@ -9010,7 +9010,7 @@ const PostGameScreen = ({ gameId, onBack, onPickMoment, setHlOwner, captures = [
           </div>
           {/* Video — fills, contained so neither axis crops. */}
           <video
-            src={'clips/' + encodeURIComponent('condensed_game (1).mp4')}
+            src="clips/condensed_game.mp4"
             autoPlay muted playsInline controls
             onEnded={() => setRecapOpen(null)}
             className="flex-1 w-full h-full"
@@ -10950,7 +10950,7 @@ const GameVideoViewer = ({ gameId, momentId, onClose }) => {
                instead of leaving the HALO watermark visible behind a
                failed video load. Filename has a literal space + (1),
                URL-encoded so the <video src> resolves. */}
-            <video key={`gv-${game.id}-${playing}`} src={'clips/' + encodeURIComponent('condensed_game (1).mp4')}
+            <video key={`gv-${game.id}-${playing}`} src="clips/condensed_game.mp4"
               autoPlay={playing} muted loop playsInline preload="auto"
               onError={(e) => { e.currentTarget.style.display = 'none'; }}
               className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
@@ -10980,69 +10980,12 @@ const GameVideoViewer = ({ gameId, momentId, onClose }) => {
                 </button>
               </div>
             )}
-            {/* ── IN-FRAME PLAYER DOCK ────────────────────────────
-               Was pinned to the viewport bottom — fine on desktop but
-               weird on phone where the video sits in the top half and
-               the dock was floating 60vh below it with empty space
-               between. Now overlaid at the bottom of the video frame
-               itself, the standard YouTube/Vimeo treatment. Pointer-
-               events on the container are 'none' so the inner pill is
-               the only clickable surface (lets the user click anywhere
-               else on the video without hitting the dock). */}
-            <div className="absolute bottom-0 inset-x-0 z-30 px-3 pb-3 pt-12 pointer-events-none"
-              style={{
-                background: 'linear-gradient(180deg, transparent 0%, rgba(4,6,12,0.55) 60%, rgba(4,6,12,0.85) 100%)',
-              }}>
-              <div className="pointer-events-auto flex items-center gap-3 px-3.5 py-2.5 rounded-full"
-                style={{
-                  background: 'rgba(8,12,20,0.62)',
-                  backdropFilter: 'blur(24px) saturate(180%)',
-                  WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-                  border: '1px solid rgba(255,255,255,0.10)',
-                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.10), 0 12px 32px -10px rgba(0,0,0,0.55)',
-                }}>
-                <button onClick={() => setPlaying(p => !p)}
-                  aria-label={playing ? 'Pause' : 'Play'}
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-white shrink-0 transition-all hover:bg-white/12 active:scale-[0.94]"
-                  style={{
-                    background: 'linear-gradient(180deg, rgba(0,214,254,0.18) 0%, rgba(0,214,254,0.08) 100%)',
-                    border: '1px solid rgba(0,214,254,0.30)',
-                  }}>
-                  {playing ? (
-                    <svg width={12} height={14} viewBox="0 0 12 14" fill="white" style={{ width: 12, height: 14 }}>
-                      <rect x="0" y="0" width="4" height="14" rx="1" />
-                      <rect x="8" y="0" width="4" height="14" rx="1" />
-                    </svg>
-                  ) : (
-                    <svg width={12} height={14} viewBox="0 0 14 16" fill="white"
-                      style={{ width: 12, height: 14, marginInlineStart: 1.5 }}>
-                      <path d="M0 1.5v13c0 1 1.1 1.55 1.9 1.05l11-6.5c.8-.5.8-1.7 0-2.2l-11-6.5C1.1 -.05 0 .5 0 1.5z" />
-                    </svg>
-                  )}
-                </button>
-                <div className="flex-1 h-[3px] rounded-full relative overflow-hidden"
-                  style={{ background: 'rgba(255,255,255,0.14)' }}>
-                  <div className="absolute inset-y-0 start-0 rounded-full"
-                    style={{ width: pct + '%', background: 'linear-gradient(90deg, rgba(0,214,254,0.85) 0%, rgba(0,214,254,1) 100%)', boxShadow: '0 0 10px rgba(0,214,254,0.55)' }} />
-                  <div className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white"
-                    style={{ insetInlineStart: pct + '%', marginInlineStart: -7, boxShadow: '0 0 10px rgba(0,214,254,0.65), 0 2px 6px rgba(0,0,0,0.45)' }} />
-                </div>
-                <span className="sf text-[11px] tracking-tight font-bold tabular-nums shrink-0 hidden sm:inline-flex items-baseline gap-1.5"
-                  style={{ color: 'rgba(255,255,255,0.95)' }}>
-                  <span>{time}</span>
-                  <span style={{ color: 'rgba(255,255,255,0.40)' }}>/ {total}</span>
-                </span>
-                <button aria-label="Fullscreen"
-                  className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all hover:bg-white/10 active:scale-[0.94]"
-                  style={{ color: 'rgba(255,255,255,0.85)' }}>
-                  <svg width={14} height={14} viewBox="0 0 14 14" fill="none" stroke="currentColor"
-                    strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
-                    style={{ width: 14, height: 14 }}>
-                    <path d="M2 5V2h3M9 2h3v3M12 9v3H9M5 12H2V9" />
-                  </svg>
-                </button>
-              </div>
-            </div>
+            {/* In-frame player dock removed per spec — the video is an
+               ambient atmosphere loop, not a scrubbable VOD, so the
+               pause + scrubber + fullscreen pill was offering controls
+               that didn't match the underlying playback model. Tap on
+               the video continues to be a no-op; close X in the top
+               chrome remains the only chrome on this surface. */}
           </div>
 
           {/* ── EDITORIAL TITLE BLOCK ─────────────────────────────
