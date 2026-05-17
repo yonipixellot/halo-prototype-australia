@@ -5237,17 +5237,18 @@ const MorphLiveCard = ({ cycle, goPrev, goNext, onOpenGame }) => {
           PostGameScreen's ScoreHero — consistent visual language
           across live + finished game surfaces. */}
       <div className="relative z-10 flex-1 flex items-center justify-center px-3 lg:px-5 py-1">
+        {/* Single-row scoreboard: [crest] scoreA — scoreB [crest]
+           Team-name captions removed per critique — the crests +
+           the LIVE eyebrow above + the Watch live CTA below
+           already identify the matchup, and the captions were
+           clipping ("SH RIGS" / "MEDIUM FUNDAM") because the
+           120px column max-width couldn't fit alongside two 44px
+           scores + dash inside a ~320px card. Crests now sit on
+           the score baseline since they're flex-row siblings to
+           the scores, not vertically-stacked columns. */}
         <div className="flex items-center justify-center gap-3 lg:gap-5">
-          {/* TEAM A — crest + name caption */}
-          <div className="flex flex-col items-center min-w-0" style={{ maxWidth: 120, opacity: homeWon ? 1 : 0.55 }}>
+          <div style={{ opacity: homeWon ? 1 : 0.55 }}>
             <TeamCrest team={homeTeam} size={44} />
-            <div className="sf text-[9.5px] lg:text-[10px] tracking-[0.14em] uppercase font-bold mt-2 w-full text-center"
-              style={{
-                color: homeWon ? 'var(--text-primary)' : 'var(--text-tertiary)',
-                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-              }}>
-              {g.home}
-            </div>
           </div>
           {/* Score A */}
           <span className="sf-display tabular-nums font-bold leading-none"
@@ -5274,16 +5275,8 @@ const MorphLiveCard = ({ cycle, goPrev, goNext, onOpenGame }) => {
             }}>
             {g.scoreAway}
           </span>
-          {/* TEAM B — crest + name caption */}
-          <div className="flex flex-col items-center min-w-0" style={{ maxWidth: 120, opacity: awayWon ? 1 : 0.55 }}>
+          <div style={{ opacity: awayWon ? 1 : 0.55 }}>
             <TeamCrest team={awayTeam} size={44} />
-            <div className="sf text-[9.5px] lg:text-[10px] tracking-[0.14em] uppercase font-bold mt-2 w-full text-center"
-              style={{
-                color: awayWon ? 'var(--text-primary)' : 'var(--text-tertiary)',
-                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-              }}>
-              {g.away}
-            </div>
           </div>
         </div>
       </div>
