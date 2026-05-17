@@ -1526,10 +1526,62 @@ const SEED_CAPTURES = [
   },
 ];
 
+/* Storytelling drops — each card surfaces an insight the system
+   detected and a 3-clip stack of supporting moments. The `posters`
+   array holds the JPG poster paths the StorytellingDropsRail
+   renders inside the fanned cards (real frames from Tal Weiss's
+   clips, chosen to thematically support each drop's narrative).
+   `eyebrow` is the small italic line that sits above the title in
+   the card's editorial bottom strip. */
 const STORYTELLING_DROPS = [
-  { id: 'sd1', title: "You're 14% sharper in 4Q this month", body: 'Last 5 games — 18/24 from the field after 8:00 in the 4th quarter. Coach is leaning on you late.' },
-  { id: 'sd2', title: 'Career-best assist week',           body: '5.4 assists / game — top of Thursday Men D for shooting guards.' },
-  { id: 'sd3', title: 'Your defense set the tone vs Medium Fundamentals', body: '3 stops in the first 4 minutes of OT — single-handedly killed their run.' },
+  {
+    id: 'sd1',
+    eyebrow: 'The closing stretch',
+    title: "You're 14% sharper in 4Q this month",
+    body: 'Last 5 games — 18/24 from the field after 8:00 in the 4th quarter. Coach is leaning on you late.',
+    posters: [
+      'clips/posters/full_7_blue_5.jpg',
+      'clips/posters/full_7_blue_6.jpg',
+      'clips/posters/full_7_blue_7.jpg',
+    ],
+    moments: [
+      { ts: 'Q4 0:08', dur: ':14' },
+      { ts: 'Q4 6:04', dur: ':11' },
+      { ts: 'Q3 1:22', dur: ':08' },
+    ],
+  },
+  {
+    id: 'sd2',
+    eyebrow: 'A passer’s week',
+    title: 'Career-best assist week',
+    body: '5.4 assists / game — top of Thursday Men D for shooting guards.',
+    posters: [
+      'clips/posters/full_7_blue_1.jpg',
+      'clips/posters/full_7_blue_2.jpg',
+      'clips/posters/full_7_blue_3.jpg',
+    ],
+    moments: [
+      { ts: 'Q1 7:33', dur: ':09' },
+      { ts: 'Q2 4:11', dur: ':12' },
+      { ts: 'Q3 8:42', dur: ':07' },
+    ],
+  },
+  {
+    id: 'sd3',
+    eyebrow: 'Defense first',
+    title: 'Your defense set the tone vs Medium Fundamentals',
+    body: '3 stops in the first 4 minutes of OT — single-handedly killed their run.',
+    posters: [
+      'clips/posters/full_7_blue_2.jpg',
+      'clips/posters/full_7_blue_4.jpg',
+      'clips/posters/full_7_blue_6.jpg',
+    ],
+    moments: [
+      { ts: 'OT 4:55', dur: ':10' },
+      { ts: 'OT 3:21', dur: ':08' },
+      { ts: 'OT 1:14', dur: ':11' },
+    ],
+  },
 ];
 
 const FOLLOWING = [
@@ -5701,7 +5753,11 @@ const StorytellingDropsRail = ({ onOpenStory }) => (
     <div className="flex gap-3 overflow-x-auto no-scrollbar px-5 lg:px-8 xl:px-12 pb-2">
       {STORYTELLING_DROPS.map(s => {
         const hue = hueFor(s.id);
-        const count = 3; // placeholder — DS pulls from item.momentIds
+        /* posters[] holds the 3 real Tal Weiss clip frames for this
+           drop's fanned stack. Falls back to gracefully if missing. */
+        const posters = s.posters || [];
+        const moments = s.moments || [];
+        const count = posters.length || 3;
         return (
           <button key={s.id} onClick={() => onOpenStory(s.id)} className="relative shrink-0 overflow-hidden text-start squircle-md lg-aura lg-shine"
             style={{
@@ -5722,22 +5778,106 @@ const StorytellingDropsRail = ({ onOpenStory }) => (
             <div className="absolute top-3 end-3 lg-glass squircle-sm px-2 py-0.5 z-10">
               <span className="sf text-[10px] font-semibold leading-none tabular-nums" style={{ color: 'var(--text-secondary)' }}>{count} moments</span>
             </div>
-            {/* Stacked-cards centerpiece */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="relative" style={{ width: 110, height: 130 }}>
-                <div className="absolute lg-glass squircle-sm" style={{ top: 8, insetInlineStart: 28, width: 64, height: 92, transform: 'rotate(8deg)', opacity: 0.55 }} />
-                <div className="absolute lg-glass-card squircle-sm" style={{ top: 4, insetInlineStart: 18, width: 64, height: 100, transform: 'rotate(-3deg)', opacity: 0.85 }} />
-                <div className="absolute lg-glass-strong squircle-sm flex flex-col items-center justify-center" style={{ top: 0, insetInlineStart: 8, width: 64, height: 110 }}>
-                  <div className="sf-display text-[24px] font-bold leading-none" style={{ color: 'var(--text-primary)' }}>{count}</div>
-                  <div className="sf text-[8.5px] tracking-[0.16em] uppercase font-bold mt-1.5" style={{ color: 'var(--text-tertiary)' }}>Moments</div>
+            {/* Fanned-thumbnail centerpiece — three real clip posters,
+               middle one centered + biggest, side ones rotated and
+               dimmed. Replaces the previous empty glass-card stack.
+               paddingBottom (140) reserves space for the bottom
+               editorial strip below — bumped from 116 to make room
+               for the larger eyebrow/title/body sizes. */}
+            <div className="absolute inset-0 flex items-center justify-center" style={{ paddingBottom: 140, paddingTop: 36 }}>
+              <div className="relative" style={{ width: 156, height: 138 }}>
+                {/* Back-left card — rotated -9deg, lowest opacity */}
+                <div className="absolute squircle-sm overflow-hidden"
+                  style={{
+                    insetInlineStart: 0, top: 8, width: 78, height: 118,
+                    transform: 'rotate(-9deg) translateX(-12px)',
+                    border: '1px solid rgba(255,255,255,0.16)',
+                    boxShadow: '0 6px 16px rgba(0,0,0,0.45)',
+                    opacity: 0.55,
+                    background: '#0b0e16',
+                  }}>
+                  {posters[0] && (
+                    <img src={posters[0]} alt=""
+                      className="absolute inset-0 w-full h-full"
+                      style={{ objectFit: 'cover' }} />
+                  )}
+                </div>
+                {/* Back-right card — rotated +8deg, mid opacity */}
+                <div className="absolute squircle-sm overflow-hidden"
+                  style={{
+                    insetInlineEnd: 0, top: 6, width: 78, height: 118,
+                    transform: 'rotate(8deg) translateX(12px)',
+                    border: '1px solid rgba(255,255,255,0.18)',
+                    boxShadow: '0 8px 18px rgba(0,0,0,0.5)',
+                    opacity: 0.75,
+                    background: '#0b0e16',
+                  }}>
+                  {posters[1] && (
+                    <img src={posters[1]} alt=""
+                      className="absolute inset-0 w-full h-full"
+                      style={{ objectFit: 'cover' }} />
+                  )}
+                </div>
+                {/* Front card — centered, full opacity, with timestamp
+                   strip + play disc */}
+                <div className="absolute squircle-sm overflow-hidden"
+                  style={{
+                    insetInlineStart: '50%', top: 0, width: 84, height: 130,
+                    transform: 'translateX(-50%) translateY(-2px)',
+                    border: '1px solid rgba(255,255,255,0.22)',
+                    boxShadow: '0 12px 28px rgba(0,0,0,0.6)',
+                    background: '#0b0e16',
+                  }}>
+                  {posters[2] && (
+                    <img src={posters[2]} alt=""
+                      className="absolute inset-0 w-full h-full"
+                      style={{ objectFit: 'cover' }} />
+                  )}
+                  {/* Bottom scrim + small timestamp on the front card */}
+                  <div className="absolute inset-x-0 bottom-0 px-1.5 pt-4 pb-1"
+                    style={{ background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.7) 100%)' }}>
+                    {moments[2] && (
+                      <div className="halo-serif text-[9px] leading-none flex items-center justify-between" style={{ color: 'rgba(255,255,255,0.9)' }}>
+                        <span>{moments[2].ts}</span>
+                        <em style={{ color: 'rgba(255,255,255,0.55)' }}>{moments[2].dur}</em>
+                      </div>
+                    )}
+                  </div>
+                  {/* Center play disc */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="rounded-full flex items-center justify-center"
+                      style={{
+                        width: 26, height: 26,
+                        background: 'rgba(0,0,0,0.55)',
+                        border: '1px solid rgba(255,255,255,0.28)',
+                        backdropFilter: 'blur(6px)',
+                        WebkitBackdropFilter: 'blur(6px)',
+                      }}>
+                      <svg width={9} height={11} viewBox="0 0 12 14" fill="currentColor" style={{ color: '#fff', marginInlineStart: 1 }}>
+                        <path d="M0 1.2v11.6c0 .9 1 1.4 1.7 1l9.6-5.8c.7-.4.7-1.5 0-1.9L1.7.2C1 -.2 0 .3 0 1.2z" />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-            {/* Bottom info */}
+            {/* Bottom info — editorial serif title + italic eyebrow.
+               Same Instrument Serif face the storydrop uses. Body
+               stays in sf for readability at small size. */}
             <div className="absolute bottom-0 inset-x-0 px-4 pt-14 pb-4 z-10"
               style={{ background: 'linear-gradient(180deg, var(--bottom-fade-start) 0%, var(--bottom-fade-mid) 60%, var(--bottom-fade-end) 100%)' }}>
-              <div className="sf-display text-[14px] font-bold leading-tight tracking-[-0.01em] mb-1.5 clip2" style={{ color: 'var(--text-primary)' }}>{s.title}</div>
-              <div className="sf text-[11px] leading-snug clip2" style={{ color: 'var(--text-tertiary)' }}>{s.body}</div>
+              {s.eyebrow && (
+                <div className="halo-serif text-[16px] italic mb-1.5" style={{ color: 'var(--brand-cyan-text)' }}>
+                  {s.eyebrow}
+                </div>
+              )}
+              {/* Title sized as a magazine pull-headline now — 26px
+                 single-weight Instrument Serif, tight tracking, 2-line
+                 clamp. Body bumped to 13px so it sits as a confident
+                 caption beneath the headline, not a footnote. Stack
+                 wrapper above reserves 140px for this strip. */}
+              <div className="halo-serif text-[26px] leading-[1.04] tracking-[-0.015em] mb-1.5 clip2" style={{ color: 'var(--text-primary)' }}>{s.title}</div>
+              <div className="sf text-[13px] leading-snug clip2" style={{ color: 'var(--text-tertiary)' }}>{s.body}</div>
             </div>
           </button>
         );
