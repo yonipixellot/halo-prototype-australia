@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Halo · phone preview</title>
+  <style>
+    /* ============================================================
+       preview-phone.html
+
+       Desktop wrapper that renders halo-prototype-v1.html inside an
+       iPhone-shaped frame at 393x844 (iPhone 15-class). The prototype
+       internally uses Tailwind's lg: breakpoint (1024px) to switch
+       between phone and desktop layouts — at iframe width 393px the
+       phone layout kicks in automatically. The iframe is same-origin
+       (both files live in /prototype/) so all hash routing, native
+       <video> playback, and JS state work without any postMessage
+       bridge.
+
+       Pure CSS phone shell (no images, no SVG). Frame, bezels, and
+       Dynamic Island are all box-styled divs so the file stays
+       drop-in and renders identically across the deploy.
+       ============================================================ */
+
+    :root {
+      --canvas-bg: #050810;
+      --frame-outer: #1a1d24;
+      --frame-mid: #0f1218;
+      --frame-inner: #050810;
+      --island-bg: #050810;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--canvas-bg);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+      color: #fff;
+    }
+
+    /* Page canvas — radial atmosphere matching the prototype's
+       Watch hero so the phone reads as part of the same product. */
+    .canvas {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(ellipse 60% 50% at 50% 35%, rgba(0,214,254,0.08) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 50% at 50% 75%, rgba(132,88,255,0.06) 0%, transparent 60%),
+        var(--canvas-bg);
+    }
+
+    /* Subtle hatch noise overlay — same vibe as the prototype's
+       atmospheric backgrounds. */
+    .canvas::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: repeating-linear-gradient(
+        45deg,
+        transparent 0px,
+        transparent 2px,
+        rgba(255,255,255,0.012) 2px,
+        rgba(255,255,255,0.012) 3px
+      );
+      pointer-events: none;
+    }
+
+    /* iPhone frame.
+       - Outer dim shell with a subtle gradient (catches light like a
+         titanium edge).
+       - Two inner layers create the bezel depth (frame-mid → frame-inner).
+       - Screen lives inside the innermost rounded-rect.
+       Dimensions chosen so the screen is exactly 393x844 (iPhone 15
+       logical points). Add 14px bezel on each side + 18px top/bottom
+       for the frame, giving an overall 421x880 footprint. */
+    .phone {
+      position: relative;
+      width: 421px;
+      height: 880px;
+      border-radius: 56px;
+      background: linear-gradient(135deg, #2a2d34 0%, #1a1d24 45%, #0f1218 100%);
+      padding: 18px 14px;
+      box-shadow:
+        /* Hard rim catch-light */
+        inset 0 0 0 1px rgba(255,255,255,0.06),
+        inset 0 1px 0 rgba(255,255,255,0.12),
+        /* Soft outer drop */
+        0 30px 80px -20px rgba(0,0,0,0.85),
+        0 10px 30px -10px rgba(0,0,0,0.55);
+    }
+
+    /* Inner bezel layer — sits between the titanium frame and the
+       black screen border. Adds the subtle ridge real iPhones have. */
+    .phone-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 42px;
+      background: var(--frame-inner);
+      padding: 3px;
+      box-shadow:
+        inset 0 0 0 1px rgba(0,0,0,0.6),
+        inset 0 0 0 2px rgba(255,255,255,0.04);
+    }
+
+    /* The actual screen — clips the iframe to the rounded screen
+       shape. overflow:hidden is what lets the iframe corners curve. */
+    .phone-screen {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 38px;
+      overflow: hidden;
+      background: #000;
+    }
+
+    .phone-screen iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+      background: #050810;
+    }
+
+    /* Dynamic Island — pill-shaped, centered at the top, sits on
+       top of the screen surface. Pointer-events disabled so it
+       doesn't block any taps that go to the iframe content
+       behind it. The iframe's top safe-area padding (pt-12 etc.
+       across the prototype's top bars) keeps content from
+       colliding with this. */
+    .dynamic-island {
+      position: absolute;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 36px;
+      border-radius: 18px;
+      background: var(--island-bg);
+      z-index: 10;
+      pointer-events: none;
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.04),
+        0 1px 2px rgba(0,0,0,0.6);
+    }
+
+    /* Side buttons — purely visual, suggest the device chrome
+       without being interactive. Position on the inside edge of
+       the titanium frame. */
+    .btn {
+      position: absolute;
+      background: linear-gradient(180deg, #2a2d34 0%, #1a1d24 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.10),
+        inset 0 -1px 0 rgba(0,0,0,0.45);
+    }
+
+    /* Volume up + volume down on the left, action button above */
+    .btn-action  { left: -2px; top: 110px; width: 4px; height: 32px; border-radius: 2px; }
+    .btn-vol-up  { left: -2px; top: 170px; width: 4px; height: 52px; border-radius: 2px; }
+    .btn-vol-dn  { left: -2px; top: 240px; width: 4px; height: 52px; border-radius: 2px; }
+    /* Power button on the right */
+    .btn-power   { right: -2px; top: 200px; width: 4px; height: 84px; border-radius: 2px; }
+
+    /* Responsive scaling — always scale the phone to fit the smaller
+       of (viewport height - 60px) / 880 and (viewport width - 60px) /
+       421. Using min() inside transform: scale() means a single rule
+       covers every viewport, including the case where width is the
+       constraint and the case where height is. The 60px margin keeps
+       the phone from kissing the page edge on either axis.
+       Wrapping in min(..., 1) caps the scale at 1x so the phone never
+       enlarges past its native 421x880 footprint on huge viewports. */
+    .phone {
+      transform: scale(min((100vh - 60px) / 880, (100vw - 60px) / 421, 1));
+      transform-origin: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="canvas">
+    <div class="phone">
+      <span class="btn btn-action"></span>
+      <span class="btn btn-vol-up"></span>
+      <span class="btn btn-vol-dn"></span>
+      <span class="btn btn-power"></span>
+      <div class="phone-inner">
+        <div class="phone-screen">
+          <span class="dynamic-island"></span>
+          <!-- Same-origin iframe of the prototype. allow=* lets
+               <video autoPlay muted> play inside the frame, which is
+               how the storydrop clips, Watch hero atmosphere video,
+               and PostGame condensed_game playback all work. -->
+          <iframe src="halo-prototype-v1.html"
+            title="Halo prototype"
+            allow="autoplay; fullscreen; clipboard-write"
+            referrerpolicy="same-origin"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
