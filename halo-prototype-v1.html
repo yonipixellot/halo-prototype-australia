@@ -8217,6 +8217,11 @@ const ComingAfterTipoff = () => {
 };
 
 const PostGameScreen = ({ gameId, onBack, onPickMoment, setHlOwner, captures = [] }) => {
+  /* recapOpen toggles a full-screen overlay that plays the condensed
+     game clip. Wired to the "Game highlight" thumbnail's click.
+     The clip itself ships at clips/condensed_game (1).mp4 — same
+     same-origin static-asset model as the per-player clips. */
+  const [recapOpen, setRecapOpen] = useState(false);
   const g = SEED_GAMES.find(x => x.id === gameId) || SEED_GAMES.find(x => x.status === 'just-ended');
   const isUpcoming = g.status === 'upcoming';
   const myMoments = SEED_MOMENTS;
@@ -8253,17 +8258,28 @@ const PostGameScreen = ({ gameId, onBack, onPickMoment, setHlOwner, captures = [
       {/* Score hero */}
       <ScoreHero game={g} />
 
-      {/* Full game embed */}
+      {/* Full game embed — wired to the same overlay player as the
+         Game highlight card. For the demo we only have one match
+         asset (condensed_game.mp4) so both thumbs route to it; a
+         real product would point Full game at the unedited VOD and
+         Game highlight at the recap cut. */}
       <PgSection title="Full game" first>
         <GameVideoEmbed kind="full" title="Watch the full game"
           sub={`${homeTeam.name} ${g.scoreHome} · ${awayTeam.name} ${g.scoreAway}`}
-          duration="1:32:00" onClick={() => {}} />
+          duration="1:32:00"
+          onClick={() => setRecapOpen(true)} />
       </PgSection>
 
-      {/* Game highlight — big RecapCard */}
+      {/* Game highlight — big RecapCard.
+         Click opens the condensed_game clip in a fullscreen overlay
+         (RecapPlayer below). The clip is a same-origin static asset
+         shipped under clips/, so autoPlay works without a user click
+         on Drive's UI. */}
       {recap && (
         <PgSection title="Game highlight">
-          <GameVideoEmbed kind="recap" title={recap.title} sub={recap.sub} duration={fmt.dur(recap.dur)} onClick={() => {}} />
+          <GameVideoEmbed kind="recap" title={recap.title} sub={recap.sub}
+            duration={fmt.dur(recap.dur)}
+            onClick={() => setRecapOpen(true)} />
         </PgSection>
       )}
 
@@ -8324,6 +8340,40 @@ const PostGameScreen = ({ gameId, onBack, onPickMoment, setHlOwner, captures = [
       {/* Player stats — tabbed table */}
       <PlayerStatsSection game={g} />
       </>
+      )}
+
+      {/* Game highlight player — fullscreen overlay that plays the
+         condensed_game.mp4 clip. Same pattern as the highlight viewer
+         (native <video autoPlay muted playsInline> on a same-origin
+         static asset). Filename has a literal space + (1) — URL-encoded
+         so the src resolves without a 404. */}
+      {recapOpen && (
+        <div data-theme="dark" className="fixed inset-0 z-[80] anim-fade flex flex-col"
+          style={{ background: '#050810' }}>
+          {/* Top chrome — game title + close X */}
+          <div className="absolute top-0 inset-x-0 z-30 px-4 pt-11 pb-4 flex items-center justify-between gap-2 pointer-events-none">
+            <div className="pointer-events-auto flex items-center gap-2 min-w-0">
+              <TeamCrest team={homeTeam} size={22} />
+              <span className="sf-display text-[13px] font-bold tracking-tight text-white truncate">{homeTeam.name}</span>
+              <span className="sf text-[11px]" style={{ color: 'rgba(255,255,255,0.45)' }}>vs</span>
+              <TeamCrest team={awayTeam} size={22} />
+              <span className="sf-display text-[13px] font-bold tracking-tight text-white truncate">{awayTeam.name}</span>
+              <span className="sf text-[10.5px] tracking-[0.16em] uppercase font-semibold ms-2"
+                style={{ color: 'var(--brand-cyan-text)' }}>Recap</span>
+            </div>
+            <button onClick={() => setRecapOpen(false)} aria-label="Close"
+              className="pointer-events-auto w-9 h-9 lg-glass squircle-sm flex items-center justify-center text-white shrink-0">
+              <Icon name="close" size={12} stroke={1.8} />
+            </button>
+          </div>
+          {/* Video — fills, contained so neither axis crops. */}
+          <video
+            src={'clips/' + encodeURIComponent('condensed_game (1).mp4')}
+            autoPlay muted playsInline controls
+            onEnded={() => setRecapOpen(false)}
+            className="flex-1 w-full h-full"
+            style={{ objectFit: 'contain', background: '#000' }} />
+        </div>
       )}
     </div>
   );
