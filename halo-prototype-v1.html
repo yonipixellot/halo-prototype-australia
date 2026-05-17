@@ -1050,6 +1050,13 @@
     100% { transform: scaleY(1);   opacity: 0; }
   }
 
+  /* Chevron pulse — paired with sdScrollLine so the down-arrow bobs
+     down + brightens in sync with the line drawing in. */
+  @keyframes sdScrollChevron {
+    0%, 100% { transform: translateY(-2px); opacity: 0.55; }
+    50%      { transform: translateY(2px);  opacity: 1; }
+  }
+
   /* Headline glitch — RGB-split feel on the big "+6" stat. */
   @keyframes sdGlitchRed {
     0%, 100% { opacity: 0; transform: translate(0,0); }
@@ -10089,11 +10096,21 @@ const SD_Hero = () => {
   }, []);
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center text-center px-6 py-20 overflow-hidden">
-      <img src={SD_HERO_IMG} alt="" aria-hidden="true"
+      {/* Atmosphere video — same clips/atmosphere_loop.mp4 the Watch
+         hero uses. Brighter pass than the first storydrop attempt:
+         brightness 0.65, saturate 0.85, full color (no grayscale),
+         opacity 0.85 so the basketball action is clearly visible
+         instead of a vague dark wash. The radial scrim below was
+         also lightened (0.30 / 0.55 / 0.82) so the centre of the
+         frame stays legible for the +6 numeric hero while the edges
+         still fade to canvas. SD_HERO_IMG passed as poster so the
+         first frame paints instantly. */}
+      <video src="clips/atmosphere_loop.mp4" autoPlay muted loop playsInline preload="auto"
+        poster={SD_HERO_IMG} aria-hidden="true"
         className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-        style={{ opacity: 0.10, filter: 'grayscale(0.4) contrast(1.1)' }} />
+        style={{ opacity: 0.85, filter: 'brightness(0.65) saturate(0.85)' }} />
       <div className="absolute inset-0 pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse 60% 55% at 50% 35%, rgba(10,13,20,0.55) 0%, rgba(10,13,20,0.85) 60%, rgba(10,13,20,0.97) 100%)' }} />
+        style={{ background: 'radial-gradient(ellipse 60% 55% at 50% 35%, rgba(10,13,20,0.30) 0%, rgba(10,13,20,0.55) 60%, rgba(10,13,20,0.82) 100%)' }} />
       <div className="relative z-10 flex items-center gap-3 mb-10">
         <SD_HaloMark size={24} />
         <span className="sd-mono text-[10.5px] tracking-[0.30em] uppercase sd-tx45">
@@ -10140,29 +10157,45 @@ const SD_Hero = () => {
       <div className="sd-rh4 relative z-10 sd-mono text-[11px] tracking-[0.30em] uppercase sd-tx45 mt-5">
         Game · {SD_GAME.shortDate} · {SD_HEADLINE.gameLine}
       </div>
-      {/* Bottom-center scroll prompt — promoted to "you can't miss it"
-          per critique. Now it's the SOLE scroll affordance (the corner
-          SD_ScrollBadge was removed). Layered composition:
-            · Vertical hairline that elongates on a 2.4s loop, suggesting
-              the act of scrolling down without being a heavy chevron
-            · "SCROLL TO READ" mono caption above the line
-            · Subtle cyan glow at the line's bottom terminus so the eye
-              tracks the motion
-          Bigger text, taller animation, brighter opacity than v1. */}
-      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-3 pointer-events-none sd-rh4"
+      {/* Bottom-center scroll prompt — rebuilt for visibility.
+          Positioning switched from `left-1/2 -translate-x-1/2` to
+          `inset-x-0 flex justify-center` so the centering is robust
+          against any parent transforms (storydrop scroll container
+          applies its own transforms during section reveals, which
+          was nudging the previous setup off-center).
+          Composition:
+            · "SCROLL TO READ" mono caption at 14px (was 11) in full
+              cream — reads as a real CTA, not a watermark
+            · Animated cyan line below, longer + thicker than before
+            · Pulsing chevron beneath the line to anchor the eye and
+              reinforce the "down" direction */}
+      <div className="absolute bottom-10 inset-x-0 z-10 flex justify-center pointer-events-none sd-rh4"
         aria-hidden="true">
-        <div className="sd-mono text-[11px] tracking-[0.40em] uppercase font-semibold"
-          style={{ color: 'rgba(240,235,225,0.78)' }}>
-          Scroll to read
-        </div>
-        <div className="relative" style={{ height: 48, width: 1 }}>
-          <div style={{
-            position: 'absolute', insetInlineStart: 0, top: 0, width: 1, height: '100%',
-            background: 'linear-gradient(180deg, transparent 0%, rgba(0,214,254,0.85) 100%)',
-            animation: 'sdScrollLine 2.4s ease-in-out infinite',
-            transformOrigin: 'top',
-            boxShadow: '0 0 8px rgba(0,214,254,0.55)',
-          }} />
+        <div className="flex flex-col items-center gap-3.5">
+          <div className="sd-mono text-[14px] tracking-[0.40em] uppercase font-semibold"
+            style={{ color: 'rgba(240,235,225,0.95)', textShadow: '0 1px 8px rgba(0,0,0,0.65)' }}>
+            Scroll to read
+          </div>
+          <div className="relative" style={{ height: 56, width: 2 }}>
+            <div style={{
+              position: 'absolute', insetInlineStart: 0, top: 0, width: 2, height: '100%',
+              background: 'linear-gradient(180deg, transparent 0%, rgba(0,214,254,0.95) 100%)',
+              animation: 'sdScrollLine 2.4s ease-in-out infinite',
+              transformOrigin: 'top',
+              boxShadow: '0 0 10px rgba(0,214,254,0.7)',
+              borderRadius: 1,
+            }} />
+          </div>
+          {/* Down chevron — anchors the eye, reinforces direction.
+             Pulses gently in sync with the line animation. */}
+          <svg width="14" height="10" viewBox="0 0 14 10" fill="none"
+            style={{
+              color: 'rgba(0,214,254,0.95)',
+              filter: 'drop-shadow(0 0 6px rgba(0,214,254,0.55))',
+              animation: 'sdScrollChevron 2.4s ease-in-out infinite',
+            }}>
+            <path d="M1 1 L7 7 L13 1" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </div>
       </div>
     </section>
