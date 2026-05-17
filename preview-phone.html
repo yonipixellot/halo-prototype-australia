@@ -131,17 +131,22 @@
     /* Dynamic Island — pill-shaped, centered at the top, sits on
        top of the screen surface. Pointer-events disabled so it
        doesn't block any taps that go to the iframe content
-       behind it. The iframe's top safe-area padding (pt-12 etc.
-       across the prototype's top bars) keeps content from
-       colliding with this. */
+       behind it.
+       Position calibrated to match real iPhone proportions AND to
+       not collide with the prototype's top bars: the prototype uses
+       pt-12 (48px) on its safe-area top padding throughout, so the
+       island must stay above the 48px line. Current geometry sits
+       between 12px and 42px from the screen top — fully clears any
+       top-bar content (back chevron + team-name strip + score) that
+       starts at the 48px mark. */
     .dynamic-island {
       position: absolute;
-      top: 30px;
+      top: 12px;
       left: 50%;
       transform: translateX(-50%);
-      width: 120px;
-      height: 36px;
-      border-radius: 18px;
+      width: 110px;
+      height: 30px;
+      border-radius: 15px;
       background: var(--island-bg);
       z-index: 10;
       pointer-events: none;
