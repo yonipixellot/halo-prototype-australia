@@ -8654,6 +8654,48 @@ const HighlightViewer = ({ hlOwner = 'self', momentIndex = 0, onClose, onWatchFu
     return (ma && ma.title) || 'Highlight';
   };
 
+  /* NeighborThumb — desktop ghost prev/next preview.
+     Was just the empty VideoPoster (cyan/purple gradient + giant H
+     monogram) which told the user nothing about what was coming next.
+     Now renders the actual neighbor clip as a paused <video> seeked
+     to ~2s — first half-second of game footage is usually a fade-in
+     or bench shot, so 2s gives a more representative still frame.
+     Preload is 'metadata' so we only fetch the few KB needed to
+     decode the seek frame, not the whole clip.
+     For the ad slot (when the prev/next index lands on the sponsored
+     slide), we render the ad creative as an <img> instead — same
+     visual contract, different source. */
+  const NeighborThumb = ({ i }) => {
+    const slotIsAd = isAdAt(i);
+    const ma = momentAt(i);
+    const ref = useRef(null);
+    useEffect(() => {
+      if (slotIsAd) return;
+      if (!ref.current) return;
+      const v = ref.current;
+      const onMeta = () => {
+        try {
+          v.currentTime = Math.min(2, (v.duration || 4) / 3);
+        } catch (_e) {}
+      };
+      v.addEventListener('loadedmetadata', onMeta);
+      return () => v.removeEventListener('loadedmetadata', onMeta);
+    }, [slotIsAd, ma && ma.src]);
+    if (slotIsAd) {
+      return (
+        <img src={PLAYER_HL_AD_DATA_URI} alt=""
+          className="absolute inset-0 w-full h-full"
+          style={{ objectFit: 'cover', objectPosition: 'center' }} />
+      );
+    }
+    if (!ma) return null;
+    return (
+      <video ref={ref} src={ma.src} muted playsInline preload="metadata"
+        className="absolute inset-0 w-full h-full"
+        style={{ objectFit: 'cover', background: '#000', pointerEvents: 'none' }} />
+    );
+  };
+
   /* IndexPill — "1 / 7" indicator. Restored alongside the rest of
      the richer-layout revert; user explicitly preferred it. */
   const IndexPill = () => (
@@ -8906,7 +8948,7 @@ const HighlightViewer = ({ hlOwner = 'self', momentIndex = 0, onClose, onWatchFu
             filter: 'blur(0.5px) saturate(0.85)',
             boxShadow: '0 24px 60px -20px rgba(0,0,0,0.55)',
           }}>
-          <VideoPoster />
+          <NeighborThumb i={(idx - 1 + total) % total} />
           <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(4,6,12,0.35) 100%)' }} />
           <div className="absolute bottom-4 inset-x-4 z-10">
             <div className="sf text-[9.5px] tracking-[0.18em] uppercase font-bold mb-1" style={{ color: 'rgba(255,255,255,0.55)' }}>Previous</div>
@@ -8930,7 +8972,7 @@ const HighlightViewer = ({ hlOwner = 'self', momentIndex = 0, onClose, onWatchFu
             filter: 'blur(0.5px) saturate(0.85)',
             boxShadow: '0 24px 60px -20px rgba(0,0,0,0.55)',
           }}>
-          <VideoPoster />
+          <NeighborThumb i={(idx + 1) % total} />
           <div className="absolute inset-0" style={{ background: 'linear-gradient(270deg, transparent 0%, rgba(4,6,12,0.35) 100%)' }} />
           <div className="absolute bottom-4 inset-x-4 z-10 text-end">
             <div className="sf text-[9.5px] tracking-[0.18em] uppercase font-bold mb-1" style={{ color: 'rgba(255,255,255,0.55)' }}>Next</div>
@@ -10146,11 +10188,16 @@ const GameVideoViewer = ({ gameId, momentId, onClose }) => {
                     style={{ color: 'var(--brand-cyan-text)' }}>
                     {game.scoreHome}–{game.scoreAway}
                   </span>
+                  {/* Score-chip suffix is dynamic. Live: current period
+                     (e.g. 'Q2'). Ended: 'Final'. Was hardcoded 'Final'
+                     which read wrong on a live game. */}
                   <span className="sf text-[8.5px] tracking-[0.14em] uppercase font-bold leading-none"
-                    style={{ color: 'rgba(0,214,254,0.85)' }}>Final</span>
+                    style={{ color: 'rgba(0,214,254,0.85)' }}>
+                    {game.status === 'live' ? (game.period || 'Live') : 'Final'}
+                  </span>
                 </div>
               )}
-              {game.when && (
+              {game.when && game.status !== 'live' && (
                 <span className="sf text-[10.5px] tracking-[0.16em] uppercase font-semibold"
                   style={{ color: 'rgba(255,255,255,0.55)' }}>
                   · {game.when}
@@ -10161,9 +10208,16 @@ const GameVideoViewer = ({ gameId, momentId, onClose }) => {
               style={{ fontSize: 'clamp(26px, 3.6vw, 42px)', color: 'rgba(255,255,255,0.98)' }}>
               {game.home} <span style={{ color: 'rgba(255,255,255,0.40)', fontWeight: 600 }}>vs</span> {game.away}
             </h1>
+            {/* Subtitle — for ended games this is the canonical
+               'Full game · 1h 30m' (the VOD's runtime). For LIVE games
+               there's no fixed runtime yet — the game is still
+               happening — so show the in-progress state instead
+               (period · clock if available, otherwise just 'Live now'). */}
             <p className="sf text-[13px] lg:text-[14px] mt-2.5 leading-relaxed"
               style={{ color: 'rgba(255,255,255,0.55)' }}>
-              Full game · 1h 30m
+              {game.status === 'live'
+                ? `Live · ${game.period || 'in progress'}`
+                : 'Full game · 1h 30m'}
             </p>
           </div>
 
@@ -10174,6 +10228,13 @@ const GameVideoViewer = ({ gameId, momentId, onClose }) => {
               so the moments here visually rhyme with Home drops + Watch
               VThumbs. Horizontal scroll bleeds beyond the gutter so the
               rail feels continuous, not boxed-in. */}
+          {/* Moments rail — auto-clipped highlights from the game.
+             Hidden during a LIVE game because there are no
+             "auto-clipped from this game" yet — the game is still
+             happening. Real moments only get cut after final whistle
+             (or at the very least, after a play wraps). Shown for
+             just-ended / final games. */}
+          {game.status !== 'live' && (
           <div className="mt-8 lg:mt-10">
             <div className="px-5 lg:px-0 mb-3 flex items-end justify-between">
               <div>
@@ -10193,6 +10254,7 @@ const GameVideoViewer = ({ gameId, momentId, onClose }) => {
               ))}
             </div>
           </div>
+          )}
         </div>
       </div>
 
