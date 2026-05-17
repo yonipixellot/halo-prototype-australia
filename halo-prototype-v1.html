@@ -1306,50 +1306,61 @@ const SEED_MOMENTS = [
    The legacy SEED_MOMENTS above is kept for the storydrop's mock
    moment data + the existing PostGameScreen rails that aren't yet
    wired to per-player. */
-const _drvIframe = (id) => 'https://drive.google.com/file/d/' + id + '/preview';
+/* Local clip path builder. After dropping Drive iframes (which couldn't
+   autoplay or expose end events), the 28 MP4s now ship inside the
+   repo under prototype/clips/{white,red}/<jersey>{w,r}/<filename>.
+   Spaces in folder names are URL-encoded so the <video src> attribute
+   resolves without a 404 on browsers that don't auto-encode.
+
+   Args:
+     kit  — 'white' (Sesh Rigs) | 'red' (Medium Fundamentals)
+     num  — jersey number string ('7', '12', '24', '7', '15')
+     file — filename inside the folder ('full_7_blue_1.mp4', etc.)
+*/
+const _clip = (kit, num, file) => 'clips/' + kit + '/' + num + '%20' + kit + '/' + file;
 const PLAYER_CLIPS = {
-  /* r1 — Tal Weiss · #7 · Sesh Rigs (7 clips) */
+  /* r1 — Tal Weiss · #7 · Sesh Rigs (7 clips, kit=white) */
   r1: [
-    { id: 'tw1', src: _drvIframe('1pqSFfzhexncKpqx5kKC-prznVY_QSUl4'), title: 'Drive 1',       sub: 'Q1 · 8:24' },
-    { id: 'tw2', src: _drvIframe('1tcQlwPqpvSCsARVDQ1t3e2YwQ0hbHEJt'), title: 'Drive 2',       sub: 'Q1 · 5:11' },
-    { id: 'tw3', src: _drvIframe('1LnjqX7gDYr00qVTxm1uHF6TUhyI0Qq5G'), title: 'Drive 3',       sub: 'Q2 · 9:42' },
-    { id: 'tw4', src: _drvIframe('1QS8YzY9xfZ9MYdGHcZSk1HCLiEVgjk1d'), title: 'Drive 4',       sub: 'Q2 · 4:18' },
-    { id: 'tw5', src: _drvIframe('1F1HXnz5H77GTjy4vX0fhpnxm5lKvXWlz'), title: 'Drive 5',       sub: 'Q3 · 7:33' },
-    { id: 'tw6', src: _drvIframe('13fF8IHSOEOvUb3jqx6eCKapvNRpnuM5R'), title: 'Drive 6',       sub: 'Q3 · 2:55' },
-    { id: 'tw7', src: _drvIframe('1on9-BUx_tK4XK-dSnYf6Zi4ZCgzEARLN'), title: 'Game-winning',  sub: 'Q4 · 0:08' },
+    { id: 'tw1', src: _clip('white', '7',  'full_7_blue_1.mp4'),  title: 'Drive 1',      sub: 'Q1 · 8:24' },
+    { id: 'tw2', src: _clip('white', '7',  'full_7_blue_2.mp4'),  title: 'Drive 2',      sub: 'Q1 · 5:11' },
+    { id: 'tw3', src: _clip('white', '7',  'full_7_blue_3.mp4'),  title: 'Drive 3',      sub: 'Q2 · 9:42' },
+    { id: 'tw4', src: _clip('white', '7',  'full_7_blue_4.mp4'),  title: 'Drive 4',      sub: 'Q2 · 4:18' },
+    { id: 'tw5', src: _clip('white', '7',  'full_7_blue_5.mp4'),  title: 'Drive 5',      sub: 'Q3 · 7:33' },
+    { id: 'tw6', src: _clip('white', '7',  'full_7_blue_6.mp4'),  title: 'Drive 6',      sub: 'Q3 · 2:55' },
+    { id: 'tw7', src: _clip('white', '7',  'full_7_blue_7.mp4'),  title: 'Game-winning', sub: 'Q4 · 0:08' },
   ],
-  /* r2 — Sarah Kim · #12 · Sesh Rigs (5 clips) */
+  /* r2 — Sarah Kim · #12 · Sesh Rigs (5 clips, kit=white) */
   r2: [
-    { id: 'sk1', src: _drvIframe('1kA4_xrI5rC-NINBZXh8jMHK1JOEXPLp2'), title: 'Drive 1',       sub: 'Q1 · 9:50' },
-    { id: 'sk2', src: _drvIframe('1M5Irk9VH2IF3sslhTH0a9JjmjL42uFUG'), title: 'Drive 2',       sub: 'Q1 · 3:24' },
-    { id: 'sk3', src: _drvIframe('1W3Gdbt5hy9eg0_vMb-zmZ8QW1I-p58zs'), title: 'Drive 3',       sub: 'Q2 · 7:11' },
-    { id: 'sk4', src: _drvIframe('1q7gWCf60F5kodMc9Ut48QEMGB4N5m_28'), title: 'Drive 4',       sub: 'Q3 · 5:42' },
-    { id: 'sk5', src: _drvIframe('1-HiCIq1wJ_7H9xnoNWy_85mGghdTPIA0'), title: 'Drive 5',       sub: 'Q4 · 4:18' },
+    { id: 'sk1', src: _clip('white', '12', 'full_12_blue_1.mp4'), title: 'Drive 1',      sub: 'Q1 · 9:50' },
+    { id: 'sk2', src: _clip('white', '12', 'full_12_blue_2.mp4'), title: 'Drive 2',      sub: 'Q1 · 3:24' },
+    { id: 'sk3', src: _clip('white', '12', 'full_12_blue_3.mp4'), title: 'Drive 3',      sub: 'Q2 · 7:11' },
+    { id: 'sk4', src: _clip('white', '12', 'full_12_blue_4.mp4'), title: 'Drive 4',      sub: 'Q3 · 5:42' },
+    { id: 'sk5', src: _clip('white', '12', 'full_12_blue_5.mp4'), title: 'Drive 5',      sub: 'Q4 · 4:18' },
   ],
-  /* r3 — Dylan Torres · #24 (was #23) · Sesh Rigs (8 clips) */
+  /* r3 — Dylan Torres · #24 · Sesh Rigs (8 clips, kit=white) */
   r3: [
-    { id: 'dt1', src: _drvIframe('1yUGzASP9Xja4sEbRzdly-STZSXkFuukL'), title: 'Drive 1',       sub: 'Q1 · 9:14' },
-    { id: 'dt2', src: _drvIframe('1pTFtfcKLuhSS1NYj08Fvc057-KhVcoGN'), title: 'Drive 2',       sub: 'Q1 · 6:02' },
-    { id: 'dt3', src: _drvIframe('1zVuFfX8th8KSkRzSaFR-I1Kia-rxlVt0'), title: 'Drive 3',       sub: 'Q1 · 2:48' },
-    { id: 'dt4', src: _drvIframe('12nIWgiLzoKsl1TxZoFplvBqF5KIuQ-hj'), title: 'Drive 4',       sub: 'Q2 · 8:33' },
-    { id: 'dt5', src: _drvIframe('1Ghb61oE5da58jlwqUq-AFnVhOzNDoaDx'), title: 'Drive 5',       sub: 'Q2 · 3:11' },
-    { id: 'dt6', src: _drvIframe('10DhPI9_VUIJgdZ9I3diY4qZYQp4dDyMw'), title: 'Drive 6',       sub: 'Q3 · 7:42' },
-    { id: 'dt7', src: _drvIframe('1zlfspMOvahSaRZyTHVU6KOEi2lN0vfJm'), title: 'Drive 7',       sub: 'Q3 · 1:55' },
-    { id: 'dt8', src: _drvIframe('1b3nKR43KMNwAp2U748rxHpGdU_ULOfjJ'), title: 'Drive 8',       sub: 'Q4 · 5:21' },
+    { id: 'dt1', src: _clip('white', '24', 'full_24_white_1.mp4'), title: 'Drive 1', sub: 'Q1 · 9:14' },
+    { id: 'dt2', src: _clip('white', '24', 'full_24_white_2.mp4'), title: 'Drive 2', sub: 'Q1 · 6:02' },
+    { id: 'dt3', src: _clip('white', '24', 'full_24_white_3.mp4'), title: 'Drive 3', sub: 'Q1 · 2:48' },
+    { id: 'dt4', src: _clip('white', '24', 'full_24_white_4.mp4'), title: 'Drive 4', sub: 'Q2 · 8:33' },
+    { id: 'dt5', src: _clip('white', '24', 'full_24_white_5.mp4'), title: 'Drive 5', sub: 'Q2 · 3:11' },
+    { id: 'dt6', src: _clip('white', '24', 'full_24_white_6.mp4'), title: 'Drive 6', sub: 'Q3 · 7:42' },
+    { id: 'dt7', src: _clip('white', '24', 'full_24_white_7.mp4'), title: 'Drive 7', sub: 'Q3 · 1:55' },
+    { id: 'dt8', src: _clip('white', '24', 'full_24_white_8.mp4'), title: 'Drive 8', sub: 'Q4 · 5:21' },
   ],
-  /* a1 — C. Bell · #7 (was #21) · Medium Fundamentals (5 clips) */
+  /* a1 — C. Bell · #7 · Medium Fundamentals (5 clips, kit=red) */
   a1: [
-    { id: 'cb0', src: _drvIframe('1qTTnr7Ixc04KF480i93wZlDAiRGxC12O'), title: 'Drive 1',       sub: 'Q1 · 9:33' },
-    { id: 'cb1', src: _drvIframe('1p0bTWq2Aj_JhSnOGhPF628vBerXVSXr-'), title: 'Drive 2',       sub: 'Q1 · 4:11' },
-    { id: 'cb2', src: _drvIframe('1OJ3SfO8rSC9155rbo6Ez2tx5c8BMGiJb'), title: 'Drive 3',       sub: 'Q2 · 7:22' },
-    { id: 'cb3', src: _drvIframe('1pWjnmfPpx-_xz6SlIqMYDyZH0bZzmkfw'), title: 'Drive 4',       sub: 'Q3 · 5:14' },
-    { id: 'cb4', src: _drvIframe('12emopwMdypX832Q1dQk0RuQBjHrNIch5'), title: 'Drive 5',       sub: 'Q4 · 3:48' },
+    { id: 'cb0', src: _clip('red', '7',  'full_7_red_0.mp4'), title: 'Drive 1', sub: 'Q1 · 9:33' },
+    { id: 'cb1', src: _clip('red', '7',  'full_7_red_1.mp4'), title: 'Drive 2', sub: 'Q1 · 4:11' },
+    { id: 'cb2', src: _clip('red', '7',  'full_7_red_2.mp4'), title: 'Drive 3', sub: 'Q2 · 7:22' },
+    { id: 'cb3', src: _clip('red', '7',  'full_7_red_3.mp4'), title: 'Drive 4', sub: 'Q3 · 5:14' },
+    { id: 'cb4', src: _clip('red', '7',  'full_7_red_4.mp4'), title: 'Drive 5', sub: 'Q4 · 3:48' },
   ],
-  /* a2 — M. Reyes · #15 (was #8) · Medium Fundamentals (3 clips) */
+  /* a2 — M. Reyes · #15 · Medium Fundamentals (3 clips, kit=red) */
   a2: [
-    { id: 'mr0', src: _drvIframe('1m_qtXr3JteSzVvXFsAy1-QXcXhuQWpkB'), title: 'Drive 1',       sub: 'Q2 · 8:11' },
-    { id: 'mr1', src: _drvIframe('1qDME8nTwhNvFKyeii1Ihmg816jCEPbvC'), title: 'Drive 2',       sub: 'Q3 · 6:42' },
-    { id: 'mr3', src: _drvIframe('1OGTU63SW166V96qIDgGgy5x3uVsuXlCZ'), title: 'Drive 3',       sub: 'Q4 · 4:21' },
+    { id: 'mr0', src: _clip('red', '15', 'full_15_red_00.mp4'), title: 'Drive 1', sub: 'Q2 · 8:11' },
+    { id: 'mr1', src: _clip('red', '15', 'full_15_red_01.mp4'), title: 'Drive 2', sub: 'Q3 · 6:42' },
+    { id: 'mr3', src: _clip('red', '15', 'full_15_red_03.mp4'), title: 'Drive 3', sub: 'Q4 · 4:21' },
   ],
 };
 /* HL_OWNER_TO_ROSTER — bridge from the IdentityCircle owner ID
@@ -8472,7 +8483,17 @@ const PLAYER_HL_AD_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAA
 
 const HighlightViewer = ({ hlOwner = 'self', momentIndex = 0, onClose, onWatchFullGame, onChainNext }) => {
   const [idx, setIdx] = useState(momentIndex);
-  const [playing, setPlaying] = useState(true);
+  /* `playing` state — driven by the <video> element's onPlay/onPause
+     events. Starts false; autoPlay fires onPlay almost immediately
+     on slide change, flipping this to true (PlayHero hides). If the
+     browser blocks autoplay or the user manually pauses, this goes
+     false and PlayHero re-appears as a real resume affordance. */
+  const [playing, setPlaying] = useState(false);
+  /* Video ref — shared between phone + desktop branches (only one is
+     mounted at a time due to lg:hidden / hidden lg:flex). PlayHero
+     uses it to actually call .play() instead of just toggling React
+     state. */
+  const videoRef = useRef(null);
   const [shareOpen, setShareOpen] = useState(false);
   /* Per-player clip library — looked up from PLAYER_CLIPS via the
      HL_OWNER_TO_ROSTER bridge. Each owner ('self', 'player-sarah',
@@ -8539,7 +8560,13 @@ const HighlightViewer = ({ hlOwner = 'self', momentIndex = 0, onClose, onWatchFu
       if (e.key === 'ArrowRight') goNext();
       else if (e.key === 'ArrowLeft') goPrev();
       else if (e.key === 'Escape') onClose();
-      else if (e.key === ' ') { e.preventDefault(); setPlaying(p => !p); }
+      else if (e.key === ' ') {
+        e.preventDefault();
+        const v = videoRef.current;
+        if (!v) return;
+        if (v.paused) v.play().catch(() => {});
+        else v.pause();
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -8556,20 +8583,20 @@ const HighlightViewer = ({ hlOwner = 'self', momentIndex = 0, onClose, onWatchFu
   }, [idx, isAd]);
   if (!m && !isAd) return null;
 
-  /* Top progress segments — Instagram story pattern. Brighter inactive
-     state (0.25 vs 0.18) so the count is legible at a glance per
-     critique. Current segment now has a slight cyan glow.
-     Iterates over `total` (not SEED_MOMENTS.length) so the ad slot
-     gets its own progress segment in line with the clips. */
+  /* Top progress segments — slide-position only.
+     The fill used to be 60% on the current slide to suggest playback
+     progress, but the React state had no idea what Drive's iframe was
+     actually doing — it was a hardcoded fiction. Now the fill is
+     binary: previous slides are full, current is full, future are
+     empty. Honest wayfinding, no false progress claim. */
   const ProgressSegments = () => (
     <div className="flex gap-1 flex-1 me-3">
       {Array.from({ length: total }).map((_, i) => (
         <div key={i} className="flex-1 h-[2.5px] overflow-hidden rounded-full"
           style={{ background: 'rgba(255,255,255,0.25)' }}>
           <div className="h-full" style={{
-            width: i < idx ? '100%' : i === idx ? '60%' : '0%',
+            width: i <= idx ? '100%' : '0%',
             background: '#fff',
-            boxShadow: i === idx ? '0 0 8px rgba(0,214,254,0.65)' : 'none',
             transition: 'width 200ms linear',
           }} />
         </div>
@@ -8595,10 +8622,13 @@ const HighlightViewer = ({ hlOwner = 'self', momentIndex = 0, onClose, onWatchFu
         draggable={false}
         className="absolute inset-0 w-full h-full"
         style={{ objectFit: 'contain', objectPosition: 'center', pointerEvents: 'none' }} />
-      {/* SPONSORED disclosure — top-leading, sits under the progress
-          chrome so both stay legible. Dark glass pill, same treatment
-          as the morph card ad. */}
-      <div className="absolute top-[80px] start-4 z-30 lg:top-[72px]">
+      {/* SPONSORED disclosure — top-leading.
+          Phone: sits at top-[80px] so it clears the in-frame progress
+          chrome (which is still overlaid on the video at pt-11).
+          Desktop: progress chrome moved OUTSIDE the focal frame in
+          the latest layout, so we can pin the pill at top-4 (true
+          top-left corner) instead of needing 72px of clearance. */}
+      <div className="absolute top-[80px] lg:top-4 start-4 z-30">
         <div className="inline-flex items-center px-2.5 py-1 squircle-sm"
           style={{
             background: 'rgba(0,0,0,0.55)',
@@ -8624,9 +8654,8 @@ const HighlightViewer = ({ hlOwner = 'self', momentIndex = 0, onClose, onWatchFu
     return (ma && ma.title) || 'Highlight';
   };
 
-  /* Index pill — "1 / 7" indicator next to the close X. Tiny tabular
-     nums so it reads as wayfinding, not content. Added per critique:
-     users navigating through highlights need to know where they are. */
+  /* IndexPill — "1 / 7" indicator. Restored alongside the rest of
+     the richer-layout revert; user explicitly preferred it. */
   const IndexPill = () => (
     <div className="sf text-[10.5px] tabular-nums font-bold tracking-tight pe-2"
       style={{ color: 'rgba(255,255,255,0.65)' }}>
@@ -8658,9 +8687,14 @@ const HighlightViewer = ({ hlOwner = 'self', momentIndex = 0, onClose, onWatchFu
     </div>
   );
 
-  /* Glass play button — visible when paused. Tapping resumes. */
+  /* PlayHero — visible glass play button overlay. Now wired to actually
+     call .play() on the underlying <video> element via the ref. If the
+     browser blocked autoplay or the user manually paused, this resumes. */
   const PlayHero = () => (
-    <button onClick={(e) => { e.stopPropagation(); setPlaying(true); }}
+    <button onClick={(e) => {
+        e.stopPropagation();
+        if (videoRef.current) videoRef.current.play().catch(() => {});
+      }}
       className="w-20 h-20 rounded-full lg-glass-strong flex items-center justify-center transition-transform duration-200 hover:scale-[1.06] active:scale-[0.98]"
       aria-label="Play"
       style={{
@@ -8676,8 +8710,7 @@ const HighlightViewer = ({ hlOwner = 'self', momentIndex = 0, onClose, onWatchFu
 
   /* VideoPoster — radial bleed + giant HALO monogram + hatch grain.
      Renders behind the video element so a slow / failed video doesn't
-     read as a broken black box. Same poster pattern used by the
-     GameVideoViewer for visual consistency across video surfaces. */
+     read as a broken black box. */
   const VideoPoster = () => (
     <>
       <div className="absolute inset-0 pointer-events-none"
@@ -8700,10 +8733,9 @@ const HighlightViewer = ({ hlOwner = 'self', momentIndex = 0, onClose, onWatchFu
     </>
   );
 
-  /* Score chip — text-only treatment. Replaces the prior
-     "round letter discs" UI which read as toggle controls per critique.
-     Team names sit as muted eyebrow-cased text flanking the dominant
-     tabular score in the middle. */
+  /* Score chip — text-only treatment. Team names sit as muted
+     eyebrow-cased text flanking the dominant tabular score in the
+     middle. */
   const ScoreChip = () => game && game.scoreHome != null ? (
     <div className="squircle-sm px-4 py-2.5 mb-4 flex items-center justify-between"
       style={{
@@ -8727,8 +8759,7 @@ const HighlightViewer = ({ hlOwner = 'self', momentIndex = 0, onClose, onWatchFu
   ) : null;
 
   /* Action row — Watch full game (primary, flex-1) + Save (icon) +
-     Share (icon). Save added per critique so social actions match the
-     CTA's weight more equitably and the user can stash a highlight. */
+     Share (icon). */
   const ActionRow = () => (
     <div className="flex items-stretch gap-2">
       <button onClick={() => { onClose(); onWatchFullGame && onWatchFullGame(game.id, m && m.id); }}
@@ -8764,16 +8795,9 @@ const HighlightViewer = ({ hlOwner = 'self', momentIndex = 0, onClose, onWatchFu
     </div>
   );
 
-  /* Info block — player headline + score chip + CTAs. Renders as a
-     bottom-overlay on the video. The previous "Game-winning 3" / per-clip
-     title pulled from PLAYER_CLIPS, but the BA video library has no real
-     per-clip captions yet — only filenames — so I'd been filling the H1
-     with placeholder strings like "Drive 1" / "Drive 2". For the demo,
-     promote the PLAYER NAME to be the H1 (that IS the meaningful
-     identity at this point in the story) and demote per-clip context
-     into a short eyebrow ("#7 · Sesh Rigs"). The quarter + clock
-     ("Q1 · 8:24") is already pinned at the top of the focal frame via
-     TopOverlayEyebrow, so we don't duplicate it down here. */
+  /* Info block — player headline + eyebrow + score chip + CTAs.
+     Headline is the player NAME (not the placeholder per-clip "Drive 1"
+     string) so it stays sensible until real captions exist. */
   const InfoBlock = () => (
     <div className="px-5 pb-5 pt-2">
       <div className="sf-display text-white font-bold tracking-[-0.025em] leading-[1.0] mb-2 text-[26px] lg:text-[28px]"
@@ -8808,42 +8832,38 @@ const HighlightViewer = ({ hlOwner = 'self', momentIndex = 0, onClose, onWatchFu
       <div className="lg:hidden flex-1 relative overflow-hidden">
         {isAd ? (
           /* Ad slot — full-bleed 9:16 banner replaces the video + info
-              block. Top chrome (progress / index / close) still renders
-              as a sibling below so it overlays the banner. */
+             block. Top chrome (progress / index / close) renders as a
+             sibling below so it overlays the banner. */
           <AdSlide />
         ) : (
           <>
-            {/* Video poster behind the live video — radial gradient + HALO
-                monogram so a slow/failed video doesn't render as a broken
-                black box. */}
             <VideoPoster />
-            {/* Drive-hosted clip via /preview iframe. Each clip in
-                PLAYER_CLIPS carries its own src; iframe re-mounts via
-                key when idx changes so the new clip loads cleanly.
-                Drive's preview player runs its own play/pause +
-                scrubber UI; the prototype's story-style progress
-                segments above are now slide-navigation, not
-                video-playback control. */}
-            <iframe key={`hv-phone-${idx}-${m && m.id}`} src={m && m.src}
-              title={m && m.title}
-              allow="autoplay; encrypted-media; fullscreen"
-              allowFullScreen
-              className="absolute inset-0 w-full h-full" style={{ border: 0 }} />
-            {/* Story-style eyebrow overlay — sits at top-left of the video
-                frame with breathing room from the progress segments. */}
+            {/* Native <video> — was a Drive /preview iframe before.
+               autoPlay+muted+playsInline starts immediately on every
+               new slide; onEnded chains to the next clip so the whole
+               reel auto-advances without a click. `key` forces a fresh
+               element when the user manually navigates so autoPlay
+               re-fires. */}
+            <video key={`hv-phone-${idx}-${m && m.id}`}
+              ref={videoRef}
+              src={m && m.src}
+              autoPlay muted playsInline
+              onPlay={() => setPlaying(true)}
+              onPause={() => setPlaying(false)}
+              onEnded={goNext}
+              className="absolute inset-0 w-full h-full"
+              style={{ objectFit: 'cover', background: '#000' }} />
             <div className="absolute top-[80px] start-4 z-30">
               <TopOverlayEyebrow />
             </div>
-            {/* Tap zones — prev / next */}
+            {/* Tap zones — prev / next, 1/3 width each. */}
             <button onClick={goPrev} className="absolute start-0 top-[140px] bottom-[240px] w-1/3 z-10" aria-label="Previous" />
             <button onClick={goNext} className="absolute end-0 top-[140px] bottom-[240px] w-1/3 z-10" aria-label="Next" />
-            {/* Center play hero — only when paused */}
             {!playing && (
               <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
                 <div className="pointer-events-auto"><PlayHero /></div>
               </div>
             )}
-            {/* Bottom info — overlay with gradient scrim */}
             <div className="absolute bottom-0 inset-x-0 z-10 pt-20"
               style={{ background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.45) 30%, rgba(0,0,0,0.92) 100%)' }}>
               <InfoBlock />
@@ -8851,7 +8871,7 @@ const HighlightViewer = ({ hlOwner = 'self', momentIndex = 0, onClose, onWatchFu
           </>
         )}
         {/* Top chrome — progress segments + index pill + close. Always
-            on top regardless of ad/clip via z-30 + sibling order. */}
+           on top regardless of ad/clip via z-30 + sibling order. */}
         <div className="absolute top-0 inset-x-0 z-30 px-4 pt-11 pb-4 flex items-center justify-between gap-2">
           <ProgressSegments />
           <div className="flex items-center gap-1.5 shrink-0">
@@ -8865,19 +8885,14 @@ const HighlightViewer = ({ hlOwner = 'self', momentIndex = 0, onClose, onWatchFu
       </div>
 
       {/* === DESKTOP LAYOUT (lg+) — 3-frame composition ===
-          Per critique, the 9:16 card was stranded in a sea of black on
-          desktop. Now: ghosted prev + next neighbor frames flank the
-          focal card at 60% scale, tap to jump. Frames are also
-          backed by the VideoPoster so even the dimmed neighbors look
-          like real story cards, not placeholder rectangles. The eye
-          can SEE there are 7 highlights without leaving this card.
-
-          The arrows are gone — clicking a neighbor jumps to it. Keyboard
-          arrow keys still navigate (wired via useEffect at the top). */}
+         Ghost prev + next neighbor frames flank the focal card at ~94%
+         scale, tap to jump. Per latest critique, the progress segments
+         + close X now live OUTSIDE the focal frame (above it), so the
+         "Instagram-style story chrome" doesn't crowd the video itself.
+         The eyebrow chip (Q1 · 8:24 · YOURS) stays on the video at
+         top-left because it IS in-clip context. */}
       <div className="hidden lg:flex flex-1 items-center justify-center relative overflow-hidden">
-        {/* Ghost prev — left of focal. Simple percentage-based offset
-            (start:6%) avoids fragile calc() math that could be parsed
-            differently across browsers. Tap = jump. */}
+        {/* Ghost prev — left of focal */}
         <button onClick={goPrev} aria-label="Previous highlight"
           className="absolute z-10 overflow-hidden squircle-md transition-all hover:opacity-80 active:scale-[0.97]"
           style={{
@@ -8901,7 +8916,7 @@ const HighlightViewer = ({ hlOwner = 'self', momentIndex = 0, onClose, onWatchFu
           </div>
         </button>
 
-        {/* Ghost next — right of focal, same simple offset. */}
+        {/* Ghost next — right of focal */}
         <button onClick={goNext} aria-label="Next highlight"
           className="absolute z-10 overflow-hidden squircle-md transition-all hover:opacity-80 active:scale-[0.97]"
           style={{
@@ -8925,64 +8940,16 @@ const HighlightViewer = ({ hlOwner = 'self', momentIndex = 0, onClose, onWatchFu
           </div>
         </button>
 
-        {/* The focal phone-shape player frame */}
-        <div className="relative z-20 overflow-hidden squircle-md"
-          style={{
-            height: 'min(88vh, 760px)',
-            aspectRatio: '9 / 16',
-            background: '#000',
-            boxShadow:
-              '0 32px 96px -16px rgba(0,0,0,0.80),' +
-              '0 0 60px -10px rgba(0,214,254,0.20),' +
-              '0 0 0 1px rgba(255,255,255,0.06)',
-          }}>
-          {isAd ? (
-            /* Ad slot — same full-bleed banner. Top chrome below
-                still renders. */
-            <AdSlide />
-          ) : (
-            <>
-              {/* Drive-hosted clip via /preview iframe, desktop variant.
-                  Same pattern as phone: key re-mounts on idx change so
-                  the new clip loads, Drive runs its own video UI. */}
-              <VideoPoster />
-              <iframe key={`hv-desktop-${idx}-${m && m.id}`} src={m && m.src}
-                title={m && m.title}
-                allow="autoplay; encrypted-media; fullscreen"
-                allowFullScreen
-                className="absolute inset-0 w-full h-full" style={{ border: 0 }} />
-              {/* Story-style eyebrow at top-left of video frame */}
-              <div className="absolute top-[72px] start-4 z-30">
-                <TopOverlayEyebrow />
-              </div>
-              {/* Tap zones — prev (left half) / next (right half).
-                  Mirrors the phone layout's tap-zone story-viewer
-                  pattern so clicking the focal card advances. Vertical
-                  bounds (top-[120px], bottom-[260px]) keep the zones
-                  clear of the top chrome (progress + close + eyebrow)
-                  and the bottom InfoBlock (so Watch full game + Save
-                  + Share buttons stay independently clickable). */}
-              <button onClick={goPrev} aria-label="Previous clip"
-                className="absolute start-0 top-[120px] bottom-[260px] w-1/2 z-10" />
-              <button onClick={goNext} aria-label="Next clip"
-                className="absolute end-0 top-[120px] bottom-[260px] w-1/2 z-10" />
-              {/* Center play hero — only when paused */}
-              {!playing && (
-                <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-                  <div className="pointer-events-auto"><PlayHero /></div>
-                </div>
-              )}
-              {/* Bottom info — overlay with gradient scrim. z-20 (above
-                  the tap zones) so its buttons stay clickable. */}
-              <div className="absolute bottom-0 inset-x-0 z-20 pt-20"
-                style={{ background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.45) 30%, rgba(0,0,0,0.92) 100%)' }}>
-                <InfoBlock />
-              </div>
-            </>
-          )}
-          {/* Top chrome — progress segments + index pill + close.
-              Always renders, regardless of ad/clip. */}
-          <div className="absolute top-0 inset-x-0 z-30 px-4 pt-6 pb-5 flex items-center justify-between gap-2">
+        {/* The focal phone-shape player frame + the chrome that sits
+           ABOVE it. Stack them in a vertical flex so the progress
+           segments + close X get their own row, outside the 9:16
+           card. */}
+        <div className="relative z-20 flex flex-col items-center" style={{ width: 'min(calc(88vh * 9 / 16), 428px)' }}>
+          {/* Top chrome — progress segments + index pill + close,
+             OUTSIDE the focal frame. Sits in its own row above the
+             video card. Matches the width of the focal frame so the
+             segments line up with the video edges. */}
+          <div className="w-full flex items-center justify-between gap-2 pb-3 px-1">
             <ProgressSegments />
             <div className="flex items-center gap-1.5 shrink-0">
               <IndexPill />
@@ -8991,6 +8958,49 @@ const HighlightViewer = ({ hlOwner = 'self', momentIndex = 0, onClose, onWatchFu
                 <Icon name="close" size={12} stroke={1.8} />
               </button>
             </div>
+          </div>
+          <div className="relative overflow-hidden squircle-md w-full"
+            style={{
+              height: 'min(88vh, 760px)',
+              aspectRatio: '9 / 16',
+              background: '#000',
+              boxShadow:
+                '0 32px 96px -16px rgba(0,0,0,0.80),' +
+                '0 0 60px -10px rgba(0,214,254,0.20),' +
+                '0 0 0 1px rgba(255,255,255,0.06)',
+            }}>
+            {isAd ? (
+              <AdSlide />
+            ) : (
+              <>
+                <VideoPoster />
+                <video key={`hv-desktop-${idx}-${m && m.id}`}
+                  src={m && m.src}
+                  autoPlay muted playsInline
+                  onPlay={() => setPlaying(true)}
+                  onPause={() => setPlaying(false)}
+                  onEnded={goNext}
+                  className="absolute inset-0 w-full h-full"
+                  style={{ objectFit: 'cover', background: '#000' }} />
+                <div className="absolute top-4 start-4 z-30">
+                  <TopOverlayEyebrow />
+                </div>
+                {/* Tap zones — prev (left half) / next (right half). */}
+                <button onClick={goPrev} aria-label="Previous clip"
+                  className="absolute start-0 top-[60px] bottom-[260px] w-1/2 z-10" />
+                <button onClick={goNext} aria-label="Next clip"
+                  className="absolute end-0 top-[60px] bottom-[260px] w-1/2 z-10" />
+                {!playing && (
+                  <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+                    <div className="pointer-events-auto"><PlayHero /></div>
+                  </div>
+                )}
+                <div className="absolute bottom-0 inset-x-0 z-20 pt-20"
+                  style={{ background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.45) 30%, rgba(0,0,0,0.92) 100%)' }}>
+                  <InfoBlock />
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
