@@ -4798,57 +4798,145 @@ const MorphPreCard = ({ cycle, goPrev, goNext, onNotify }) => {
   );
 };
 
-/* MorphLiveCard — extracted for the same Rules-of-Hooks reason as
-   MorphPreCard. Its useState + useEffect for the moments ticker live
-   at the top of THIS component's scope, so transitions in/out of the
-   live state mount/unmount the component cleanly. */
+/* MorphLiveCard — rebuilt with a 3-tier vertical hierarchy that
+   matches the prototype's editorial pattern:
+     1. TOP chrome     — LIVE pill (with period + clock baked in)
+                         on the left; moments count + StateNav right.
+     2. CENTER hero    — massive score (clamp 56–76px) flanked by
+                         team names at equal weight. The score is
+                         the focal point.
+     3. BOTTOM CTA     — full-width Watch live button with cyan glow.
+                         Unmistakable primary action.
+   Previously the score and team names lived at opposite bottom
+   corners disconnected from each other; the LIVE pill was
+   contextless; the empty middle 60% read as a layout bug. */
 const MorphLiveCard = ({ cycle, goPrev, goNext, onOpenGame }) => {
   const g = SEED_GAMES.find(x => x.status === 'live') || SEED_GAMES[0];
   const [moments, setMoments] = useState(g.momentsCount || 5);
+  /* Clock ticks within the current period — pure visual, doesn't
+     advance the period. Gives the LIVE chrome live-feel motion. */
+  const [clockSec, setClockSec] = useState(4 * 60 + 21); // 04:21
   useEffect(() => {
     const t = setInterval(() => setMoments(m => m + (Math.random() > 0.5 ? 1 : 0)), 6000);
     return () => clearInterval(t);
   }, []);
+  useEffect(() => {
+    const t = setInterval(() => setClockSec(s => (s > 0 ? s - 1 : 11 * 60 + 59)), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const fmtClock = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  const homeTeam = teamByName(g.home);
+  const awayTeam = teamByName(g.away);
+  /* Who's leading right now — used by the team-score columns to
+     emphasise the leading side with full primary color + cyan glow
+     and dim the trailing side to muted text. */
+  const homeWon = (g.scoreHome || 0) > (g.scoreAway || 0);
+  const awayWon = (g.scoreAway || 0) > (g.scoreHome || 0);
   return (
     <div role="button" tabIndex={0} onClick={() => onOpenGame(g.id)}
-      className="relative w-full text-start squircle-md overflow-hidden lg-aura lg-shine lg-live-ember cursor-pointer flex flex-col justify-between"
+      className="relative w-full text-start squircle-md overflow-hidden lg-aura lg-shine lg-live-ember cursor-pointer flex flex-col"
       style={{
         minHeight: MORPH_CARD_MIN_HEIGHT,
-        background: 'linear-gradient(180deg, var(--card-base-soft-top) 0%, var(--card-base-soft-bot) 100%)',
-          border: '1px solid var(--glass-card-border)',
-          backdropFilter: 'blur(36px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(36px) saturate(180%)',
-          color: 'var(--text-primary)',
-        }}>
-        <div className="lg-live-amp" aria-hidden="true" />
-        <div className="relative px-4 pt-3 pb-2 lg:px-5 flex items-center justify-between"
-          style={{ borderBottom: '1px solid var(--hairline)', zIndex: 2 }}>
-          <button onClick={(e) => { e.stopPropagation(); cycle(); }}
-            className="live-red squircle-sm px-2 py-1 inline-flex items-center gap-1.5 active:scale-[0.96]" title="Tap to cycle demo state">
-            <div className="w-2 h-2 rounded-full bg-white anim-pulse-dot" style={{ boxShadow: '0 0 6px rgba(255,255,255,0.95)', flexShrink: 0 }} />
-            <span className="sf text-[10px] font-bold tracking-[0.18em] uppercase leading-none" style={{ color: '#FFF' }}>LIVE</span>
-          </button>
-          <div className="flex items-center gap-2">
-            <span className="sf text-[10px] font-medium tracking-tight" style={{ color: 'var(--text-muted)' }}>{moments} moments</span>
-            <span className="sf text-[10px] font-semibold" style={{ color: 'var(--text-tertiary)' }}>· {g.period}</span>
-            <StateNav onPrev={goPrev} onNext={goNext} />
+        background:
+          `radial-gradient(ellipse 60% 80% at 0% 50%, ${homeTeam.accentA} 0%, transparent 60%),` +
+          `radial-gradient(ellipse 60% 80% at 100% 50%, ${awayTeam.accentA} 0%, transparent 60%),` +
+          'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(220,38,38,0.20) 0%, transparent 60%),' +
+          'linear-gradient(180deg, var(--card-base-soft-top) 0%, var(--card-base-soft-bot) 100%)',
+        border: '1px solid var(--glass-card-border)',
+        /* Dropped the 0 0 0 1px rgba(220,38,38,0.18) outline-shadow —
+           it was rendering as an inset second border, looked like a
+           "card inside a card" glitch. The lg-live-ember CSS class
+           already provides the warm red outer aura. */
+        boxShadow: 'inset 0 1px 0 var(--glass-card-inset-top), var(--glass-card-shadow)',
+        backdropFilter: 'blur(36px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(36px) saturate(180%)',
+        color: 'var(--text-primary)',
+      }}>
+      <div className="lg-live-amp" aria-hidden="true" />
+
+      {/* ── TIER 1 · TOP CHROME ─────────────────────────────────
+          LIVE pill carries period + clock so the live state is
+          fully self-describing ("LIVE · Q2 04:21"). StateNav alone
+          on the right — moments count removed (was redundant
+          metadata that competed with the LIVE chrome at equal
+          uppercase tracking weight). */}
+      <div className="relative z-10 px-4 lg:px-5 pt-3.5 pb-2 flex items-center justify-between">
+        <button onClick={(e) => { e.stopPropagation(); cycle(); }}
+          className="live-red squircle-sm px-2.5 py-1 inline-flex items-center gap-1.5 active:scale-[0.96]" title="Tap to cycle demo state">
+          <div className="w-1.5 h-1.5 rounded-full bg-white anim-pulse-dot" style={{ boxShadow: '0 0 6px rgba(255,255,255,0.95)', flexShrink: 0 }} />
+          <span className="sf text-[10px] font-bold tracking-[0.18em] uppercase leading-none tabular-nums" style={{ color: '#FFF' }}>
+            LIVE · {g.period} {fmtClock(clockSec)}
+          </span>
+        </button>
+        <StateNav onPrev={goPrev} onNext={goNext} />
+      </div>
+
+      {/* ── TIER 2 · CENTER HERO ────────────────────────────────
+          Each team is one COLUMN: name above score, paired tightly
+          so the reader instantly sees who scored what. Two columns
+          flank an em-dash separator. Winning team renders in full
+          primary white (name + score); losing team dims to muted
+          gray so the leading side is unmistakable. Previously
+          team names sat as a single left-aligned sentence below
+          the score block, which broke the visual link between
+          name and number. */}
+      <div className="relative z-10 flex-1 flex items-center justify-center px-4 lg:px-5 py-1">
+        <div className="flex items-center justify-center gap-5 lg:gap-10">
+          {/* TEAM A column — name above score, right-aligned so it
+              reads toward the em-dash separator. */}
+          <div className="flex flex-col items-end min-w-0">
+            <div className="sf text-[10.5px] lg:text-[11.5px] tracking-[0.18em] uppercase font-bold mb-1.5 truncate max-w-[180px]"
+              style={{ color: homeWon ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>
+              {g.home}
+            </div>
+            <span className="sf-display tabular-nums font-bold leading-none"
+              style={{
+                fontSize: 'clamp(48px, 12vw, 68px)',
+                letterSpacing: '-0.045em',
+                color: homeWon ? 'var(--text-primary)' : 'var(--text-secondary)',
+                textShadow: homeWon ? '0 0 18px rgba(0,214,254,0.32)' : 'none',
+              }}>
+              {g.scoreHome}
+            </span>
+          </div>
+          {/* Em-dash separator — sits between the score numbers,
+              not between team names (where the dash would read as
+              a hyphen between words). */}
+          <span className="sf-display font-bold leading-none self-end mb-3 lg:mb-4"
+            style={{ fontSize: 'clamp(24px, 6vw, 36px)', color: 'var(--text-faint)', letterSpacing: '-0.02em' }}>
+            —
+          </span>
+          {/* TEAM B column — name above score, left-aligned to mirror. */}
+          <div className="flex flex-col items-start min-w-0">
+            <div className="sf text-[10.5px] lg:text-[11.5px] tracking-[0.18em] uppercase font-bold mb-1.5 truncate max-w-[180px]"
+              style={{ color: awayWon ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>
+              {g.away}
+            </div>
+            <span className="sf-display tabular-nums font-bold leading-none"
+              style={{
+                fontSize: 'clamp(48px, 12vw, 68px)',
+                letterSpacing: '-0.045em',
+                color: awayWon ? 'var(--text-primary)' : 'var(--text-secondary)',
+                textShadow: awayWon ? '0 0 18px rgba(0,214,254,0.32)' : 'none',
+              }}>
+              {g.scoreAway}
+            </span>
           </div>
         </div>
-        <div className="relative px-4 lg:px-5 py-4 flex items-center justify-between" style={{ zIndex: 2 }}>
-          <div className="flex-1 min-w-0">
-            <div className="sf-display text-[18px] font-bold leading-tight tracking-[-0.015em]" style={{ color: 'var(--text-primary)' }}>{g.home}</div>
-            <div className="sf text-[12px]" style={{ color: 'var(--text-tertiary)' }}>vs {g.away}</div>
-          </div>
-          <div className="flex items-baseline gap-3 sf-display font-bold tabular-nums">
-            <span className="text-[28px]" style={{ color: 'var(--text-primary)' }}>{g.scoreHome}</span>
-            <span className="text-[16px]" style={{ color: 'var(--text-tertiary)' }}>—</span>
-            <span className="text-[28px]" style={{ color: 'var(--text-tertiary)' }}>{g.scoreAway}</span>
-          </div>
-        </div>
-      <div className="relative px-4 lg:px-5 pb-3 flex items-center justify-start" style={{ zIndex: 2 }}>
-        <button onClick={(e) => { e.stopPropagation(); onOpenGame(g.id); }} className="lg-btn-primary squircle-sm sf text-[12px] font-bold px-4 py-2 flex items-center gap-1.5">
-          <svg width={11} height={11} viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><path d="M3 2 L12 7 L3 12 Z" /></svg>
-          Watch live
+      </div>
+
+      {/* ── TIER 3 · BOTTOM CTA ─────────────────────────────────
+          Watch live is the primary action — content-width pill
+          centered horizontally so it aligns with the centered
+          LIVE chrome above and the centered score block. */}
+      <div className="relative z-10 px-4 lg:px-5 pb-3.5 pt-1 flex justify-center">
+        <button onClick={(e) => { e.stopPropagation(); onOpenGame(g.id); }}
+          className="lg-btn-primary squircle-sm sf text-[13px] font-bold inline-flex items-center justify-center gap-2 px-5 py-2.5"
+          style={{ boxShadow: '0 6px 22px -6px rgba(0,214,254,0.50), inset 0 1px 0 rgba(255,255,255,0.30)' }}>
+          <svg width={12} height={12} viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+            <path d="M3 2 L12 7 L3 12 Z" />
+          </svg>
+          Watch live now
         </button>
       </div>
     </div>
