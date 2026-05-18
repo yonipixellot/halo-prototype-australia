@@ -1811,14 +1811,19 @@ const STATE_THEMES = {
   QLD: {
     pageSweep: 'linear-gradient(180deg, #6E081E 0%, #2a0810 38%, #0a0510 70%, #04060c 100%)',
     atmosphere: 'transparent',
-    scrim: 'linear-gradient(180deg, transparent 0%, transparent 35%, rgba(10,5,16,0.55) 70%, rgba(4,6,12,0.92) 100%)',
+    /* Scrim tinted with deep maroon (darker shade of the page top)
+       so it blends seamlessly into the page sweep underneath instead
+       of carving a dark band across the maroon. Ends at #2a0810 to
+       match the page sweep's color at the hero bottom (~38%). */
+    scrim: 'linear-gradient(180deg, transparent 0%, transparent 30%, rgba(74,5,24,0.55) 60%, rgba(42,8,16,0.92) 95%, #2a0810 100%)',
     accent: '#8C0E2A',
     liveDot: '#ffd0d8',
   },
   VIC: {
     pageSweep: 'linear-gradient(180deg, #0a1640 0%, #050a20 38%, #04060c 70%, #04060c 100%)',
     atmosphere: 'transparent',
-    scrim: 'linear-gradient(180deg, transparent 0%, transparent 35%, rgba(5,10,32,0.55) 70%, rgba(4,6,12,0.92) 100%)',
+    /* Deep navy scrim blending into VIC's page sweep. */
+    scrim: 'linear-gradient(180deg, transparent 0%, transparent 30%, rgba(8,18,55,0.55) 60%, rgba(5,10,32,0.92) 95%, #050a20 100%)',
     accent: '#1A2D5A',
     liveDot: '#c8d8ff',
   },
@@ -1829,7 +1834,10 @@ const STATE_THEMES = {
        without dragging in blue. */
     pageSweep: 'linear-gradient(180deg, #C8102E 0%, rgba(255,184,28,0.55) 18%, #6E0518 32%, #1a0608 60%, #04060c 100%)',
     atmosphere: 'transparent',
-    scrim: 'linear-gradient(180deg, transparent 0%, transparent 40%, rgba(26,6,8,0.55) 75%, rgba(4,6,12,0.92) 100%)',
+    /* Deep warm scrim — fades from transparent through deep red into
+       near-black, matching the page sweep around the hero-bottom
+       position (~60% of the page). */
+    scrim: 'linear-gradient(180deg, transparent 0%, transparent 30%, rgba(110,8,30,0.55) 60%, rgba(46,3,16,0.92) 95%, #1a0608 100%)',
     accent: '#A6112A',
     liveDot: '#FFB81C',
   },
