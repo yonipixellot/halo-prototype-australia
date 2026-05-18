@@ -7133,14 +7133,14 @@ const FeaturedHero = ({ onWatch, selectedState = 'QLD' }) => {
       <div className="absolute inset-0 pointer-events-none"
         style={{ background: theme.scrim }} />
       <div className="absolute inset-x-0 bottom-0 z-10 px-4 pb-3">
-        <div className="flex items-center gap-2.5 mb-2">
+        {/* LIVE / Last match pill stacked ABOVE the program eyebrow
+           line on its own row — per spec the live state should read
+           as a primary affordance, not as a tag next to the program
+           name. */}
+        <div className="flex flex-col items-start gap-2 mb-2">
           {isLive ? (
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full"
               style={{ background: 'rgba(220,38,38,0.95)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.25), 0 0 16px rgba(220,38,38,0.50)' }}>
-              {/* Pulse dot tinted to the state's accent so the LIVE pill
-                 carries a tiny piece of state identity. Defaults back
-                 to white via STATE_THEMES._default for non-themed
-                 states. */}
               <div className="w-1.5 h-1.5 rounded-full anim-pulse-dot"
                 style={{ background: theme.liveDot, boxShadow: `0 0 6px ${theme.liveDot}` }} />
               <span className="sf text-[9.5px] tracking-[0.16em] font-bold uppercase text-white">Live now</span>
@@ -7240,7 +7240,9 @@ const WatchHeroDesktop = ({ onWatch, selectedState = 'QLD' }) => {
         style={{ background: theme.scrim }} />
       {/* Left-anchored content */}
       <div className="absolute inset-y-0 inset-x-0 z-10 flex flex-col justify-end px-10 xl:px-12 pb-8 max-w-[1000px]">
-        <div className="flex items-center gap-2.5 mb-2.5">
+        {/* Same stacked treatment as the phone hero — LIVE pill on
+           its own line above the program eyebrow. */}
+        <div className="flex flex-col items-start gap-2 mb-2.5">
           {isLive ? (
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full"
               style={{ background: 'rgba(220,38,38,0.95)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.25), 0 0 16px rgba(220,38,38,0.50)' }}>
