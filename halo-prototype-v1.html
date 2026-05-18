@@ -1834,14 +1834,14 @@ const STATE_THEMES = {
        without dragging in blue. */
     pageSweep: 'linear-gradient(180deg, #C8102E 0%, rgba(255,184,28,0.55) 18%, #6E0518 32%, #1a0608 60%, #04060c 100%)',
     atmosphere: 'transparent',
-    /* Deep warm scrim — earlier version faded to near-black, which
-       carved a dark band against SA's red-saturated page sweep
-       (the rails section right below the hero stays warm-red, so
-       a near-black scrim bottom read as a visible cut). Now the
-       scrim resolves at #4A0414 — a deep wine red that sits in
-       the same warm family as the page sweep around hero-bottom
-       position, so the seam blends seamlessly. */
-    scrim: 'linear-gradient(180deg, transparent 0%, transparent 30%, rgba(90,5,22,0.50) 60%, rgba(58,3,14,0.85) 92%, #4A0414 100%)',
+    /* SA scrim — kept very translucent so the page sweep's red
+       passes through the entire bottom of the hero. Previous opaque
+       endpoint at #4A0414 was still creating a darker band; this
+       version peaks at only 0.42 alpha mid-scrim and 0.55 at the
+       bottom, so the page color is the dominant visual at the seam.
+       Text legibility is reinforced by the existing title text
+       contrast against the dimmed video underneath. */
+    scrim: 'linear-gradient(180deg, transparent 0%, transparent 38%, rgba(30,2,10,0.20) 60%, rgba(40,3,12,0.42) 82%, rgba(50,4,14,0.55) 100%)',
     accent: '#A6112A',
     liveDot: '#FFB81C',
   },
