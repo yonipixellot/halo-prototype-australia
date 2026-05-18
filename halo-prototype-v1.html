@@ -6483,6 +6483,31 @@ const GamesScreen = ({ onOpenGame, onOpenGameVideo }) => {
             <div className="sf text-[12px]" style={{ color: 'var(--text-muted)' }}>Use the chevrons above to find one</div>
           </div>
         )}
+        {/* Sponsor ad slot — sits above the LIVE card on Games tab.
+            Uses the yoni-x-claude collaboration banner. 4:1 aspect
+            keeps it as a clearly-an-ad horizontal band without
+            stealing focus from the game card directly below it.
+            'Sponsored' eyebrow tag clarifies the slot is paid
+            placement, not editorial content. */}
+        {live.length > 0 && (
+          <div>
+            <div className="sf text-[9px] tracking-[0.22em] uppercase font-semibold mb-1.5 px-0.5" style={{ color: 'rgba(255,255,255,0.40)' }}>
+              Sponsored
+            </div>
+            <button onClick={() => {}} aria-label="Sponsored content"
+              className="block w-full overflow-hidden squircle-md relative lg-aura"
+              style={{
+                aspectRatio: '4 / 1',
+                background: '#0a0e1a',
+                border: '1px solid rgba(255,255,255,0.06)',
+                marginBottom: 18,
+              }}>
+              <img src="yoni-x-claude-9-16.optimized.jpg" alt=""
+                className="absolute inset-0 w-full h-full"
+                style={{ objectFit: 'cover', objectPosition: 'center 25%' }} />
+            </button>
+          </div>
+        )}
         {live.length > 0 && (
           <div>
             <GamesSectionLabel tone="live" label="Live now" />
