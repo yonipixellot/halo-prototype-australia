@@ -1776,6 +1776,43 @@ const STATES_DATA = [
   { code: 'VIC', name: 'Victoria',                     src: 'logos/state-vic.png', wordmark: 'logos/state-vic-wordmark.png' },
   { code: 'WA',  name: 'Western Australia',            src: 'logos/state-wa.png'  },
 ];
+
+/* STATE_THEMES — per-state visual treatment used by the Watch hero
+   (background atmosphere overlay), the state-switcher pill (ring +
+   glow color), and the LIVE pulse-dot tint. Only QLD/VIC/SA are
+   themed for the May 2026 demo; other states fall back to the
+   default Halo cyan/purple atmosphere defined in `_default`.
+   - atmosphere: CSS background string (radial-gradients + base
+     linear). Stacked behind the atmosphere_loop.mp4 video so the
+     video reads tinted in the state's signature shade.
+   - accent: hex/rgb for the WatchStateSwitcherPill border + glow
+     and the LIVE pulse-dot (overrides the default white dot when
+     the user has explicitly picked a themed state).
+   - liveDot: lighter shade for the actual pulse dot — accent itself
+     is used as the glow so the dot reads as a glowing core. */
+const STATE_THEMES = {
+  _default: {
+    atmosphere: 'radial-gradient(ellipse 70% 80% at 70% 30%, rgba(220,38,38,0.40) 0%, transparent 55%), radial-gradient(ellipse 60% 70% at 25% 75%, rgba(0,180,255,0.28) 0%, transparent 60%), linear-gradient(135deg, #0a0e1a 0%, #050810 60%, #0d1228 100%)',
+    accent: '#00D6FE',
+    liveDot: '#fff',
+  },
+  QLD: {
+    atmosphere: 'radial-gradient(ellipse 100% 70% at 70% 60%, rgba(110,8,30,0.85) 0%, rgba(75,5,20,0.5) 30%, transparent 65%), radial-gradient(ellipse 60% 40% at 15% 25%, rgba(75,5,20,0.55) 0%, transparent 60%), linear-gradient(135deg, #1a0610 0%, #050810 60%, #0f0408 100%)',
+    accent: '#8C0E2A',
+    liveDot: '#ffd0d8',
+  },
+  VIC: {
+    atmosphere: 'radial-gradient(ellipse 110% 60% at 50% 0%, rgba(8,18,55,0.92) 0%, rgba(5,12,38,0.65) 40%, transparent 75%), radial-gradient(ellipse 65% 50% at 30% 85%, rgba(3,8,28,0.85) 0%, transparent 70%), linear-gradient(135deg, #04081a 0%, #050810 60%, #050a18 100%)',
+    accent: '#1A2D5A',
+    liveDot: '#c8d8ff',
+  },
+  SA: {
+    atmosphere: 'radial-gradient(ellipse 55% 45% at 15% 35%, rgba(200,16,46,0.60) 0%, transparent 60%), radial-gradient(ellipse 80% 50% at 60% 75%, rgba(0,61,165,0.60) 0%, transparent 65%), radial-gradient(ellipse 45% 35% at 92% 85%, rgba(255,184,28,0.45) 0%, transparent 55%), linear-gradient(135deg, #0a0810 0%, #050810 60%, #08080e 100%)',
+    accent: '#003DA5',
+    liveDot: '#FFB81C',
+  },
+};
+const stateTheme = (code) => STATE_THEMES[code] || STATE_THEMES._default;
 /* Per-state team lookup — used by the Watch tab to filter rails by
    the currently-selected state code. Senior Domestic is QLD-only in
    the prototype (it's Tal's specific competition); other states show
@@ -6545,11 +6582,24 @@ const stateName = (code) => (STATES_DATA.find(s => s.code === code) || {}).name 
 const WatchStateSwitcherPill = ({ selected, onSelect }) => {
   const [open, setOpen] = useState(false);
   const selectedState = STATES_DATA.find(s => s.code === selected);
+  /* Themed pill — when the user has picked a state with a theme
+     entry (QLD/VIC/SA), the pill border + outer glow take that
+     state's accent color. Default cyan/white treatment is preserved
+     for non-themed states so the chrome stays neutral until the
+     user explicitly picks. */
+  const theme = stateTheme(selected);
+  const isThemed = !!STATE_THEMES[selected];
   return (
     <>
       <button onClick={() => setOpen(true)}
         className="lg-glass squircle-sm ps-1 pe-3 py-1 inline-flex items-center gap-2 transition-transform active:scale-[0.97]"
-        style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.10)' }}
+        style={{
+          background: 'rgba(0,0,0,0.45)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          border: isThemed ? `1px solid ${theme.accent}` : '1px solid rgba(255,255,255,0.10)',
+          boxShadow: isThemed ? `0 0 10px ${theme.accent}88` : 'none',
+        }}
         title={`Watching: ${stateName(selected)}`}>
         {selectedState && selectedState.src && (
           <span className="inline-flex items-center justify-center overflow-hidden"
@@ -7025,12 +7075,13 @@ const FeaturedHero = ({ onWatch, selectedState = 'QLD' }) => {
   const eyebrowText = owningProgram
     ? `${owningProgram.name} · ${owningProgram.sub}`
     : stateName(selectedState);
+  const theme = stateTheme(selectedState);
   return (
     <div className="relative w-full"
       style={{
         overflow: 'clip',
         minHeight: '62vh',
-        background: 'radial-gradient(ellipse 70% 80% at 70% 30%, rgba(220,38,38,0.40) 0%, transparent 55%), radial-gradient(ellipse 60% 70% at 25% 75%, rgba(0,180,255,0.28) 0%, transparent 60%), linear-gradient(135deg, #0a0e1a 0%, #050810 60%, #0d1228 100%)',
+        background: theme.atmosphere,
       }}>
       {/* Atmosphere video — same clips/atmosphere_loop.mp4 the desktop
          hero uses (20s mid-game trim of condensed_game.mp4). Phone
@@ -7051,7 +7102,12 @@ const FeaturedHero = ({ onWatch, selectedState = 'QLD' }) => {
           {isLive ? (
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full"
               style={{ background: 'rgba(220,38,38,0.95)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.25), 0 0 16px rgba(220,38,38,0.50)' }}>
-              <div className="w-1.5 h-1.5 rounded-full bg-white anim-pulse-dot" />
+              {/* Pulse dot tinted to the state's accent so the LIVE pill
+                 carries a tiny piece of state identity. Defaults back
+                 to white via STATE_THEMES._default for non-themed
+                 states. */}
+              <div className="w-1.5 h-1.5 rounded-full anim-pulse-dot"
+                style={{ background: theme.liveDot, boxShadow: `0 0 6px ${theme.liveDot}` }} />
               <span className="sf text-[9.5px] tracking-[0.16em] font-bold uppercase text-white">Live now</span>
             </div>
           ) : (
@@ -7103,13 +7159,14 @@ const WatchHeroDesktop = ({ onWatch, selectedState = 'QLD' }) => {
   const eyebrowText = owningProgram
     ? `${owningProgram.name} · ${owningProgram.sub} · Rowland Cowan`
     : stateName(selectedState);
+  const theme = stateTheme(selectedState);
   return (
     <div className="relative w-full"
       style={{
         overflow: 'clip',
         minHeight: '52vh',
         maxHeight: 560,
-        background: 'radial-gradient(ellipse 60% 70% at 75% 30%, rgba(220,38,38,0.32) 0%, transparent 55%), radial-gradient(ellipse 55% 60% at 85% 80%, rgba(132,88,255,0.30) 0%, transparent 60%), radial-gradient(ellipse 50% 60% at 25% 65%, rgba(0,180,255,0.22) 0%, transparent 55%), linear-gradient(135deg, #0a0e1a 0%, #050810 60%, #0d1228 100%)',
+        background: theme.atmosphere,
       }}>
       {/* Atmosphere video — clips/atmosphere_loop.mp4 is a 20-second
          trim of clips/condensed_game (1).mp4 (t=32..52), no audio,
@@ -7148,7 +7205,8 @@ const WatchHeroDesktop = ({ onWatch, selectedState = 'QLD' }) => {
           {isLive ? (
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full"
               style={{ background: 'rgba(220,38,38,0.95)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.25), 0 0 16px rgba(220,38,38,0.50)' }}>
-              <div className="w-1.5 h-1.5 rounded-full bg-white anim-pulse-dot" />
+              <div className="w-1.5 h-1.5 rounded-full anim-pulse-dot"
+                style={{ background: theme.liveDot, boxShadow: `0 0 6px ${theme.liveDot}` }} />
               <span className="sf text-[9.5px] tracking-[0.16em] font-bold uppercase text-white">Live now</span>
             </div>
           ) : (
