@@ -6497,14 +6497,17 @@ const GamesScreen = ({ onOpenGame, onOpenGameVideo }) => {
             <button onClick={() => {}} aria-label="Sponsored content"
               className="block w-full overflow-hidden squircle-md relative lg-aura"
               style={{
-                aspectRatio: '2.5 / 1',
+                /* spalding-ad-1600x600.png is actually 1774x887 → 2:1
+                   exact. Slot aspect matches the file so the image
+                   renders pixel-perfect with no crop or letterbox. */
+                aspectRatio: '2 / 1',
                 background: '#0a0e1a',
                 border: '1px solid rgba(255,255,255,0.06)',
                 marginBottom: 18,
               }}>
-              <img src="yoni-x-claude-9-16.optimized.jpg" alt=""
+              <img src="spalding-ad-1600x600.png" alt="Sponsored: Spalding"
                 className="absolute inset-0 w-full h-full"
-                style={{ objectFit: 'cover', objectPosition: 'center 25%' }} />
+                style={{ objectFit: 'cover', objectPosition: 'center' }} />
             </button>
           </div>
         )}
