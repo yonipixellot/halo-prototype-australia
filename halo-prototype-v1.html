@@ -1308,6 +1308,16 @@ const SEED_GAMES = [
   { id: 'gE',  home: 'Sesh Rigs', away: 'Medium Fundamentals',   status: 'just-ended', scoreHome: 64, scoreAway: 58, momentsCount: 8, when: 'Yesterday · 7:30 PM', poster: 'clips/posters/condensed_game.jpg' },
   { id: 'gP1', home: 'Sesh Rigs', away: 'Hustle HQ',             status: 'final',  scoreHome: 71, scoreAway: 63, when: '3 days ago', poster: 'clips/posters/condensed_game_late.jpg' },
   { id: 'gP2', home: 'Sesh Rigs', away: 'Nothing But All Stars', status: 'final',  scoreHome: 55, scoreAway: 48, when: 'Last week', poster: 'clips/posters/condensed_game_full.jpg' },
+  /* ── VIC games ────────────────────────────────────────────
+     Backs the VIC NBL1 South 'live' flag and gives the Watch
+     tab something to surface when the user picks VIC. */
+  { id: 'gVL', home: 'Bendigo Braves',    away: 'Melbourne Tigers', status: 'live',        scoreHome: 52, scoreAway: 48, period: 'Q3', momentsCount: 3 },
+  { id: 'gV1', home: 'Bendigo Braves',    away: 'Melbourne Tigers', status: 'final',       scoreHome: 78, scoreAway: 71, when: '2 days ago', momentsCount: 6, poster: 'clips/posters/condensed_game.jpg' },
+  { id: 'gV2', home: 'Frankston Blues',   away: 'Knox Raiders',     status: 'final',       scoreHome: 83, scoreAway: 78, when: '4 days ago', momentsCount: 4, poster: 'clips/posters/condensed_game_late.jpg' },
+  /* ── SA games ─────────────────────────────────────────────
+     NBL1 Central + Junior Reps so picking SA shows real games. */
+  { id: 'gS1', home: 'Forestville Eagles', away: 'Norwood Flames', status: 'final',         scoreHome: 65, scoreAway: 60, when: '3 days ago', momentsCount: 5, poster: 'clips/posters/condensed_game_full.jpg' },
+  { id: 'gS2', home: 'Norwood Flames',     away: 'South Adelaide Panthers', status: 'final', scoreHome: 71, scoreAway: 68, when: 'Last week', momentsCount: 3, poster: 'clips/posters/condensed_game.jpg' },
 ];
 
 /* Local clip path builder. After dropping Drive iframes (which couldn't
@@ -1708,6 +1718,20 @@ const TEAMS_DB = {
   canbGunners:  { id: 'canbGunners',  name: 'Canberra Gunners',      nickname: 'Gunners',  initial: 'CG', state: 'ACT', tier: 'nbl1',       accentA: 'rgba(255,210,80,0.55)',  accentB: 'rgba(20,30,40,0.40)',   src: 'logos/canberra-gunners.png' },
   actAcademy:   { id: 'actAcademy',   name: 'ACT Academy',           nickname: 'Academy',  initial: 'AA', state: 'ACT', tier: 'juniorReps', accentA: 'rgba(0,214,254,0.55)',   accentB: 'rgba(132,88,255,0.36)' },
   darwinSalt:   { id: 'darwinSalt',   name: 'Darwin Salties',        nickname: 'Salties',  initial: 'DS', state: 'NT',  tier: 'nbl1',       accentA: 'rgba(255,140,40,0.55)',  accentB: 'rgba(255,90,50,0.30)',  src: 'logos/darwin-salties.png' },
+  /* ── VIC Big V state-league teams ─────────────────────────────
+     Added so the VIC 'Big V' program tile actually backs onto real
+     team identities. No bundled logo PNGs yet (STATUS.md skipped
+     these), so TeamCrest falls back to initials — that's fine for
+     state-rail population. */
+  geelongSpr:   { id: 'geelongSpr',   name: 'Geelong Supercats',     nickname: 'Cats',     initial: 'GS', state: 'VIC', tier: 'bigv',       accentA: 'rgba(255,210,80,0.55)',  accentB: 'rgba(0,170,220,0.30)' },
+  humeBroncos:  { id: 'humeBroncos',  name: 'Hume City Broncos',     nickname: 'Broncos',  initial: 'HB', state: 'VIC', tier: 'bigv',       accentA: 'rgba(132,88,255,0.55)',  accentB: 'rgba(255,90,50,0.30)' },
+  sandSabres:   { id: 'sandSabres',   name: 'Sandringham Sabres',    nickname: 'Sabres',   initial: 'SD', state: 'VIC', tier: 'bigv',       accentA: 'rgba(0,170,220,0.55)',   accentB: 'rgba(20,30,40,0.40)' },
+  /* ── SA Premier League state-league teams ─────────────────────
+     Same treatment for SA Premier League. Eastern Mavericks +
+     Sturt Sabres are real SA Premier League clubs. */
+  adelLightning:{ id: 'adelLightning', name: 'Adelaide Lightning',   nickname: 'Lightning',initial: 'AL', state: 'SA',  tier: 'premier',    accentA: 'rgba(255,210,80,0.55)',  accentB: 'rgba(132,88,255,0.30)' },
+  sturtSabres:  { id: 'sturtSabres',   name: 'Sturt Sabres',          nickname: 'Sabres',   initial: 'ST', state: 'SA',  tier: 'premier',    accentA: 'rgba(220,38,38,0.55)',   accentB: 'rgba(20,30,40,0.40)' },
+  eastMavericks:{ id: 'eastMavericks', name: 'Eastern Mavericks',     nickname: 'Mavs',     initial: 'EM', state: 'SA',  tier: 'premier',    accentA: 'rgba(0,170,220,0.55)',   accentB: 'rgba(255,210,80,0.30)' },
 };
 /* Brand marks used outside TEAMS_DB lookups (onboarding splash, About
    footer, athlete-profile association line, settings tile). */
@@ -6456,8 +6480,8 @@ const WATCH_PROGRAMS_BY_STATE = {
   ],
   VIC: [
     { id: 'big-v',           name: 'Big V',           sub: 'State league',        live: false, games: [] },
-    { id: 'nbl1-south',      name: 'NBL1 South',      sub: 'Semi-pro · VIC',      live: true,  games: [] },
-    { id: 'junior-reps',     name: 'Junior Reps',     sub: 'U18 · U16 · U14',     live: false, games: [] },
+    { id: 'nbl1-south',      name: 'NBL1 South',      sub: 'Semi-pro · VIC',      live: true,  games: ['gVL','gV1'] },
+    { id: 'junior-reps',     name: 'Junior Reps',     sub: 'U18 · U16 · U14',     live: false, games: ['gV2'] },
     { id: 'metro',           name: 'Metro League',    sub: 'Senior community',    live: false, games: [] },
     { id: '3x3',             name: '3x3',             sub: 'Half-court',          live: false, games: [] },
   ],
@@ -6476,8 +6500,8 @@ const WATCH_PROGRAMS_BY_STATE = {
   ],
   SA: [
     { id: 'premier-league',  name: 'Premier League',  sub: 'SA state',            live: false, games: [] },
-    { id: 'nbl1-central',    name: 'NBL1 Central',    sub: 'Semi-pro · SA',       live: false, games: [] },
-    { id: 'junior-reps',     name: 'Junior Reps',     sub: 'U18 · U16 · U14',     live: false, games: [] },
+    { id: 'nbl1-central',    name: 'NBL1 Central',    sub: 'Semi-pro · SA',       live: false, games: ['gS1'] },
+    { id: 'junior-reps',     name: 'Junior Reps',     sub: 'U18 · U16 · U14',     live: false, games: ['gS2'] },
     { id: '3x3',             name: '3x3',             sub: 'Half-court',          live: false, games: [] },
   ],
   TAS: [
