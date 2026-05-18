@@ -5512,12 +5512,16 @@ const MorphAdCard = ({ cycle, goPrev, goNext }) => {
   return (
     <div className="relative w-full squircle-md overflow-hidden lg-aura lg-shine"
       style={{
-        // Unified morph card height (replaces the breakpoint-aware
-        // aspect-ratio). 9:16 mobile banner + 4:1 desktop banner both
-        // letterbox cleanly into a fixed 220px frame because the
-        // matching #9CC9E6 background bleeds into the letterbox bars.
-        minHeight: MORPH_CARD_MIN_HEIGHT,
-        background: '#9CC9E6',
+        // Adopts the spalding-1600x838.png native aspect (1734x907 →
+        // 1.91:1) so the image renders pixel-perfect with no crop or
+        // letterbox. The min-height constraint that other morph
+        // variants share (240px floor for visual consistency during
+        // the demo cycle) is dropped here — the home feed accepts a
+        // slightly shorter ad card variant in exchange for ad
+        // fidelity. background drops to dark to match the ad
+        // creative's dark canvas.
+        aspectRatio: '1734 / 907',
+        background: '#0a0e1a',
         border: '1px solid var(--glass-card-border)',
         boxShadow: 'inset 0 1px 0 var(--glass-card-inset-top), var(--glass-card-shadow)',
         color: '#FFF',
@@ -9641,7 +9645,7 @@ const HighlightViewer = ({ hlOwner = 'self', momentIndex = 0, onClose, onWatchFu
   const AdSlide = () => (
     <button onClick={goNext} aria-label="Continue"
       className="absolute inset-0 w-full h-full overflow-hidden"
-      style={{ background: '#9CC9E6', cursor: 'pointer' }}>
+      style={{ background: '#000', cursor: 'pointer' }}>
       <img src={PLAYER_HL_AD_DATA_URI}
         alt="Sponsored: Yoni x Claude — A Netflix Series"
         draggable={false}
