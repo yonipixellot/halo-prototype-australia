@@ -1817,13 +1817,14 @@ const STATE_THEMES = {
   },
   SA: {
     atmosphere: 'radial-gradient(ellipse 70% 80% at 70% 30%, rgba(220,38,38,0.40) 0%, transparent 55%), radial-gradient(ellipse 60% 70% at 25% 75%, rgba(0,180,255,0.28) 0%, transparent 60%), linear-gradient(135deg, #0a0e1a 0%, #050810 60%, #0d1228 100%)',
-    /* SA scrim narrowed to warm-only — yellow ember fading into deep
-       red — per user feedback that the blue muddied the bottom of the
-       hero. accent + pill ring also recolored from blue (#003DA5) to
-       SA's red so the chrome reinforces the warm palette instead of
-       contradicting it. Yellow stays on the LIVE pulse-dot. */
-    scrim: 'linear-gradient(180deg, transparent 0%, transparent 28%, rgba(255,184,28,0.32) 52%, rgba(200,16,46,0.82) 80%, #5E0418 100%)',
-    accent: '#C8102E',
+    /* SA scrim — warm-only ember fade. Earlier version had the red
+       too bright/saturated; toned down to a subdued ember (lower
+       opacity yellow, darker + softer red, near-black at bottom)
+       so the title block reads against sunset glow rather than fire
+       engine. accent kept as red for chrome reinforcement, LIVE dot
+       still yellow. */
+    scrim: 'linear-gradient(180deg, transparent 0%, transparent 32%, rgba(255,184,28,0.20) 52%, rgba(150,18,38,0.60) 78%, #2E020C 100%)',
+    accent: '#A6112A',
     liveDot: '#FFB81C',
   },
 };
