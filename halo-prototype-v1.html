@@ -1766,7 +1766,12 @@ const STATES_DATA = [
   { code: 'NSW', name: 'New South Wales',              src: 'logos/state-nsw.png' },
   { code: 'NT',  name: 'Northern Territory',           src: 'logos/state-nt.png'  },
   { code: 'QLD', name: 'Queensland',                   src: 'logos/state-qld.png', wordmark: 'logos/state-qld-wordmark.svg' },
-  { code: 'SA',  name: 'South Australia',              src: 'logos/state-sa.png',  wordmark: 'logos/state-sa-wordmark.png'  },
+  /* SA wordmark PNG has heavy canvas padding around the logo (the
+     basketball + 'Basketball South Australia' text only fill ~55% of
+     the 2008x1182 canvas vertically), so at the default 32px the
+     visible mark reads ~18px tall and looks broken next to BQ and BV.
+     wordmarkScale bumps the rendered height to compensate per-state. */
+  { code: 'SA',  name: 'South Australia',              src: 'logos/state-sa.png',  wordmark: 'logos/state-sa-wordmark.png',  wordmarkScale: 1.75 },
   { code: 'TAS', name: 'Tasmania',                     src: 'logos/state-tas.png' },
   { code: 'VIC', name: 'Victoria',                     src: 'logos/state-vic.png', wordmark: 'logos/state-vic-wordmark.png' },
   { code: 'WA',  name: 'Western Australia',            src: 'logos/state-wa.png'  },
@@ -7217,14 +7222,15 @@ const WatchShell = ({ hero, children, topBarCenter, selectedState, onSelectState
            shipped. Missing wordmark falls back to HALO TV so
            non-wired states (NSW, WA, etc.) still render. Image
            hides via onError if the file is absent. */}
-        <div className="shrink-0 flex items-center" style={{ height: 32 }}>
+        <div className="shrink-0 flex items-center" style={{ height: 48 }}>
           {(() => {
             const st = STATES_DATA.find(s => s.code === selectedState);
             if (st && st.wordmark) {
+              const h = Math.round(32 * (st.wordmarkScale || 1));
               return (
                 <img src={st.wordmark} alt={`${st.name} wordmark`}
-                  style={{ height: 32, width: 'auto', display: 'block' }}
-                  onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling && (e.target.nextSibling.style.display = 'inline'); }} />
+                  style={{ height: h, width: 'auto', display: 'block' }}
+                  onError={(e) => { e.target.style.display = 'none'; }} />
               );
             }
             return <span className="sf-display font-bold text-[18px] text-white">HALO <span className="text-halo-cyan">TV</span></span>;
@@ -7471,16 +7477,19 @@ const WatchScreen = ({ onOpenGame, onOpenGameVideo, onPickMoment }) => {
             the rest of the watch tree). */}
         <div className="sticky top-0 z-30 px-4 pt-5 pb-3"
           style={{ background: 'linear-gradient(180deg, rgba(5,8,16,0.55) 0%, rgba(5,8,16,0.20) 70%, transparent 100%)' }}>
-          <div className="flex items-center justify-between mb-3" style={{ minHeight: 36 }}>
+          <div className="flex items-center justify-between mb-3" style={{ minHeight: 54 }}>
             {/* Phone brand slot — same state-wordmark swap as the
-               desktop WatchShell top bar. 36px tall to match the
-               larger 22px HALO TV wordmark cap height. */}
+               desktop WatchShell top bar. wordmarkScale (per-state)
+               compensates for PNG canvas padding so SA reads at the
+               same visual size as BQ/BV despite its larger native
+               whitespace. */}
             {(() => {
               const st = STATES_DATA.find(s => s.code === selectedState);
               if (st && st.wordmark) {
+                const h = Math.round(36 * (st.wordmarkScale || 1));
                 return (
                   <img src={st.wordmark} alt={`${st.name} wordmark`}
-                    style={{ height: 36, width: 'auto', display: 'block' }}
+                    style={{ height: h, width: 'auto', display: 'block' }}
                     onError={(e) => { e.target.style.display = 'none'; }} />
                 );
               }
