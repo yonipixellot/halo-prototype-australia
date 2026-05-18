@@ -1790,40 +1790,46 @@ const STATES_DATA = [
      the user has explicitly picked a themed state).
    - liveDot: lighter shade for the actual pulse dot — accent itself
      is used as the glow so the dot reads as a glowing core. */
+/* STATE_THEMES — per-state visual treatment with three layers:
+   - pageSweep: full-page vertical gradient, applied to the Watch
+     tab outer container. Saturated state color at the top
+     (covering the hero zone) fading into the dark canvas below
+     where the rails live. This is the new headline treatment.
+   - scrim: hero bottom-fade scrim. Reverted to neutral on themed
+     states so it blends into the pageSweep underneath instead of
+     painting a competing color band.
+   - accent: WatchStateSwitcherPill border + glow color.
+   - liveDot: LIVE pulse-dot tint inside the red Live pill. */
 const STATE_THEMES = {
   _default: {
+    pageSweep: null,
     atmosphere: 'radial-gradient(ellipse 70% 80% at 70% 30%, rgba(220,38,38,0.40) 0%, transparent 55%), radial-gradient(ellipse 60% 70% at 25% 75%, rgba(0,180,255,0.28) 0%, transparent 60%), linear-gradient(135deg, #0a0e1a 0%, #050810 60%, #0d1228 100%)',
     scrim: 'linear-gradient(180deg, transparent 0%, transparent 30%, rgba(12,14,20,0.55) 65%, rgba(12,14,20,0.92) 90%, #0C0E14 100%)',
     accent: '#00D6FE',
     liveDot: '#fff',
   },
-  /* Themed state scrims — the bottom-fade gradient that lives behind
-     the title/score/CTA block. Tinted in the state's accent so the
-     entire content-bearing strip reads as state-owned. The atmosphere
-     overlay above the video is reverted to the default neutral on
-     themed states — having both was double-paint and the scrim alone
-     lands harder because it sits where the user's eye actually rests. */
   QLD: {
-    atmosphere: 'radial-gradient(ellipse 70% 80% at 70% 30%, rgba(220,38,38,0.40) 0%, transparent 55%), radial-gradient(ellipse 60% 70% at 25% 75%, rgba(0,180,255,0.28) 0%, transparent 60%), linear-gradient(135deg, #0a0e1a 0%, #050810 60%, #0d1228 100%)',
-    scrim: 'linear-gradient(180deg, transparent 0%, transparent 30%, rgba(110,8,30,0.45) 60%, rgba(110,8,30,0.92) 92%, #4A0518 100%)',
+    pageSweep: 'linear-gradient(180deg, #6E081E 0%, #2a0810 38%, #0a0510 70%, #04060c 100%)',
+    atmosphere: 'transparent',
+    scrim: 'linear-gradient(180deg, transparent 0%, transparent 35%, rgba(10,5,16,0.55) 70%, rgba(4,6,12,0.92) 100%)',
     accent: '#8C0E2A',
     liveDot: '#ffd0d8',
   },
   VIC: {
-    atmosphere: 'radial-gradient(ellipse 70% 80% at 70% 30%, rgba(220,38,38,0.40) 0%, transparent 55%), radial-gradient(ellipse 60% 70% at 25% 75%, rgba(0,180,255,0.28) 0%, transparent 60%), linear-gradient(135deg, #0a0e1a 0%, #050810 60%, #0d1228 100%)',
-    scrim: 'linear-gradient(180deg, transparent 0%, transparent 30%, rgba(8,18,55,0.55) 60%, rgba(8,18,55,0.95) 92%, #050D2E 100%)',
+    pageSweep: 'linear-gradient(180deg, #0a1640 0%, #050a20 38%, #04060c 70%, #04060c 100%)',
+    atmosphere: 'transparent',
+    scrim: 'linear-gradient(180deg, transparent 0%, transparent 35%, rgba(5,10,32,0.55) 70%, rgba(4,6,12,0.92) 100%)',
     accent: '#1A2D5A',
     liveDot: '#c8d8ff',
   },
   SA: {
-    atmosphere: 'radial-gradient(ellipse 70% 80% at 70% 30%, rgba(220,38,38,0.40) 0%, transparent 55%), radial-gradient(ellipse 60% 70% at 25% 75%, rgba(0,180,255,0.28) 0%, transparent 60%), linear-gradient(135deg, #0a0e1a 0%, #050810 60%, #0d1228 100%)',
-    /* SA scrim — warm-only ember fade. Earlier version had the red
-       too bright/saturated; toned down to a subdued ember (lower
-       opacity yellow, darker + softer red, near-black at bottom)
-       so the title block reads against sunset glow rather than fire
-       engine. accent kept as red for chrome reinforcement, LIVE dot
-       still yellow. */
-    scrim: 'linear-gradient(180deg, transparent 0%, transparent 32%, rgba(255,184,28,0.20) 52%, rgba(150,18,38,0.60) 78%, #2E020C 100%)',
+    /* SA picked option 2 (red + yellow ember): red saturates the
+       top, gold band ~18% as a sunset moment, then deep red
+       transitioning into near-black. Captures the warm SA palette
+       without dragging in blue. */
+    pageSweep: 'linear-gradient(180deg, #C8102E 0%, rgba(255,184,28,0.55) 18%, #6E0518 32%, #1a0608 60%, #04060c 100%)',
+    atmosphere: 'transparent',
+    scrim: 'linear-gradient(180deg, transparent 0%, transparent 40%, rgba(26,6,8,0.55) 75%, rgba(4,6,12,0.92) 100%)',
     accent: '#A6112A',
     liveDot: '#FFB81C',
   },
@@ -7285,10 +7291,14 @@ const WatchHeroDesktop = ({ onWatch, selectedState = 'QLD' }) => {
    badge, which was just chrome with no function — replaced with the
    BA state switcher pill that drives the Watch tab's per-state
    program filtering. */
-const WatchShell = ({ hero, children, topBarCenter, selectedState, onSelectState }) => (
-  <div data-theme="dark" className="relative min-h-screen text-white sf" style={{ overflowX: 'clip' }}>
-    {/* Atmosphere — full bleed */}
-    <div className="lg-atmosphere" />
+const WatchShell = ({ hero, children, topBarCenter, selectedState, onSelectState }) => {
+  const sweep = stateTheme(selectedState).pageSweep;
+  return (
+  <div data-theme="dark" className="relative min-h-screen text-white sf"
+    style={{ overflowX: 'clip', ...(sweep ? { background: sweep } : {}) }}>
+    {/* Atmosphere — full bleed. Suppressed for themed states because
+       pageSweep handles the page background directly. */}
+    {!sweep && <div className="lg-atmosphere" />}
     <div className="absolute inset-0 z-[1] pointer-events-none"
       style={{ background: 'linear-gradient(180deg, var(--vignette-corner) 0%, transparent 30%, transparent 70%, var(--vignette-corner-soft) 100%)' }} />
     {/* Sticky top bar */}
@@ -7334,7 +7344,8 @@ const WatchShell = ({ hero, children, topBarCenter, selectedState, onSelectState
       {children}
     </section>
   </div>
-);
+  );
+};
 
 /* WatchSearchInput — lg-glass pill with search icon + suggestions
    dropdown when query is non-empty. */
@@ -7550,8 +7561,19 @@ const WatchScreen = ({ onOpenGame, onOpenGameVideo, onPickMoment }) => {
   return (
     <>
       {/* ──────────────── Phone (< lg) ──────────────── */}
-      <div data-theme="dark" className="lg:hidden anim-fade pb-28 text-white sf relative min-h-screen">
-        <div className="lg-atmosphere" />
+      <div data-theme="dark" className="lg:hidden anim-fade pb-28 text-white sf relative min-h-screen"
+        style={(() => {
+          /* Gradient sweep — the state's saturated brand color
+             paints the top 60-70% of the page (covering the hero
+             zone) and fades into the dark canvas where the rails
+             live. Non-themed states get a neutral dark bg via the
+             lg-atmosphere class layer below. */
+          const sweep = stateTheme(selectedState).pageSweep;
+          return sweep ? { background: sweep } : null;
+        })()}>
+        {/* lg-atmosphere only renders when the state has no pageSweep — for
+           themed states the page gradient replaces it entirely. */}
+        {!stateTheme(selectedState).pageSweep && <div className="lg-atmosphere" />}
         <div className="absolute inset-0 z-[1] pointer-events-none"
           style={{ background: 'linear-gradient(180deg, var(--vignette-corner) 0%, transparent 30%, transparent 70%, var(--vignette-corner-soft) 100%)' }} />
         {phoneStateSwitcher}
