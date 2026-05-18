@@ -6993,10 +6993,16 @@ const WatchVThumb = ({ moment, size = 'md', onClick }) => {
 
 /* FeaturedHero — phone hero. 62vh full-bleed, video bg + scrim that fades
    into the canvas color. LIVE pill (red) or LAST MATCH pill (glass).
-   Bottom-anchored content cluster. Direct port of DS FeaturedHero. */
-const FeaturedHero = ({ onWatch }) => {
-  const liveGame = SEED_GAMES.find(g => g.status === 'live');
-  const lastGame = SEED_GAMES.find(g => g.status === 'just-ended' || g.status === 'final');
+   Bottom-anchored content cluster. Direct port of DS FeaturedHero.
+   selectedState scopes the hero to the user's active state pick —
+   without it the hero always showed QLD's gL even when the user
+   switched the state pill to VIC or SA. */
+const FeaturedHero = ({ onWatch, selectedState = 'QLD' }) => {
+  const programs = WATCH_PROGRAMS_BY_STATE[selectedState] || [];
+  const stateGameIds = new Set(programs.flatMap(p => p.games || []));
+  const inState = (g) => stateGameIds.has(g.id);
+  const liveGame = SEED_GAMES.find(g => g.status === 'live' && inState(g));
+  const lastGame = SEED_GAMES.find(g => (g.status === 'just-ended' || g.status === 'final') && inState(g));
   const isLive = !!liveGame;
   const game = liveGame ?? lastGame;
   if (!game) return null;
@@ -7059,10 +7065,15 @@ const FeaturedHero = ({ onWatch }) => {
 
 /* WatchHeroDesktop — 70vh cinematic full-bleed. Two CTAs side-by-side
    (Watch Live primary + More info glass). Video uses mix-blend-mode
-   luminosity for the Netflix-ambient treatment. Direct port. */
-const WatchHeroDesktop = ({ onWatch }) => {
-  const liveGame = SEED_GAMES.find(g => g.status === 'live');
-  const lastGame = SEED_GAMES.find(g => g.status === 'just-ended' || g.status === 'final');
+   luminosity for the Netflix-ambient treatment. Direct port.
+   selectedState scopes the hero pick to the user's current state —
+   mirror of the same fix in FeaturedHero. */
+const WatchHeroDesktop = ({ onWatch, selectedState = 'QLD' }) => {
+  const programs = WATCH_PROGRAMS_BY_STATE[selectedState] || [];
+  const stateGameIds = new Set(programs.flatMap(p => p.games || []));
+  const inState = (g) => stateGameIds.has(g.id);
+  const liveGame = SEED_GAMES.find(g => g.status === 'live' && inState(g));
+  const lastGame = SEED_GAMES.find(g => (g.status === 'just-ended' || g.status === 'final') && inState(g));
   const isLive = !!liveGame;
   const game = liveGame ?? lastGame;
   if (!game) return null;
@@ -7306,8 +7317,20 @@ const WatchRails = ({ activeDivision, onPushGame, onPickMoment, selectedState = 
   const div = activeDivision ? programs.find(d => d.id === activeDivision) : null;
   const liveGames = SEED_GAMES.filter(g => g.status === 'live');
   const ended = SEED_GAMES.filter(g => g.status === 'just-ended' || g.status === 'final');
-  const scopedLive  = div ? liveGames.filter(g => div.games.includes(g.id)) : liveGames;
-  const scopedEnded = div ? ended.filter(g => div.games.includes(g.id))    : ended;
+  /* Bug fix: when no specific program is selected, rails used to fall
+     back to ALL games across all states — meaning switching the state
+     pill changed nothing on the page. Now build a Set of every game
+     ID this state owns (union of all its programs' game lists) and
+     filter the unscoped rails against it. Picking VIC shows only VIC
+     games; picking SA shows only SA games. Selecting a specific
+     program narrows further as before. */
+  const stateGameIds = new Set(programs.flatMap(p => p.games || []));
+  const scopedLive  = div
+    ? liveGames.filter(g => div.games.includes(g.id))
+    : liveGames.filter(g => stateGameIds.has(g.id));
+  const scopedEnded = div
+    ? ended.filter(g => div.games.includes(g.id))
+    : ended.filter(g => stateGameIds.has(g.id));
   return (
     <>
       {scopedLive.length > 0 && (
@@ -7418,7 +7441,7 @@ const WatchScreen = ({ onOpenGame, onOpenGameVideo, onPickMoment }) => {
           </div>
           <WatchSearchInput query={query} setQuery={setQuery} onPickGame={handlePush} />
         </div>
-        <FeaturedHero onWatch={handlePush} />
+        <FeaturedHero onWatch={handlePush} selectedState={selectedState} />
         {body}
       </div>
 
@@ -7426,7 +7449,7 @@ const WatchScreen = ({ onOpenGame, onOpenGameVideo, onPickMoment }) => {
       <div className="hidden lg:block">
         <WatchShell
           topBarCenter={<WatchSearchInput query={query} setQuery={setQuery} onPickGame={handlePush} />}
-          hero={<WatchHeroDesktop onWatch={handlePush} />}
+          hero={<WatchHeroDesktop onWatch={handlePush} selectedState={selectedState} />}
           selectedState={selectedState}
           onSelectState={setSelectedState}>
           {body}
