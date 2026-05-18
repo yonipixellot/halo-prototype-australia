@@ -7119,7 +7119,7 @@ const WatchVThumb = ({ moment, size = 'md', onClick }) => {
    selectedState scopes the hero to the user's active state pick —
    without it the hero always showed QLD's gL even when the user
    switched the state pill to VIC or SA. */
-const FeaturedHero = ({ onWatch, selectedState = 'QLD' }) => {
+const FeaturedHero = ({ onWatch, selectedState = 'QLD', heroMode = 'video', cycleHero }) => {
   const programs = WATCH_PROGRAMS_BY_STATE[selectedState] || [];
   const stateGameIds = new Set(programs.flatMap(p => p.games || []));
   const inState = (g) => stateGameIds.has(g.id);
@@ -7146,6 +7146,28 @@ const FeaturedHero = ({ onWatch, selectedState = 'QLD' }) => {
         minHeight: '62vh',
         background: theme.atmosphere,
       }}>
+      {/* StateNav toggle — always visible top-right. Both arrows
+         call cycleHero (binary toggle), so click either direction
+         flips between 'video' hero and 'ad' takeover. */}
+      {cycleHero && (
+        <div className="absolute top-3 end-3 z-40">
+          <StateNav onPrev={cycleHero} onNext={cycleHero} />
+        </div>
+      )}
+      {heroMode === 'ad' ? (
+        /* Full-bleed sponsor takeover — mobile spalding asset
+           (1080x1440 portrait, 3:4) sized to fill the entire 62vh
+           hero. No chrome, no video, just the ad. */
+        <>
+          <img src="spalding-1080x1440.png" alt="Sponsored: Spalding"
+            className="absolute inset-0 w-full h-full"
+            style={{ objectFit: 'cover', objectPosition: 'center' }} />
+          <div className="absolute top-3 start-3 z-30 squircle-sm px-2 py-1"
+            style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.10)' }}>
+            <span className="sf text-[9px] font-bold tracking-[0.18em] uppercase leading-none" style={{ color: 'rgba(255,255,255,0.85)' }}>Sponsored</span>
+          </div>
+        </>
+      ) : (<>
       {/* Atmosphere video — same clips/atmosphere_loop.mp4 the desktop
          hero uses (20s mid-game trim of condensed_game.mp4). Phone
          layout is bottom-anchored with content over a full-bleed
@@ -7205,6 +7227,7 @@ const FeaturedHero = ({ onWatch, selectedState = 'QLD' }) => {
           {isLive ? 'Watch live' : 'Watch full game'}
         </button>
       </div>
+      </>)}
     </div>
   );
 };
@@ -7214,7 +7237,7 @@ const FeaturedHero = ({ onWatch, selectedState = 'QLD' }) => {
    luminosity for the Netflix-ambient treatment. Direct port.
    selectedState scopes the hero pick to the user's current state —
    mirror of the same fix in FeaturedHero. */
-const WatchHeroDesktop = ({ onWatch, selectedState = 'QLD' }) => {
+const WatchHeroDesktop = ({ onWatch, selectedState = 'QLD', heroMode = 'video', cycleHero }) => {
   const programs = WATCH_PROGRAMS_BY_STATE[selectedState] || [];
   const stateGameIds = new Set(programs.flatMap(p => p.games || []));
   const inState = (g) => stateGameIds.has(g.id);
@@ -7236,6 +7259,26 @@ const WatchHeroDesktop = ({ onWatch, selectedState = 'QLD' }) => {
         maxHeight: 560,
         background: theme.atmosphere,
       }}>
+      {/* StateNav toggle — always visible top-right. Same binary
+         toggle as the phone hero. */}
+      {cycleHero && (
+        <div className="absolute top-4 end-4 z-40">
+          <StateNav onPrev={cycleHero} onNext={cycleHero} />
+        </div>
+      )}
+      {heroMode === 'ad' ? (
+        /* Full-bleed sponsor takeover — desktop spalding asset
+           (2400x1120 wide, ~15:7) fills the entire hero. */
+        <>
+          <img src="spalding-2400x1120.png" alt="Sponsored: Spalding"
+            className="absolute inset-0 w-full h-full"
+            style={{ objectFit: 'cover', objectPosition: 'center' }} />
+          <div className="absolute top-4 start-4 z-30 squircle-sm px-2 py-1"
+            style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.10)' }}>
+            <span className="sf text-[10px] font-bold tracking-[0.18em] uppercase leading-none" style={{ color: 'rgba(255,255,255,0.85)' }}>Sponsored</span>
+          </div>
+        </>
+      ) : (<>
       {/* Atmosphere video — clips/atmosphere_loop.mp4 is a 20-second
          trim of clips/condensed_game (1).mp4 (t=32..52), no audio,
          scaled to 1280px and faststart-encoded so it can preload
@@ -7323,6 +7366,7 @@ const WatchHeroDesktop = ({ onWatch, selectedState = 'QLD' }) => {
           </button>
         </div>
       </div>
+      </>)}
     </div>
   );
 };
@@ -7563,6 +7607,13 @@ const EmptyScopedRail = ({ label }) => (
 const WatchScreen = ({ onOpenGame, onOpenGameVideo, onPickMoment }) => {
   const [activeDivision, setActiveDivision] = useState(null);
   const [query, setQuery] = useState('');
+  /* Hero mode toggle — flips between the regular video hero ('video')
+     and a full-bleed sponsor ad takeover ('ad'). Driven by StateNav
+     arrows in the top-right of the hero so team members can demo the
+     ad capability live without code changes. Per spec the page sweep
+     + rails stay themed even when the ad is showing. */
+  const [heroMode, setHeroMode] = useState('video');
+  const cycleHero = () => setHeroMode(m => m === 'video' ? 'ad' : 'video');
   /* Selected BA state for the Watch tab — drives the program tiles +
      heading. Persisted to localStorage so a demo reload lands back in
      the state the user was browsing. Default QLD (Tal's home state). */
@@ -7650,7 +7701,7 @@ const WatchScreen = ({ onOpenGame, onOpenGameVideo, onPickMoment }) => {
           </div>
           <WatchSearchInput query={query} setQuery={setQuery} onPickGame={handlePush} />
         </div>
-        <FeaturedHero onWatch={handlePush} selectedState={selectedState} />
+        <FeaturedHero onWatch={handlePush} selectedState={selectedState} heroMode={heroMode} cycleHero={cycleHero} />
         {body}
       </div>
 
@@ -7658,7 +7709,7 @@ const WatchScreen = ({ onOpenGame, onOpenGameVideo, onPickMoment }) => {
       <div className="hidden lg:block">
         <WatchShell
           topBarCenter={<WatchSearchInput query={query} setQuery={setQuery} onPickGame={handlePush} />}
-          hero={<WatchHeroDesktop onWatch={handlePush} selectedState={selectedState} />}
+          hero={<WatchHeroDesktop onWatch={handlePush} selectedState={selectedState} heroMode={heroMode} cycleHero={cycleHero} />}
           selectedState={selectedState}
           onSelectState={setSelectedState}>
           {body}
