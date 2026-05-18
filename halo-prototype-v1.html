@@ -1755,14 +1755,20 @@ const teamByInitial = (initial) => Object.values(TEAMS_DB).find(t => t.initial =
 /* STATES_DATA — each member federation now carries a `src` field for
    its badge. Rendered in the Watch tab state-switcher pill (before the
    text) and inside the dropdown menu rows. */
+/* `wordmark` (optional) — full federation logo with text + crest,
+   used in place of the 'HALO TV' brand wordmark in the Watch tab top
+   bar when this state is selected. Different file from `src` (which
+   is the small 24px badge used in the state-switcher pill).
+   QLD has bq.svg shipping; VIC + SA expected at the listed paths
+   (user to drop in via Finder). Missing files fall back to 'HALO TV'. */
 const STATES_DATA = [
   { code: 'ACT', name: 'Australian Capital Territory', src: 'logos/state-act.png' },
   { code: 'NSW', name: 'New South Wales',              src: 'logos/state-nsw.png' },
   { code: 'NT',  name: 'Northern Territory',           src: 'logos/state-nt.png'  },
-  { code: 'QLD', name: 'Queensland',                   src: 'logos/state-qld.png' },
-  { code: 'SA',  name: 'South Australia',              src: 'logos/state-sa.png'  },
+  { code: 'QLD', name: 'Queensland',                   src: 'logos/state-qld.png', wordmark: 'logos/state-qld-wordmark.svg' },
+  { code: 'SA',  name: 'South Australia',              src: 'logos/state-sa.png',  wordmark: 'logos/state-sa-wordmark.png'  },
   { code: 'TAS', name: 'Tasmania',                     src: 'logos/state-tas.png' },
-  { code: 'VIC', name: 'Victoria',                     src: 'logos/state-vic.png' },
+  { code: 'VIC', name: 'Victoria',                     src: 'logos/state-vic.png', wordmark: 'logos/state-vic-wordmark.png' },
   { code: 'WA',  name: 'Western Australia',            src: 'logos/state-wa.png'  },
 ];
 /* Per-state team lookup — used by the Watch tab to filter rails by
@@ -6163,18 +6169,16 @@ const HorizontalGameCard = ({ game, onOpenGame }) => {
         {/* Top row — LIVE pill + moments count.
             The pill carries the period; moments count quietly anchors the
             top-end as ambient context — never the loudest thing. */}
-        <div className="relative z-10 flex items-center justify-between p-5 lg:p-6">
+        <div className="relative z-10 flex items-center p-5 lg:p-6">
+          {/* Moments count removed from the live state row — a running
+             clip count next to LIVE reads as a stat that ticks, which
+             it doesn't. Ended cards still surface it (in the meta line). */}
           <div className="lg-glass live-red squircle-sm px-2.5 py-1 flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-white anim-pulse-dot" />
             <span className="sf text-[10px] font-bold tracking-[0.18em] uppercase leading-none" style={{ color: '#FFF' }}>
               LIVE · {game.period || 'Q1'}
             </span>
           </div>
-          {game.momentsCount != null && game.momentsCount > 0 && (
-            <span className="sf text-[10.5px] font-bold tracking-[0.14em] uppercase" style={{ color: 'var(--text-muted)' }}>
-              {game.momentsCount} moments
-            </span>
-          )}
         </div>
 
         {/* Editorial scoreboard — single horizontal row, crest on
@@ -7006,6 +7010,16 @@ const FeaturedHero = ({ onWatch, selectedState = 'QLD' }) => {
   const isLive = !!liveGame;
   const game = liveGame ?? lastGame;
   if (!game) return null;
+  /* Eyebrow text — look up the program in the current state that
+     owns this game. Was hardcoded 'Senior Domestic · Thursday Men D'
+     (QLD's program) regardless of state, which read wrong after the
+     state filter started picking VIC/SA games. Falls back to a state
+     name string if no program owns the game (shouldn't happen but
+     keeps the chrome stable). */
+  const owningProgram = programs.find(p => p.games && p.games.includes(game.id));
+  const eyebrowText = owningProgram
+    ? `${owningProgram.name} · ${owningProgram.sub}`
+    : stateName(selectedState);
   return (
     <div className="relative w-full"
       style={{
@@ -7042,7 +7056,7 @@ const FeaturedHero = ({ onWatch, selectedState = 'QLD' }) => {
             </div>
           )}
           <span className="sf text-[9.5px] tracking-[0.14em] uppercase font-semibold" style={{ color: 'var(--text-tertiary)' }}>
-            Senior Domestic · Thursday Men D
+            {eyebrowText}
           </span>
         </div>
         <h1 className="sf-display font-bold leading-[0.95] tracking-[-0.025em] text-white" style={{ fontSize: 36 }}>
@@ -7051,7 +7065,10 @@ const FeaturedHero = ({ onWatch, selectedState = 'QLD' }) => {
         </h1>
         <div className="sf text-[12.5px] mt-2" style={{ color: 'var(--text-tertiary)' }}>
           {game.scoreHome != null ? `${game.scoreHome} — ${game.scoreAway}` : (isLive ? game.period : 'Upcoming')}
-          {game.momentsCount ? ` · ${game.momentsCount} moments` : ''}
+          {/* Moments count suppressed during LIVE state — a running
+             clip count next to a live score reads as a stat that
+             ticks up, which it doesn't. Shown only for ended games. */}
+          {!isLive && game.momentsCount ? ` · ${game.momentsCount} moments` : ''}
         </div>
         <button onClick={() => onWatch(game.id, isLive)}
           className="mt-3 lg-btn-primary lg-shine squircle-md sf font-bold text-[13px] flex items-center gap-2 px-5 py-3">
@@ -7077,6 +7094,10 @@ const WatchHeroDesktop = ({ onWatch, selectedState = 'QLD' }) => {
   const isLive = !!liveGame;
   const game = liveGame ?? lastGame;
   if (!game) return null;
+  const owningProgram = programs.find(p => p.games && p.games.includes(game.id));
+  const eyebrowText = owningProgram
+    ? `${owningProgram.name} · ${owningProgram.sub} · Rowland Cowan`
+    : stateName(selectedState);
   return (
     <div className="relative w-full"
       style={{
@@ -7132,7 +7153,7 @@ const WatchHeroDesktop = ({ onWatch, selectedState = 'QLD' }) => {
             </div>
           )}
           <span className="sf text-[10px] tracking-[0.16em] uppercase font-semibold" style={{ color: 'var(--text-tertiary)' }}>
-            Senior Domestic · Thursday Men D · Rowland Cowan
+            {eyebrowText}
           </span>
         </div>
         <h1 className="sf-display font-bold leading-[0.98] tracking-[-0.025em] text-white" style={{ fontSize: 44 }}>
@@ -7190,8 +7211,24 @@ const WatchShell = ({ hero, children, topBarCenter, selectedState, onSelectState
         WebkitBackdropFilter: 'blur(12px) saturate(160%)',
       }}>
       <div className="mx-auto max-w-[1200px] px-8 xl:px-12 py-3 flex items-center gap-5">
-        <div className="shrink-0">
-          <span className="sf-display font-bold text-[18px] text-white">HALO <span className="text-halo-cyan">TV</span></span>
+        {/* Brand slot — defaults to the HALO TV wordmark; swaps to
+           the selected state's federation wordmark (Basketball
+           Queensland / Victoria / SA) when that state has one
+           shipped. Missing wordmark falls back to HALO TV so
+           non-wired states (NSW, WA, etc.) still render. Image
+           hides via onError if the file is absent. */}
+        <div className="shrink-0 flex items-center" style={{ height: 32 }}>
+          {(() => {
+            const st = STATES_DATA.find(s => s.code === selectedState);
+            if (st && st.wordmark) {
+              return (
+                <img src={st.wordmark} alt={`${st.name} wordmark`}
+                  style={{ height: 32, width: 'auto', display: 'block' }}
+                  onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling && (e.target.nextSibling.style.display = 'inline'); }} />
+              );
+            }
+            return <span className="sf-display font-bold text-[18px] text-white">HALO <span className="text-halo-cyan">TV</span></span>;
+          })()}
         </div>
         <div className="flex-1 min-w-0">{topBarCenter}</div>
         <div className="flex items-center gap-3 shrink-0">
@@ -7434,10 +7471,25 @@ const WatchScreen = ({ onOpenGame, onOpenGameVideo, onPickMoment }) => {
             the rest of the watch tree). */}
         <div className="sticky top-0 z-30 px-4 pt-5 pb-3"
           style={{ background: 'linear-gradient(180deg, rgba(5,8,16,0.55) 0%, rgba(5,8,16,0.20) 70%, transparent 100%)' }}>
-          <div className="flex items-center justify-between mb-3">
-            <span className="sf-display font-bold text-[22px] text-white">
-              HALO <span className="text-halo-cyan">TV</span>
-            </span>
+          <div className="flex items-center justify-between mb-3" style={{ minHeight: 36 }}>
+            {/* Phone brand slot — same state-wordmark swap as the
+               desktop WatchShell top bar. 36px tall to match the
+               larger 22px HALO TV wordmark cap height. */}
+            {(() => {
+              const st = STATES_DATA.find(s => s.code === selectedState);
+              if (st && st.wordmark) {
+                return (
+                  <img src={st.wordmark} alt={`${st.name} wordmark`}
+                    style={{ height: 36, width: 'auto', display: 'block' }}
+                    onError={(e) => { e.target.style.display = 'none'; }} />
+                );
+              }
+              return (
+                <span className="sf-display font-bold text-[22px] text-white">
+                  HALO <span className="text-halo-cyan">TV</span>
+                </span>
+              );
+            })()}
           </div>
           <WatchSearchInput query={query} setQuery={setQuery} onPickGame={handlePush} />
         </div>
